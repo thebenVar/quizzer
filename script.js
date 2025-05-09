@@ -8,8 +8,7 @@ let startQuizButton, quizContentElement, questionTextElement, optionsAreaElement
     liveIncorrectCountElement, streakCounterElement, feedbackFlashElement,
     reviewSection, reviewToggleButton, reviewContent, achievementsListElement,
     liveGiftsElement, timeTakenElement, nameInputElement,
-    resultNameElement, resultMessageElement, progressionModeSelectorElement, // Added
-    nextQuestionButtonElement; // Added
+    resultNameElement, resultMessageElement, correctionModeSelectorElement; // Added correction mode selector
 
 // --- Quiz State ---
 let currentQuestionIndex = 0;
@@ -30,7 +29,8 @@ let quizEndTime;
 let totalRegularQuestions = 0;
 let userName = "Quiz Taker"; // Default name
 let currentQuizData = []; // To hold the (potentially shuffled) questions for the current session
-let progressionMode = 'auto'; // Default to auto
+let showImmediateCorrection = true; // Default to immediate correction
+
 
 // --- Sound Effects (Tone.js Synths) ---
 let correctSound, incorrectSound, completeSound, giftSound;
@@ -71,8 +71,8 @@ function getDOMElements() {
     nameInputElement = document.getElementById('user-name');
     resultNameElement = document.getElementById('result-name');
     resultMessageElement = document.getElementById('result-message');
-    progressionModeSelectorElement = document.getElementById('progression-mode-selector');
-    nextQuestionButtonElement = document.getElementById('next-question-btn');
+    correctionModeSelectorElement = document.getElementById('correction-mode-selector');
+    // nextQuestionButtonElement removed
 }
 
 
@@ -143,12 +143,12 @@ function startQuizFlow() {
      console.log("Starting quiz flow...");
      userName = nameInputElement.value.trim() || "Quiz Taker";
      document.getElementById('name-input-area').style.display = 'none';
-     progressionModeSelectorElement.style.display = 'none'; // Hide mode selector
 
-     // Get selected progression mode
-     const selectedMode = document.querySelector('input[name="progression"]:checked');
-     progressionMode = selectedMode ? selectedMode.value : 'auto';
-     console.log("Progression Mode:", progressionMode);
+     // Get selected correction mode
+     const selectedCorrectionMode = document.querySelector('input[name="correction"]:checked');
+     showImmediateCorrection = selectedCorrectionMode ? selectedCorrectionMode.value === 'immediate' : true; // Default to true if not found
+     console.log("Immediate Correction Mode:", showImmediateCorrection);
+     correctionModeSelectorElement.style.display = 'none'; // Hide mode selector
 
 
      // Prepare quiz data for the current session
@@ -240,20 +240,15 @@ function updateLiveCountsAndStreak() {
 
 function proceedToNextQuestion() {
      clearTimeout(autoProceedTimeout);
-     nextQuestionButtonElement.style.display = 'none'; // Hide next button when proceeding
+     // nextQuestionButtonElement.style.display = 'none'; // Button removed
      currentQuestionIndex++;
      loadQuestion();
  }
 
-// Updated to handle progression mode
-function scheduleOrEnableManualProceed() {
+// Simplified to always auto-proceed
+function scheduleAutoProceed() {
     clearTimeout(autoProceedTimeout);
-    if (progressionMode === 'auto') {
-        autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000);
-    } else { // Manual mode
-        nextQuestionButtonElement.style.display = 'inline-block';
-        submitButton.style.display = 'none'; // Hide submit if next is shown
-    }
+    autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000);
 }
 
 function triggerFeedbackFlash(isCorrect, isBonus = false) {
@@ -275,7 +270,7 @@ function loadQuestion() {
     feedbackAreaElement.className = '';
     userAnswers = {};
     submitButton.style.display = 'none'; // Hide submit by default
-    nextQuestionButtonElement.style.display = 'none'; // Hide next by default
+    // nextQuestionButtonElement.style.display = 'none'; // Button removed
     submitButton.disabled = false;
 
     if (currentQuestionIndex >= currentQuizData.length) { // Use currentQuizData
@@ -312,7 +307,7 @@ function loadQuestion() {
     switch (currentQuestion.type) {
         case "MCQ": loadMCQOptions(currentQuestion); break;
         case "Matching": loadMatchingOptions(currentQuestion); submitButton.style.display = 'inline-block'; break;
-        default: optionsAreaElement.innerHTML = '<p>Unsupported question type.</p>'; scheduleOrEnableManualProceed(); break;
+        default: optionsAreaElement.innerHTML = '<p>Unsupported question type.</p>'; scheduleAutoProceed(); break;
     }
 }
 
@@ -365,7 +360,14 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
             incorrectCount++;
         }
         currentStreak = 0;
-        feedbackAreaElement.textContent = `Incorrect!`;
+        let feedbackText = `Incorrect!`;
+        if (showImmediateCorrection && !question.isBonus) { // Show correction if mode is set and not bonus
+            feedbackText += ` The correct answer was: ${question.answer}.`;
+            if (question.justification) {
+                feedbackText += `<br><span class="feedback-justification">Why? ${question.justification}</span>`;
+            }
+        }
+        feedbackAreaElement.innerHTML = feedbackText; // Use innerHTML for line break
         feedbackAreaElement.className = 'feedback-incorrect';
         playSound(incorrectSound, "C3", "8n");
         triggerFeedbackFlash(false, question.isBonus);
@@ -382,7 +384,7 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
     if (!question.isBonus) { // Only update live counts for regular questions
         updateLiveCountsAndStreak();
     }
-    scheduleOrEnableManualProceed(); // Use new function
+    scheduleAutoProceed(); // Always auto-proceed
 }
 
  function checkStreakForGift() {
@@ -463,20 +465,25 @@ function loadMatchingOptions(question) {
              playSound(giftSound, "G5", "8n");
              triggerFeedbackFlash(true, true);
          } else {
-             feedbackAreaElement.textContent = `Bonus Incorrect (${correctMatches}/${currentQuestion.pairs.length})`;
+             let feedbackText = `Bonus Incorrect (${correctMatches}/${currentQuestion.pairs.length})`;
+             if (showImmediateCorrection) { // Check mode for bonus feedback too
+                 feedbackText += ` Review correct matches at the end.`;
+                 if (currentQuestion.justification) {
+                     feedbackText += `<br><span class="feedback-justification">Hint: ${currentQuestion.justification}</span>`;
+                 }
+             }
+             feedbackAreaElement.innerHTML = feedbackText;
              feedbackAreaElement.className = 'feedback-incorrect';
              playSound(incorrectSound, "C3", "8n");
              triggerFeedbackFlash(false);
-             // Store justification for bonus if incorrect, if provided
-             if (currentQuestion.justification) {
-                 incorrectlyAnsweredQuestions.push({
-                     questionText: currentQuestion.question + " (Bonus)",
-                     userAnswer: userMatches,
-                     correctAnswer: correctPairs,
-                     justification: currentQuestion.justification,
-                     isMatching: true
-                 });
-             }
+             // Store for final review even if bonus
+             incorrectlyAnsweredQuestions.push({ // Always add to review for bonus if not all correct
+                 questionText: currentQuestion.question + " (Bonus)",
+                 userAnswer: userMatches,
+                 correctAnswer: correctPairs,
+                 justification: currentQuestion.justification || "Match all pairs correctly.",
+                 isMatching: true
+             });
          }
      } else {
          const pointsAwarded = isAllCorrect ? (currentQuestion.points || currentQuestion.pairs.length) : 0; // Award points only if all correct
@@ -493,8 +500,15 @@ function loadMatchingOptions(question) {
          } else {
              incorrectCount++;
              currentStreak = 0;
-             feedbackAreaElement.textContent = `Answer Submitted! (${correctMatches}/${currentQuestion.pairs.length} correct)`;
-             feedbackAreaElement.className = 'feedback-submitted';
+             let feedbackText = `Answer Submitted! (${correctMatches}/${currentQuestion.pairs.length} correct)`;
+             if (showImmediateCorrection) {
+                 feedbackText += ` Some matches were incorrect. Review at the end.`;
+                 if (currentQuestion.justification) {
+                     feedbackText += `<br><span class="feedback-justification">Why? ${currentQuestion.justification}</span>`;
+                 }
+             }
+             feedbackAreaElement.innerHTML = feedbackText;
+             feedbackAreaElement.className = 'feedback-submitted'; // Or incorrect if desired
              playSound(incorrectSound, "C3", "8n");
              triggerFeedbackFlash(false);
              incorrectlyAnsweredQuestions.push({
@@ -509,7 +523,7 @@ function loadMatchingOptions(question) {
      }
 
      optionsAreaElement.querySelectorAll('.match-select').forEach(sel => sel.disabled = true);
-     scheduleOrEnableManualProceed(); // Use new function
+     scheduleAutoProceed(); // Always auto-proceed
  }
 
 
@@ -745,10 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
      });
 
-    nextQuestionButtonElement.addEventListener('click', () => { // Listener for the new button
-        proceedToNextQuestion();
-    });
-
+    // nextQuestionButtonElement listener removed
     reviewToggleButton.addEventListener('click', toggleReview);
     shareScoreButton.addEventListener('click', shareScoreAsImage);
 

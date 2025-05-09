@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-    <script src="quizData.js" defer></script>
+    <script src="quizData_sample.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body>
@@ -26,13 +26,13 @@
              <input type="text" id="user-name" name="user-name" placeholder="Your Name">
         </div>
 
-        <div id="progression-mode-selector">
-            <p>Choose how to advance to the next question:</p>
+        <div id="correction-mode-selector">
+            <p>Feedback on incorrect answers:</p>
             <label>
-                <input type="radio" name="progression" value="auto" checked> Automatic (after 2 seconds)
+                <input type="radio" name="correction" value="immediate" checked> Show correction immediately
             </label>
             <label>
-                <input type="radio" name="progression" value="manual"> Manual (click "Next")
+                <input type="radio" name="correction" value="end"> Show only in final review
             </label>
         </div>
 
@@ -67,8 +67,7 @@
 
             <div id="navigation">
                 <button id="submit-btn">Submit Answer</button>
-                <button id="next-question-btn" style="display: none;">Next Question <i class="fas fa-arrow-right"></i></button>
-            </div>
+                </div>
         </div> <div id="result-area">
             <div id="score-card">
                 <h2>Quiz Complete!</h2>

@@ -47,18 +47,20 @@ const quizData = [
     },
     // Bonus Matching Question
     {
-        id: 85,
-        question: "Match the piece of armor to its description:",
+        id: 201, // New ID for this bonus question
+        question: "Match the household member to their primary instruction from Ephesians 5:22-6:9:",
         type: "Matching",
         isBonus: true,
         pairs: [
-            ["Belt", "truth"],
-            ["Breastplate", "righteousness"],
-            ["Shield", "faith"],
-            ["Helmet", "salvation"]
+            ["Wives", "Submit to your own husbands"],
+            ["Husbands", "Love your wives"],
+            ["Children", "Obey your parents"],
+            ["Fathers", "Do not exasperate children; bring them up in the Lord"],
+            ["Slaves", "Obey masters with respect and fear"],
+            ["Masters", "Treat slaves justly, do not threaten"]
         ],
-        points: 0,
-        justification: "Ephesians 6:14-17 describes the armor: Belt of truth, Breastplate of righteousness, Shield of faith, Helmet of salvation."
+        points: 0, // Bonus questions don't contribute to the main score
+        justification: "Based on Ephesians 5:22 (Wives), 5:25 (Husbands), 6:1 (Children), 6:4 (Fathers), 6:5 (Slaves), 6:9 (Masters)."
     }
 ];
 

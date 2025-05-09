@@ -60,8 +60,8 @@ h1 {
     box-sizing: border-box;
 }
 
-/* Progression Mode Selector Styling */
-#progression-mode-selector {
+/* Correction Mode Selector Styling */
+#correction-mode-selector {
     margin-bottom: 20px;
     padding: 15px;
     background-color: #f8f9fa;
@@ -69,20 +69,20 @@ h1 {
     border-radius: 8px;
     text-align: left;
 }
-#progression-mode-selector p {
+#correction-mode-selector p {
     margin-top: 0;
     margin-bottom: 10px;
     font-weight: 500;
     color: #343a40;
 }
-#progression-mode-selector label {
+#correction-mode-selector label {
     display: block;
     margin-bottom: 8px;
     cursor: pointer;
     font-size: 0.95em;
     color: #495057;
 }
-#progression-mode-selector input[type="radio"] {
+#correction-mode-selector input[type="radio"] {
     margin-right: 8px;
     vertical-align: middle;
 }
@@ -252,14 +252,21 @@ h1 {
 
 /* Feedback Styling & Flash Effect */
 #feedback-area {
-    margin-top: 20px; font-weight: 600; font-size: 1.1em; min-height: 1.5em;
+    margin-top: 20px; font-weight: 600; font-size: 1.1em; min-height: 2.5em; /* Increased min-height for justification */
     text-align: center; padding: 10px; border-radius: 6px;
-    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for text */
+    transition: background-color 0.3s ease, color 0.3s ease;
+    line-height: 1.4;
 }
 .feedback-correct { background-color: #d1e7dd; color: #0f5132; }
 .feedback-incorrect { background-color: #f8d7da; color: #842029; }
 .feedback-submitted { background-color: #cfe2ff; color: #0a58ca; }
-.feedback-bonus { background-color: #fff3cd; color: #664d03; } /* Style for bonus feedback */
+.feedback-bonus { background-color: #fff3cd; color: #664d03; }
+.feedback-justification {
+    font-size: 0.9em;
+    font-style: italic;
+    margin-top: 5px;
+    display: block; /* Ensure it takes its own line */
+}
 
 
 /* Flash effect overlay */
@@ -300,9 +307,10 @@ h1 {
     justify-content: center; /* Center buttons */
     gap: 10px; /* Space between buttons if both are visible */
 }
-#submit-btn, #next-question-btn {
+#submit-btn { /* Only submit button now */
     padding: 12px 30px;
     font-size: 1.05em;
+    background-color: #198754;
     color: white;
     border: none;
     border-radius: 6px;
@@ -310,15 +318,12 @@ h1 {
     transition: background-color 0.2s ease;
     font-weight: 500;
 }
-#submit-btn { background-color: #198754; } /* Green */
-#next-question-btn { background-color: #0d6efd; } /* Blue */
-
-#submit-btn:disabled, #next-question-btn:disabled {
+#submit-btn:disabled {
     background-color: #adb5bd;
     cursor: not-allowed;
 }
 #submit-btn:hover:not(:disabled) { background-color: #157347; }
-#next-question-btn:hover:not(:disabled) { background-color: #0b5ed7; }
+/* Next Question Button styling removed as button is removed */
 
 
 #result-area { text-align: center; padding: 30px; border: 1px solid #bcd0f7; border-radius: 12px; background-color: #e7f0fe; margin-top: 30px; }
