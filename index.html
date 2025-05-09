@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gethsemane Bible Quiz</title> <link rel="stylesheet" href="style.css">
+    <title>Gethsemane Bible Quiz</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
@@ -25,13 +26,25 @@
              <input type="text" id="user-name" name="user-name" placeholder="Your Name">
         </div>
 
-        <button id="start-quiz-btn">Start Quiz</button> <div id="quiz-content">
+        <div id="progression-mode-selector">
+            <p>Choose how to advance to the next question:</p>
+            <label>
+                <input type="radio" name="progression" value="auto" checked> Automatic (after 2 seconds)
+            </label>
+            <label>
+                <input type="radio" name="progression" value="manual"> Manual (click "Next")
+            </label>
+        </div>
+
+        <button id="start-quiz-btn">Start Quiz</button>
+
+        <div id="quiz-content">
             <div id="quiz-header">
                 <div id="progress-bar-container">
                     <div id="progress-bar"></div>
                 </div>
                 <div id="header-info">
-                    <span id="progress-text">Question 1 / 10</span>
+                    <span id="progress-text">Question 1 / X</span>
                     <div id="live-stats">
                         <span id="live-correct-count">✔️ 0</span>
                         <span id="live-incorrect-count">❌ 0</span>
@@ -54,16 +67,19 @@
 
             <div id="navigation">
                 <button id="submit-btn">Submit Answer</button>
+                <button id="next-question-btn" style="display: none;">Next Question <i class="fas fa-arrow-right"></i></button>
             </div>
         </div> <div id="result-area">
             <div id="score-card">
-                <h2>Quiz Complete!</h2> <p id="result-message">Well done, <span id="result-name">User</span>!</p>
+                <h2>Quiz Complete!</h2>
+                <p id="result-message">Well done, <span id="result-name">User</span>!</p>
                 <p>Your final score is: <span id="final-score">0</span> / <span id="total-possible-score">0</span></p>
                 <div id="result-summary">
                     <span class="correct-count">Correct: <span id="correct-answers-count">0</span></span>
                     <span class="incorrect-count">Incorrect: <span id="incorrect-answers-count">0</span></span>
                 </div>
                 <p id="time-taken-summary">Time Taken: <span id="time-taken">--:--</span></p>
+
                 <div id="achievements-section">
                     <h3>Achievements / Gifts Earned:</h3>
                     <ul id="achievements-list">
@@ -79,8 +95,5 @@
              <div class="result-buttons">
                  <button id="share-score-btn"><i class="fas fa-share-alt"></i> Share Score</button>
                  </div>
-
-             <p id="rating-summary-container"> How was your experience? <span id="final-rating">N/A</span>
-            </p>
         </div> </div> </body>
 </html>

@@ -60,6 +60,33 @@ h1 {
     box-sizing: border-box;
 }
 
+/* Progression Mode Selector Styling */
+#progression-mode-selector {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    text-align: left;
+}
+#progression-mode-selector p {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: #343a40;
+}
+#progression-mode-selector label {
+    display: block;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 0.95em;
+    color: #495057;
+}
+#progression-mode-selector input[type="radio"] {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
 
 /* Start Button Styling */
 #start-quiz-btn {
@@ -223,14 +250,6 @@ h1 {
 .match-select { padding: 10px; border: 1px solid #ced4da; border-radius: 6px; width: 100%; box-sizing: border-box; background-color: #fff; font-size: 0.95em; }
 .match-select:disabled { background-color: #e9ecef; cursor: not-allowed; }
 
-/* Rating Question Styling */
-.rating-container { display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap; margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; }
-.rating-container label { display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 8px 10px; min-width: 45px; border-radius: 6px; transition: background-color 0.2s ease; }
-.rating-container label:hover { background-color: #e9ecef; }
-.rating-container input[type="radio"] { margin-top: 8px; cursor: pointer; transform: scale(1.2); }
-.rating-container input[type="radio"]:disabled { cursor: not-allowed; }
-.rating-container span { font-weight: 500; color: #495057; }
-
 /* Feedback Styling & Flash Effect */
 #feedback-area {
     margin-top: 20px; font-weight: 600; font-size: 1.1em; min-height: 1.5em;
@@ -274,15 +293,38 @@ h1 {
 
 
 /* Navigation/Result Styling */
-#navigation { margin-top: 25px; text-align: center; }
-#submit-btn { padding: 12px 30px; font-size: 1.05em; background-color: #198754; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; font-weight: 500; }
-#submit-btn:disabled { background-color: #adb5bd; cursor: not-allowed; }
+#navigation {
+    margin-top: 25px;
+    text-align: center;
+    display: flex; /* Use flexbox for button alignment */
+    justify-content: center; /* Center buttons */
+    gap: 10px; /* Space between buttons if both are visible */
+}
+#submit-btn, #next-question-btn {
+    padding: 12px 30px;
+    font-size: 1.05em;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+}
+#submit-btn { background-color: #198754; } /* Green */
+#next-question-btn { background-color: #0d6efd; } /* Blue */
+
+#submit-btn:disabled, #next-question-btn:disabled {
+    background-color: #adb5bd;
+    cursor: not-allowed;
+}
 #submit-btn:hover:not(:disabled) { background-color: #157347; }
+#next-question-btn:hover:not(:disabled) { background-color: #0b5ed7; }
+
 
 #result-area { text-align: center; padding: 30px; border: 1px solid #bcd0f7; border-radius: 12px; background-color: #e7f0fe; margin-top: 30px; }
 #result-area h2 { margin-bottom: 15px; color: #0a58ca; font-size: 1.6em; }
 #result-area p { font-size: 1.25em; color: #333; margin-bottom: 10px; }
-#result-summary { margin-bottom: 15px; /* Reduced margin */ }
+#result-summary { margin-bottom: 15px; }
 #result-summary span { display: inline-block; margin: 0 15px; font-weight: 500; }
 .correct-count { color: #198754; }
 .incorrect-count { color: #dc3545; }
@@ -291,33 +333,14 @@ h1 {
 #time-taken-summary {
     font-size: 1.1em;
     color: #555;
-    margin-bottom: 8px; /* Spacing for summary items */
-    display: flex; /* Use flexbox for alignment */
-    justify-content: center; /* Center items */
-    align-items: center; /* Align vertically */
-    gap: 8px; /* Space between label and stars */
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Updated Rating Summary Container Styling */
-#rating-summary-container {
-    font-size: 0.9em; /* Smaller text */
-    color: #6c757d; /* Muted color */
-    margin-top: 25px; /* Space above it */
-    text-align: center; /* Center the text */
-    width: 100%; /* Ensure it spans width for centering */
-}
-
-/* Star Rating Display in Rating Summary */
-#rating-summary-container #final-rating .fa-star { /* Style for filled stars */
-     color: #ffc107; /* Gold color */
-     font-size: 1.1em; /* Slightly larger stars if needed */
-     margin: 0 1px;
-}
-#rating-summary-container #final-rating .far { /* Style for empty stars */
-     color: #ccc; /* Light gray */
-     font-size: 1.1em;
-     margin: 0 1px;
-}
+/* Rating Summary Styling Removed */
 
 
 /* Achievements / Gifts Section */
@@ -335,41 +358,41 @@ h1 {
     list-style: none;
     padding: 0;
     margin: 0;
-    font-size: 1em; /* Base size for text achievements */
+    font-size: 1em;
     color: #495057;
-    display: flex; /* Use flexbox for alignment */
-    flex-wrap: wrap; /* Allow wrapping */
-    justify-content: center; /* Center items */
-    gap: 10px; /* Space between items */
-    align-items: center; /* Align items vertically */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    align-items: center;
 }
-#achievements-list li { /* Style for text achievements */
+#achievements-list li {
     margin-bottom: 5px;
     background-color: #e9ecef;
     padding: 5px 10px;
     border-radius: 4px;
-    display: inline-flex; /* Use inline-flex for better alignment with icons */
-    align-items: center; /* Align text vertically with potential icons */
+    display: inline-flex;
+    align-items: center;
 }
-#achievements-list li.gift-icon { /* Style specifically for gift icons */
-    font-size: 1.8em; /* Make icons larger */
-    background-color: transparent; /* No background for icons */
-    padding: 0 5px; /* Adjust padding */
-    color: #ff7b00; /* Example color for gifts */
-    line-height: 1; /* Adjust line height for icons */
+#achievements-list li.gift-icon {
+    font-size: 1.8em;
+    background-color: transparent;
+    padding: 0 5px;
+    color: #ff7b00;
+    line-height: 1;
 }
- #achievements-list li.bonus-gift-item { /* Specific style for bonus gift */
-     background-color: #fff3cd; /* Light yellow */
+ #achievements-list li.bonus-gift-item {
+     background-color: #fff3cd;
      color: #664d03;
      padding: 5px 10px;
      border-radius: 4px;
      font-weight: 500;
      display: inline-flex;
      align-items: center;
-     gap: 5px; /* Space between text and icon */
+     gap: 5px;
  }
 #achievements-list li.achievement-text::before {
-    content: '🏆 '; /* Emoji prefix for text achievements */
+    content: '🏆 ';
 }
 
 
@@ -377,10 +400,9 @@ h1 {
 .result-buttons {
     display: flex;
     justify-content: center;
-    gap: 15px; /* Space between buttons */
+    gap: 15px;
     margin-top: 25px;
-    margin-bottom: 15px; /* Add some space before the rating summary */
-    flex-wrap: wrap; /* Allow wrapping */
+    flex-wrap: wrap;
 }
 
  /* Share Button Style */
@@ -388,7 +410,7 @@ h1 {
      padding: 12px 25px;
      font-size: 1.0em;
      color: white;
-     background-color: #198754; /* Green for share */
+     background-color: #198754;
      border: none;
      border-radius: 6px;
      cursor: pointer;

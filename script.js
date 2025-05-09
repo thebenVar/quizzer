@@ -8,7 +8,8 @@ let startQuizButton, quizContentElement, questionTextElement, optionsAreaElement
     liveIncorrectCountElement, streakCounterElement, feedbackFlashElement,
     reviewSection, reviewToggleButton, reviewContent, achievementsListElement,
     liveGiftsElement, timeTakenElement, nameInputElement,
-    resultNameElement, resultMessageElement;
+    resultNameElement, resultMessageElement, progressionModeSelectorElement, // Added
+    nextQuestionButtonElement; // Added
 
 // --- Quiz State ---
 let currentQuestionIndex = 0;
@@ -22,12 +23,14 @@ let incorrectlyAnsweredQuestions = []; // Now stores { questionText, userAnswer,
 // userRating removed
 let totalPossibleScore = 0;
 let overallTimerInterval;
-let timeLeft = 30 * 60;
+let timeLeft = 40 * 60; // Default to 40 minutes
 let autoProceedTimeout;
 let quizStartTime;
 let quizEndTime;
 let totalRegularQuestions = 0;
 let userName = "Quiz Taker"; // Default name
+let currentQuizData = []; // To hold the (potentially shuffled) questions for the current session
+let progressionMode = 'auto'; // Default to auto
 
 // --- Sound Effects (Tone.js Synths) ---
 let correctSound, incorrectSound, completeSound, giftSound;
@@ -66,8 +69,10 @@ function getDOMElements() {
     timeTakenElement = document.getElementById('time-taken');
     // finalRatingElement removed
     nameInputElement = document.getElementById('user-name');
-    resultNameElement = document.getElementById('result-name'); // This was missing, needed for the span inside result-message
+    resultNameElement = document.getElementById('result-name');
     resultMessageElement = document.getElementById('result-message');
+    progressionModeSelectorElement = document.getElementById('progression-mode-selector');
+    nextQuestionButtonElement = document.getElementById('next-question-btn');
 }
 
 
@@ -125,13 +130,49 @@ async function playSound(synth, note, duration) {
     }
 }
 
+// Function to shuffle an array (Fisher-Yates shuffle)
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+    }
+}
+
+
 function startQuizFlow() {
      console.log("Starting quiz flow...");
      userName = nameInputElement.value.trim() || "Quiz Taker";
      document.getElementById('name-input-area').style.display = 'none';
+     progressionModeSelectorElement.style.display = 'none'; // Hide mode selector
+
+     // Get selected progression mode
+     const selectedMode = document.querySelector('input[name="progression"]:checked');
+     progressionMode = selectedMode ? selectedMode.value : 'auto';
+     console.log("Progression Mode:", progressionMode);
+
+
+     // Prepare quiz data for the current session
+     let regularQuizQuestions = quizData.filter(q => !q.isBonus);
+     let bonusQuestion = quizData.find(q => q.isBonus);
+
+     shuffleArray(regularQuizQuestions); // Shuffle regular questions
+
+     currentQuizData = [...regularQuizQuestions]; // Start with shuffled regular questions
+     if (bonusQuestion) {
+         currentQuizData.push(bonusQuestion); // Add bonus question at the end
+     }
+
+     // Reset quiz state variables
+     currentQuestionIndex = 0;
+     score = 0;
+     correctCount = 0;
+     incorrectCount = 0;
+     currentStreak = 0;
+     earnedGifts = [];
+     incorrectlyAnsweredQuestions = [];
 
      quizStartTime = Date.now();
-     calculateTotalPossibleScore();
+     calculateTotalPossibleScore(); // Calculate based on the potentially new currentQuizData
      startOverallTimer();
      loadQuestion();
 }
@@ -139,7 +180,7 @@ function startQuizFlow() {
 
 function startOverallTimer() {
      clearInterval(overallTimerInterval);
-     timeLeft = 30 * 60;
+     timeLeft = 40 * 60; // Updated to 40 minutes
      updateTimerDisplay();
      overallTimerInterval = setInterval(() => {
          timeLeft--;
@@ -162,10 +203,11 @@ function updateTimerDisplay() {
  }
 
 function calculateTotalPossibleScore() {
-     totalPossibleScore = quizData
+     // Calculate based on the questions in the current session (currentQuizData)
+     totalPossibleScore = currentQuizData
          .filter(q => !q.isBonus)
          .reduce((sum, question) => sum + (question.points || 0), 0);
-     totalRegularQuestions = quizData.filter(q => !q.isBonus && q.type !== 'Rating').length; // Rating questions don't count for progress
+     totalRegularQuestions = currentQuizData.filter(q => !q.isBonus).length;
  }
 
 function updateLiveCountsAndStreak() {
@@ -180,9 +222,8 @@ function updateLiveCountsAndStreak() {
 }
 
  function updateProgressBar() {
-     // Progress bar should reflect progress through scorable, non-bonus questions
-     const scorableQuestionsAnswered = quizData.slice(0, currentQuestionIndex).filter(q => !q.isBonus && q.type !== 'Rating').length;
-     const progress = totalRegularQuestions > 0 ? (scorableQuestionsAnswered / totalRegularQuestions) * 100 : 0;
+     // Progress bar should reflect progress through all questions including bonus
+     const progress = currentQuizData.length > 0 ? ((currentQuestionIndex) / currentQuizData.length) * 100 : 0;
      progressBarElement.style.width = `${progress}%`;
  }
 
@@ -199,14 +240,21 @@ function updateLiveCountsAndStreak() {
 
 function proceedToNextQuestion() {
      clearTimeout(autoProceedTimeout);
+     nextQuestionButtonElement.style.display = 'none'; // Hide next button when proceeding
      currentQuestionIndex++;
      loadQuestion();
  }
 
-function scheduleAutoProceed() {
-     clearTimeout(autoProceedTimeout);
-     autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000);
- }
+// Updated to handle progression mode
+function scheduleOrEnableManualProceed() {
+    clearTimeout(autoProceedTimeout);
+    if (progressionMode === 'auto') {
+        autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000);
+    } else { // Manual mode
+        nextQuestionButtonElement.style.display = 'inline-block';
+        submitButton.style.display = 'none'; // Hide submit if next is shown
+    }
+}
 
 function triggerFeedbackFlash(isCorrect, isBonus = false) {
     feedbackFlashElement.className = 'feedback-flash';
@@ -226,21 +274,22 @@ function loadQuestion() {
     feedbackAreaElement.textContent = '';
     feedbackAreaElement.className = '';
     userAnswers = {};
-    submitButton.style.display = 'none';
+    submitButton.style.display = 'none'; // Hide submit by default
+    nextQuestionButtonElement.style.display = 'none'; // Hide next by default
     submitButton.disabled = false;
 
-    if (currentQuestionIndex >= quizData.length) {
+    if (currentQuestionIndex >= currentQuizData.length) { // Use currentQuizData
         showResults();
         return;
     }
 
-    const currentQuestion = quizData[currentQuestionIndex];
+    const currentQuestion = currentQuizData[currentQuestionIndex]; // Use currentQuizData
 
     updateProgressBar();
     if (currentQuestion.isBonus) {
          progressTextElement.textContent = `Bonus Question!`;
-    } else { // Rating question is removed, so this logic simplifies
-         const regularQuestionIndex = quizData.slice(0, currentQuestionIndex + 1).filter(q => !q.isBonus).length; // Simplified filter
+    } else {
+         const regularQuestionIndex = currentQuizData.slice(0, currentQuestionIndex + 1).filter(q => !q.isBonus).length;
          progressTextElement.textContent = `Question ${regularQuestionIndex} / ${totalRegularQuestions}`;
     }
 
@@ -263,32 +312,35 @@ function loadQuestion() {
     switch (currentQuestion.type) {
         case "MCQ": loadMCQOptions(currentQuestion); break;
         case "Matching": loadMatchingOptions(currentQuestion); submitButton.style.display = 'inline-block'; break;
-        // Rating case removed
-        default: optionsAreaElement.innerHTML = '<p>Unsupported question type.</p>'; scheduleAutoProceed(); break;
+        default: optionsAreaElement.innerHTML = '<p>Unsupported question type.</p>'; scheduleOrEnableManualProceed(); break;
     }
 }
 
 function loadMCQOptions(question) {
      let regularOptions = [];
-     let specialOptions = [];
+     let specialOptions = []; // To hold "All" or "None" type options
 
-     question.options.forEach(option => {
-         const lowerCaseOption = option.toLowerCase().trim();
+     // Separate special options
+     question.options.forEach(optionText => {
+         const lowerCaseOption = optionText.toLowerCase().trim();
          if (lowerCaseOption === "all the above" || lowerCaseOption === "none of the above") {
-             specialOptions.push(option);
+             specialOptions.push(optionText);
          } else {
-             regularOptions.push(option);
+             regularOptions.push(optionText);
          }
      });
 
-     const shuffledRegularOptions = [...regularOptions].sort(() => Math.random() - 0.5);
-     const finalOptions = [...shuffledRegularOptions, ...specialOptions];
+     // Shuffle only the regular options
+     shuffleArray(regularOptions);
 
-     finalOptions.forEach(option => {
+     // Combine shuffled regular options with special options at the end
+     const finalOptions = [...regularOptions, ...specialOptions];
+
+     finalOptions.forEach(optionText => {
         const button = document.createElement('button');
-        button.textContent = option;
+        button.textContent = optionText;
         button.classList.add('mcq-option');
-        button.onclick = () => handleMCQAnswer(option, question, button);
+        button.onclick = () => handleMCQAnswer(optionText, question, button);
         optionsAreaElement.appendChild(button);
     });
  }
@@ -298,35 +350,45 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
     buttonElement.classList.add('selected');
 
     if (selectedOption === question.answer) {
-        score += question.points;
-        correctCount++;
+        if (!question.isBonus) { // Only add to score if not bonus
+            score += question.points;
+            correctCount++;
+        }
         currentStreak++;
         feedbackAreaElement.textContent = "Correct!";
         feedbackAreaElement.className = 'feedback-correct';
         playSound(correctSound, "C5", "8n");
-        triggerFeedbackFlash(true);
+        triggerFeedbackFlash(true, question.isBonus);
         checkStreakForGift();
     } else {
-        incorrectCount++;
+        if (!question.isBonus) {
+            incorrectCount++;
+        }
         currentStreak = 0;
         feedbackAreaElement.textContent = `Incorrect!`;
         feedbackAreaElement.className = 'feedback-incorrect';
         playSound(incorrectSound, "C3", "8n");
-        triggerFeedbackFlash(false);
-        incorrectlyAnsweredQuestions.push({
-            questionText: question.question,
-            userAnswer: selectedOption,
-            correctAnswer: question.answer,
-            justification: question.justification || "No specific justification provided."
-        });
+        triggerFeedbackFlash(false, question.isBonus);
+        // Only add to review if it's not a bonus question or if you want to review bonus too
+        if (!question.isBonus) {
+            incorrectlyAnsweredQuestions.push({
+                questionText: question.question,
+                userAnswer: selectedOption,
+                correctAnswer: question.answer,
+                justification: question.justification || "No specific justification provided."
+            });
+        }
     }
-    updateLiveCountsAndStreak();
-    scheduleAutoProceed();
+    if (!question.isBonus) { // Only update live counts for regular questions
+        updateLiveCountsAndStreak();
+    }
+    scheduleOrEnableManualProceed(); // Use new function
 }
 
  function checkStreakForGift() {
      const streakLevel = currentStreak;
      const giftClass = streakThresholds[streakLevel];
+     // Award only if the exact threshold is met and this specific streak gift hasn't been awarded yet
      if (giftClass && !earnedGifts.some(gift => gift.class === giftClass && gift.source === 'streak')) {
          earnedGifts.push({ class: giftClass, source: 'streak' });
          console.log(`Streak Gift earned: ${giftClass} for streak ${streakLevel}`);
@@ -341,7 +403,7 @@ function loadMatchingOptions(question) {
      container.classList.add('matching-container');
      const leftItems = question.pairs.map(pair => pair[0]);
      const rightItems = question.pairs.map(pair => pair[1]);
-     const shuffledRightItems = [...rightItems].sort(() => Math.random() - 0.5);
+     shuffleArray(rightItems); // Shuffle the items for the dropdowns
 
      leftItems.forEach((leftItem) => {
          const leftElement = document.createElement('div');
@@ -354,7 +416,7 @@ function loadMatchingOptions(question) {
          defaultOption.value = "";
          defaultOption.textContent = "Select match...";
          selectElement.appendChild(defaultOption);
-         shuffledRightItems.forEach(rightItem => {
+         rightItems.forEach(rightItem => { // Use the shuffled right items
              const optionElement = document.createElement('option');
              optionElement.value = rightItem;
              optionElement.textContent = rightItem;
@@ -371,7 +433,7 @@ function loadMatchingOptions(question) {
 
  function handleMatchingSubmit() {
      submitButton.disabled = true;
-     const currentQuestion = quizData[currentQuestionIndex];
+     const currentQuestion = currentQuizData[currentQuestionIndex]; // Use currentQuizData
      let correctMatches = 0;
      let userMatches = {};
      let correctPairs = {};
@@ -405,10 +467,20 @@ function loadMatchingOptions(question) {
              feedbackAreaElement.className = 'feedback-incorrect';
              playSound(incorrectSound, "C3", "8n");
              triggerFeedbackFlash(false);
+             // Store justification for bonus if incorrect, if provided
+             if (currentQuestion.justification) {
+                 incorrectlyAnsweredQuestions.push({
+                     questionText: currentQuestion.question + " (Bonus)",
+                     userAnswer: userMatches,
+                     correctAnswer: correctPairs,
+                     justification: currentQuestion.justification,
+                     isMatching: true
+                 });
+             }
          }
      } else {
-         const pointsEarned = correctMatches;
-         score += pointsEarned;
+         const pointsAwarded = isAllCorrect ? (currentQuestion.points || currentQuestion.pairs.length) : 0; // Award points only if all correct
+         score += pointsAwarded;
 
          if (isAllCorrect) {
              correctCount++;
@@ -437,10 +509,9 @@ function loadMatchingOptions(question) {
      }
 
      optionsAreaElement.querySelectorAll('.match-select').forEach(sel => sel.disabled = true);
-     scheduleAutoProceed();
+     scheduleOrEnableManualProceed(); // Use new function
  }
 
-// loadRatingOptions and handleRatingAnswer removed
 
 function showResults() {
     quizEndTime = Date.now();
@@ -460,10 +531,8 @@ function showResults() {
     const secondsTaken = durationSeconds % 60;
     timeTakenElement.textContent = `${minutesTaken}:${secondsTaken < 10 ? '0' : ''}${secondsTaken}`;
 
-    // Rating display logic removed
-
     const percentage = totalPossibleScore > 0 ? (score / totalPossibleScore) * 100 : 0;
-    let messageText = ""; // Renamed variable to avoid conflict
+    let messageText = "";
     if (percentage === 100) {
         messageText = `Excellent work, ${userName}! Perfect score!`;
     } else if (percentage >= 70) {
@@ -473,7 +542,7 @@ function showResults() {
     } else {
         messageText = `Keep practicing, ${userName}!`;
     }
-    resultMessageElement.textContent = messageText; // Set the full message content
+    resultMessageElement.textContent = messageText;
 
 
     populateAchievements();
@@ -519,10 +588,10 @@ function populateAchievements() {
     }
 
      // Add text achievements
-     const regularQuestions = quizData.filter(q => !q.isBonus && q.points > 0);
-     const maxRegularScore = regularQuestions.reduce((sum, q) => sum + q.points, 0);
+     const regularQuestionsFromSession = currentQuizData.filter(q => !q.isBonus && q.points > 0); // Use currentQuizData
+     const maxRegularScore = regularQuestionsFromSession.reduce((sum, q) => sum + q.points, 0);
 
-     if (correctCount === regularQuestions.length && regularQuestions.length > 0) {
+     if (correctCount === regularQuestionsFromSession.length && regularQuestionsFromSession.length > 0) {
          const li = document.createElement('li');
          li.classList.add('achievement-text');
          li.textContent = "Perfect Score! ✨";
@@ -665,19 +734,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
          startQuizButton.style.display = 'none';
          quizContentElement.style.display = 'block';
-         startQuizFlow();
+         startQuizFlow(); // This now shuffles and sets up currentQuizData
      });
 
 
      submitButton.addEventListener('click', () => {
-        const currentQuestion = quizData[currentQuestionIndex];
+        const currentQuestion = currentQuizData[currentQuestionIndex]; // Use currentQuizData
         if (currentQuestion.type === "Matching") {
             handleMatchingSubmit();
         }
      });
 
+    nextQuestionButtonElement.addEventListener('click', () => { // Listener for the new button
+        proceedToNextQuestion();
+    });
+
     reviewToggleButton.addEventListener('click', toggleReview);
     shareScoreButton.addEventListener('click', shareScoreAsImage);
 
-    calculateTotalPossibleScore();
+    // Calculate total score initially based on the data file loaded
+    // This will be recalculated in startQuizFlow if quizData is modified/shuffled
+    // calculateTotalPossibleScore(); // No longer needed here, done in startQuizFlow
 });
