@@ -7,8 +7,8 @@ let startQuizButton, quizContentElement, questionTextElement, optionsAreaElement
     correctAnswersCountElement, incorrectAnswersCountElement, liveCorrectCountElement,
     liveIncorrectCountElement, streakCounterElement, feedbackFlashElement,
     reviewSection, reviewToggleButton, reviewContent, achievementsListElement,
-    liveGiftsElement, timeTakenElement, finalRatingElement, nameInputElement,
-    resultNameElement, resultMessageElement; // Added resultMessageElement
+    liveGiftsElement, timeTakenElement, nameInputElement,
+    resultNameElement, resultMessageElement;
 
 // --- Quiz State ---
 let currentQuestionIndex = 0;
@@ -18,8 +18,8 @@ let incorrectCount = 0;
 let currentStreak = 0;
 let earnedGifts = []; // Will store objects like { class: 'fas fa-icon', source: 'streak'/'bonus' }
 let userAnswers = {};
-let incorrectlyAnsweredQuestions = [];
-let userRating = null;
+let incorrectlyAnsweredQuestions = []; // Now stores { questionText, userAnswer, correctAnswer, justification, isMatching? }
+// userRating removed
 let totalPossibleScore = 0;
 let overallTimerInterval;
 let timeLeft = 30 * 60;
@@ -64,10 +64,10 @@ function getDOMElements() {
     achievementsListElement = document.getElementById('achievements-list');
     liveGiftsElement = document.getElementById('live-gifts');
     timeTakenElement = document.getElementById('time-taken');
-    finalRatingElement = document.getElementById('final-rating');
+    // finalRatingElement removed
     nameInputElement = document.getElementById('user-name');
-    resultNameElement = document.getElementById('result-name');
-    resultMessageElement = document.getElementById('result-message'); // Get the P element for the message
+    resultNameElement = document.getElementById('result-name'); // This was missing, needed for the span inside result-message
+    resultMessageElement = document.getElementById('result-message');
 }
 
 
@@ -128,7 +128,7 @@ async function playSound(synth, note, duration) {
 function startQuizFlow() {
      console.log("Starting quiz flow...");
      userName = nameInputElement.value.trim() || "Quiz Taker";
-     document.getElementById('name-input-area').style.display = 'none'; // Hide name input area
+     document.getElementById('name-input-area').style.display = 'none';
 
      quizStartTime = Date.now();
      calculateTotalPossibleScore();
@@ -165,7 +165,7 @@ function calculateTotalPossibleScore() {
      totalPossibleScore = quizData
          .filter(q => !q.isBonus)
          .reduce((sum, question) => sum + (question.points || 0), 0);
-     totalRegularQuestions = quizData.filter(q => !q.isBonus && q.type !== 'Rating').length;
+     totalRegularQuestions = quizData.filter(q => !q.isBonus && q.type !== 'Rating').length; // Rating questions don't count for progress
  }
 
 function updateLiveCountsAndStreak() {
@@ -180,8 +180,9 @@ function updateLiveCountsAndStreak() {
 }
 
  function updateProgressBar() {
-     const effectiveIndex = Math.min(currentQuestionIndex, totalRegularQuestions);
-     const progress = totalRegularQuestions > 0 ? ((effectiveIndex) / totalRegularQuestions) * 100 : 0;
+     // Progress bar should reflect progress through scorable, non-bonus questions
+     const scorableQuestionsAnswered = quizData.slice(0, currentQuestionIndex).filter(q => !q.isBonus && q.type !== 'Rating').length;
+     const progress = totalRegularQuestions > 0 ? (scorableQuestionsAnswered / totalRegularQuestions) * 100 : 0;
      progressBarElement.style.width = `${progress}%`;
  }
 
@@ -238,8 +239,8 @@ function loadQuestion() {
     updateProgressBar();
     if (currentQuestion.isBonus) {
          progressTextElement.textContent = `Bonus Question!`;
-    } else {
-         const regularQuestionIndex = quizData.slice(0, currentQuestionIndex + 1).filter(q => !q.isBonus && q.type !== 'Rating').length;
+    } else { // Rating question is removed, so this logic simplifies
+         const regularQuestionIndex = quizData.slice(0, currentQuestionIndex + 1).filter(q => !q.isBonus).length; // Simplified filter
          progressTextElement.textContent = `Question ${regularQuestionIndex} / ${totalRegularQuestions}`;
     }
 
@@ -262,7 +263,7 @@ function loadQuestion() {
     switch (currentQuestion.type) {
         case "MCQ": loadMCQOptions(currentQuestion); break;
         case "Matching": loadMatchingOptions(currentQuestion); submitButton.style.display = 'inline-block'; break;
-        case "Rating": loadRatingOptions(currentQuestion); break;
+        // Rating case removed
         default: optionsAreaElement.innerHTML = '<p>Unsupported question type.</p>'; scheduleAutoProceed(); break;
     }
 }
@@ -315,7 +316,8 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
         incorrectlyAnsweredQuestions.push({
             questionText: question.question,
             userAnswer: selectedOption,
-            correctAnswer: question.answer
+            correctAnswer: question.answer,
+            justification: question.justification || "No specific justification provided."
         });
     }
     updateLiveCountsAndStreak();
@@ -325,7 +327,6 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
  function checkStreakForGift() {
      const streakLevel = currentStreak;
      const giftClass = streakThresholds[streakLevel];
-     // Award only if the exact threshold is met and this specific streak gift hasn't been awarded yet
      if (giftClass && !earnedGifts.some(gift => gift.class === giftClass && gift.source === 'streak')) {
          earnedGifts.push({ class: giftClass, source: 'streak' });
          console.log(`Streak Gift earned: ${giftClass} for streak ${streakLevel}`);
@@ -393,7 +394,6 @@ function loadMatchingOptions(question) {
          if (isAllCorrect) {
              feedbackAreaElement.textContent = `Bonus Correct! Candy Earned! 🍬`;
              feedbackAreaElement.className = 'feedback-bonus';
-             // Add bonus candy, ensuring it's distinct if also earned by streak
              if (!earnedGifts.some(gift => gift.class === bonusGiftClass && gift.source === 'bonus')) {
                  earnedGifts.push({ class: bonusGiftClass, source: 'bonus' });
              }
@@ -429,6 +429,7 @@ function loadMatchingOptions(question) {
                  questionText: currentQuestion.question,
                  userAnswer: userMatches,
                  correctAnswer: correctPairs,
+                 justification: currentQuestion.justification || "Match all pairs correctly.",
                  isMatching: true
              });
          }
@@ -439,39 +440,7 @@ function loadMatchingOptions(question) {
      scheduleAutoProceed();
  }
 
-
-function loadRatingOptions(question) {
-     const container = document.createElement('div');
-     container.classList.add('rating-container');
-     for (let i = question.min; i <= question.max; i++) {
-         const label = document.createElement('label');
-         const radio = document.createElement('input');
-         radio.type = 'radio';
-         radio.name = `rating-${currentQuestionIndex}`;
-         radio.value = i;
-         radio.onclick = () => handleRatingAnswer(i, question.points);
-         const text = document.createElement('span');
-         text.textContent = i;
-         label.appendChild(text);
-         label.appendChild(radio);
-         container.appendChild(label);
-     }
-     optionsAreaElement.appendChild(container);
- }
-
-function handleRatingAnswer(selectedValue, points) {
-     optionsAreaElement.querySelectorAll('input[type="radio"]').forEach(rb => {
-         rb.disabled = true;
-     });
-    userRating = selectedValue;
-    console.log(`User rated: ${userRating}`);
-    feedbackAreaElement.textContent = `Rating Submitted: ${userRating}`;
-    feedbackAreaElement.className = 'feedback-submitted';
-    currentStreak = 0;
-    updateLiveCountsAndStreak();
-    scheduleAutoProceed();
-}
-
+// loadRatingOptions and handleRatingAnswer removed
 
 function showResults() {
     quizEndTime = Date.now();
@@ -491,32 +460,20 @@ function showResults() {
     const secondsTaken = durationSeconds % 60;
     timeTakenElement.textContent = `${minutesTaken}:${secondsTaken < 10 ? '0' : ''}${secondsTaken}`;
 
-    finalRatingElement.innerHTML = '';
-    if (userRating !== null) {
-        for (let i = 1; i <= 5; i++) {
-            const starIcon = document.createElement('i');
-            starIcon.className = (i <= userRating) ? 'fas fa-star' : 'far fa-star';
-            finalRatingElement.appendChild(starIcon);
-        }
-        document.getElementById('rating-summary-container').style.display = 'block'; // Changed to block
-    } else {
-         finalRatingElement.textContent = 'N/A';
-         document.getElementById('rating-summary-container').style.display = 'block'; // Changed to block
-    }
+    // Rating display logic removed
 
-    // Set personalized message
     const percentage = totalPossibleScore > 0 ? (score / totalPossibleScore) * 100 : 0;
-    let message = "";
+    let messageText = ""; // Renamed variable to avoid conflict
     if (percentage === 100) {
-        message = `Excellent work, ${userName}! Perfect score!`;
+        messageText = `Excellent work, ${userName}! Perfect score!`;
     } else if (percentage >= 70) {
-        message = `Great job, ${userName}!`;
+        messageText = `Great job, ${userName}!`;
     } else if (percentage >= 50) {
-        message = `Good effort, ${userName}!`;
+        messageText = `Good effort, ${userName}!`;
     } else {
-        message = `Keep practicing, ${userName}!`;
+        messageText = `Keep practicing, ${userName}!`;
     }
-    resultMessageElement.textContent = message;
+    resultMessageElement.textContent = messageText; // Set the full message content
 
 
     populateAchievements();
@@ -532,11 +489,12 @@ function showResults() {
 function populateAchievements() {
     achievementsListElement.innerHTML = '';
     let achievementsDisplayed = false;
+    let bonusCandyAwardedThisTime = earnedGifts.some(gift => gift.source === 'bonus' && gift.class === bonusGiftClass);
 
     // Display streak gifts
-    const streakGiftsDisplayed = new Set(); // To ensure each streak gift type is shown once
+    const streakGiftsDisplayed = new Set();
     earnedGifts.filter(gift => gift.source === 'streak').forEach(gift => {
-        if (!streakGiftsDisplayed.has(gift.class)) {
+        if (!streakGiftsDisplayed.has(gift.class)) { // Ensure each type of streak gift is shown once
             const li = document.createElement('li');
             li.classList.add('gift-icon');
             const icon = document.createElement('i');
@@ -548,13 +506,12 @@ function populateAchievements() {
         }
     });
 
-    // Display bonus gift if earned
-    const bonusGiftAwarded = earnedGifts.find(gift => gift.source === 'bonus');
-    if (bonusGiftAwarded) {
+    // Display the bonus candy separately if awarded
+    if (bonusCandyAwardedThisTime) {
          const li = document.createElement('li');
          li.classList.add('bonus-gift-item');
          const icon = document.createElement('i');
-         icon.className = bonusGiftAwarded.class; // Should be bonusGiftClass
+         icon.className = bonusGiftClass;
          li.appendChild(icon);
          li.append(" (Bonus!)");
          achievementsListElement.appendChild(li);
@@ -599,6 +556,7 @@ function populateReviewSection() {
          const qText = document.createElement('p');
          qText.innerHTML = `<strong>Q:</strong> ${item.questionText}`;
          div.appendChild(qText);
+
          if (item.isMatching) {
              const userAnsText = document.createElement('p');
              userAnsText.innerHTML = `<strong>Your Matches:</strong>`;
@@ -626,10 +584,21 @@ function populateReviewSection() {
              const userAnsText = document.createElement('p');
              userAnsText.innerHTML = `<strong>Your Answer:</strong> <span class="review-user-answer">${item.userAnswer}</span>`;
              div.appendChild(userAnsText);
+
              const correctAnsText = document.createElement('p');
              correctAnsText.innerHTML = `<strong>Correct Answer:</strong> <span class="review-correct-answer">${item.correctAnswer}</span>`;
              div.appendChild(correctAnsText);
          }
+
+         if (item.justification) {
+             const justificationText = document.createElement('p');
+             justificationText.style.marginTop = '8px';
+             justificationText.style.fontStyle = 'italic';
+             justificationText.style.fontSize = '0.9em';
+             justificationText.innerHTML = `<strong>Why?</strong> ${item.justification}`;
+             div.appendChild(justificationText);
+         }
+
          reviewContent.appendChild(div);
      });
  }
@@ -644,10 +613,9 @@ function toggleReview() {
      }
  }
 
-// Function to handle sharing the score card as an image
 async function shareScoreAsImage() {
     const elementToCapture = scoreCardElement;
-    const buttonsToHide = resultAreaElement.querySelectorAll('.result-buttons, #review-section, #rating-summary-container');
+    const buttonsToHide = resultAreaElement.querySelectorAll('.result-buttons, #review-section');
 
     buttonsToHide.forEach(el => el.classList.add('hide-for-screenshot'));
 
