@@ -1,0 +1,421 @@
+/* Basic Styling */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    background-color: #f0f4f8;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#quiz-container {
+    background-color: #ffffff;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 700px;
+    box-sizing: border-box;
+    margin-top: 20px;
+    text-align: center;
+    position: relative; /* For feedback overlay */
+    overflow: hidden; /* Contain feedback flash */
+}
+
+/* Logo */
+#logo {
+    max-width: 100px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+h1 {
+    color: #2c3e50;
+    margin-bottom: 20px; /* Increased margin */
+    font-size: 1.8em;
+    font-weight: 600;
+}
+
+/* Name Input Area Styling */
+#name-input-area {
+    margin-bottom: 20px;
+    text-align: center;
+}
+#name-input-area label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #495057;
+}
+#name-input-area input[type="text"] {
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    width: 80%;
+    max-width: 300px; /* Limit width */
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+
+/* Start Button Styling */
+#start-quiz-btn {
+     padding: 15px 35px;
+     font-size: 1.2em;
+     background-color: #0d6efd;
+     color: white;
+     border: none;
+     border-radius: 8px;
+     cursor: pointer;
+     transition: background-color 0.2s ease;
+     font-weight: 600;
+     margin-top: 15px; /* Adjusted Space */
+}
+#start-quiz-btn:hover {
+     background-color: #0b5ed7;
+}
+
+/* Hide quiz content initially */
+#quiz-content {
+    display: none;
+}
+
+
+/* Header Elements */
+#quiz-header {
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    align-items: stretch; /* Make children take full width */
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    gap: 12px;
+    text-align: left;
+}
+
+ /* Progress Bar */
+#progress-bar-container {
+    width: 100%;
+    height: 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden; /* Ensure inner bar stays contained */
+}
+#progress-bar {
+    width: 0%; /* Start at 0 */
+    height: 100%;
+    background-color: #0d6efd;
+    border-radius: 5px;
+    transition: width 0.4s ease-in-out;
+}
+
+
+#header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+
+#progress-text {
+    font-size: 0.95em;
+    color: #555;
+    font-weight: 500;
+}
+
+/* Live Counts, Streak & Gifts */
+#live-stats {
+    display: flex;
+    gap: 10px; /* Space between count groups */
+    font-size: 0.9em;
+    font-weight: 500;
+    flex-wrap: wrap;
+    align-items: center; /* Align items vertically */
+}
+#live-counts span, #streak-counter span {
+     padding: 3px 6px;
+     border-radius: 4px;
+}
+#live-correct-count { background-color: #d1e7dd; color: #0f5132;}
+#live-incorrect-count { background-color: #f8d7da; color: #842029;}
+#streak-counter {
+    font-weight: bold;
+    color: #ff7b00; /* Orange for streak */
+    background-color: #fff3e0;
+    display: inline-block; /* Keep it neat */
+    visibility: hidden; /* Hide initially */
+    opacity: 0;
+    transition: visibility 0s, opacity 0.3s linear;
+    margin-right: 5px; /* Space before gifts */
+}
+#streak-counter.visible {
+    visibility: visible;
+    opacity: 1;
+}
+/* Live Gifts Display */
+#live-gifts {
+    display: flex;
+    gap: 5px;
+    font-size: 1.1em; /* Slightly larger icons */
+    color: #ff7b00; /* Match streak color */
+}
+
+
+#overall-timer {
+    font-size: 1.1em;
+    color: #e74c3c;
+    font-weight: bold;
+    background-color: #fbeaea;
+    padding: 5px 10px;
+    border-radius: 5px;
+    white-space: nowrap; /* Prevent timer wrapping */
+}
+
+/* Question Area */
+#question-area {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+#question-text {
+    font-size: 1.25em;
+    color: #34495e;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    font-weight: 500;
+}
+.bonus-question-label { /* Style for bonus question text */
+    font-weight: bold;
+    color: #fd7e14; /* Orange */
+    display: block;
+    margin-bottom: 10px;
+}
+
+#options-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+}
+
+/* MCQ Option Styling */
+.mcq-option {
+    display: block; width: 100%; padding: 14px 18px; background-color: #f8f9fa;
+    border: 1px solid #dee2e6; border-radius: 8px; cursor: pointer; text-align: left;
+    font-size: 1em; transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    box-sizing: border-box; color: #333;
+}
+.mcq-option:hover:not(:disabled) { background-color: #e9ecef; border-color: #adb5bd; transform: translateY(-1px); }
+.mcq-option:disabled { cursor: not-allowed; opacity: 0.7; }
+.mcq-option.selected { background-color: #cfe2ff; border-color: #9ec5fe; font-weight: 600; color: #0a58ca; }
+
+/* Matching Question Styling */
+.matching-container {
+    display: grid; grid-template-columns: auto 1fr; gap: 15px 15px; align-items: center;
+    border: 1px solid #eee; padding: 15px; border-radius: 8px; background-color: #fafafa; text-align: left;
+}
+.match-item-left { padding: 10px; background-color: #e9ecef; border-radius: 6px; text-align: right; font-weight: 500; color: #495057; }
+.match-select { padding: 10px; border: 1px solid #ced4da; border-radius: 6px; width: 100%; box-sizing: border-box; background-color: #fff; font-size: 0.95em; }
+.match-select:disabled { background-color: #e9ecef; cursor: not-allowed; }
+
+/* Rating Question Styling */
+.rating-container { display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap; margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; }
+.rating-container label { display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 8px 10px; min-width: 45px; border-radius: 6px; transition: background-color 0.2s ease; }
+.rating-container label:hover { background-color: #e9ecef; }
+.rating-container input[type="radio"] { margin-top: 8px; cursor: pointer; transform: scale(1.2); }
+.rating-container input[type="radio"]:disabled { cursor: not-allowed; }
+.rating-container span { font-weight: 500; color: #495057; }
+
+/* Feedback Styling & Flash Effect */
+#feedback-area {
+    margin-top: 20px; font-weight: 600; font-size: 1.1em; min-height: 1.5em;
+    text-align: center; padding: 10px; border-radius: 6px;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for text */
+}
+.feedback-correct { background-color: #d1e7dd; color: #0f5132; }
+.feedback-incorrect { background-color: #f8d7da; color: #842029; }
+.feedback-submitted { background-color: #cfe2ff; color: #0a58ca; }
+.feedback-bonus { background-color: #fff3cd; color: #664d03; } /* Style for bonus feedback */
+
+
+/* Flash effect overlay */
+.feedback-flash {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0;
+    pointer-events: none; /* Allow clicks through */
+    z-index: 10;
+    animation: none; /* Reset animation */
+}
+.feedback-flash.correct-flash { animation: flash-green 0.5s ease-out; }
+.feedback-flash.incorrect-flash { animation: flash-red 0.5s ease-out; }
+.feedback-flash.bonus-flash { animation: flash-yellow 0.6s ease-out; } /* Bonus flash */
+
+@keyframes flash-green {
+    0% { opacity: 0; background-color: rgba(25, 135, 84, 0.3); }
+    50% { opacity: 1; background-color: rgba(25, 135, 84, 0.3); }
+    100% { opacity: 0; background-color: rgba(25, 135, 84, 0.3); }
+}
+@keyframes flash-red {
+    0% { opacity: 0; background-color: rgba(220, 53, 69, 0.3); }
+    50% { opacity: 1; background-color: rgba(220, 53, 69, 0.3); }
+    100% { opacity: 0; background-color: rgba(220, 53, 69, 0.3); }
+}
+@keyframes flash-yellow { /* Bonus flash animation */
+     0% { opacity: 0; background-color: rgba(255, 193, 7, 0.4); }
+     50% { opacity: 1; background-color: rgba(255, 193, 7, 0.4); }
+     100% { opacity: 0; background-color: rgba(255, 193, 7, 0.4); }
+ }
+
+
+/* Navigation/Result Styling */
+#navigation { margin-top: 25px; text-align: center; }
+#submit-btn { padding: 12px 30px; font-size: 1.05em; background-color: #198754; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; font-weight: 500; }
+#submit-btn:disabled { background-color: #adb5bd; cursor: not-allowed; }
+#submit-btn:hover:not(:disabled) { background-color: #157347; }
+
+#result-area { text-align: center; padding: 30px; border: 1px solid #bcd0f7; border-radius: 12px; background-color: #e7f0fe; margin-top: 30px; }
+#result-area h2 { margin-bottom: 15px; color: #0a58ca; font-size: 1.6em; }
+#result-area p { font-size: 1.25em; color: #333; margin-bottom: 10px; }
+#result-summary { margin-bottom: 15px; /* Reduced margin */ }
+#result-summary span { display: inline-block; margin: 0 15px; font-weight: 500; }
+.correct-count { color: #198754; }
+.incorrect-count { color: #dc3545; }
+
+/* Style for Time Taken */
+#time-taken-summary {
+    font-size: 1.1em;
+    color: #555;
+    margin-bottom: 8px; /* Spacing for summary items */
+    display: flex; /* Use flexbox for alignment */
+    justify-content: center; /* Center items */
+    align-items: center; /* Align vertically */
+    gap: 8px; /* Space between label and stars */
+}
+
+/* Updated Rating Summary Container Styling */
+#rating-summary-container {
+    font-size: 0.9em; /* Smaller text */
+    color: #6c757d; /* Muted color */
+    margin-top: 25px; /* Space above it */
+    text-align: center; /* Center the text */
+    width: 100%; /* Ensure it spans width for centering */
+}
+
+/* Star Rating Display in Rating Summary */
+#rating-summary-container #final-rating .fa-star { /* Style for filled stars */
+     color: #ffc107; /* Gold color */
+     font-size: 1.1em; /* Slightly larger stars if needed */
+     margin: 0 1px;
+}
+#rating-summary-container #final-rating .far { /* Style for empty stars */
+     color: #ccc; /* Light gray */
+     font-size: 1.1em;
+     margin: 0 1px;
+}
+
+
+/* Achievements / Gifts Section */
+#achievements-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed #ccc;
+}
+#achievements-section h3 {
+    font-size: 1.1em;
+    color: #6c757d;
+    margin-bottom: 10px;
+}
+#achievements-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1em; /* Base size for text achievements */
+    color: #495057;
+    display: flex; /* Use flexbox for alignment */
+    flex-wrap: wrap; /* Allow wrapping */
+    justify-content: center; /* Center items */
+    gap: 10px; /* Space between items */
+    align-items: center; /* Align items vertically */
+}
+#achievements-list li { /* Style for text achievements */
+    margin-bottom: 5px;
+    background-color: #e9ecef;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-flex; /* Use inline-flex for better alignment with icons */
+    align-items: center; /* Align text vertically with potential icons */
+}
+#achievements-list li.gift-icon { /* Style specifically for gift icons */
+    font-size: 1.8em; /* Make icons larger */
+    background-color: transparent; /* No background for icons */
+    padding: 0 5px; /* Adjust padding */
+    color: #ff7b00; /* Example color for gifts */
+    line-height: 1; /* Adjust line height for icons */
+}
+ #achievements-list li.bonus-gift-item { /* Specific style for bonus gift */
+     background-color: #fff3cd; /* Light yellow */
+     color: #664d03;
+     padding: 5px 10px;
+     border-radius: 4px;
+     font-weight: 500;
+     display: inline-flex;
+     align-items: center;
+     gap: 5px; /* Space between text and icon */
+ }
+#achievements-list li.achievement-text::before {
+    content: '🏆 '; /* Emoji prefix for text achievements */
+}
+
+
+/* Result Area Buttons */
+.result-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Space between buttons */
+    margin-top: 25px;
+    margin-bottom: 15px; /* Add some space before the rating summary */
+    flex-wrap: wrap; /* Allow wrapping */
+}
+
+ /* Share Button Style */
+#share-score-btn {
+     padding: 12px 25px;
+     font-size: 1.0em;
+     color: white;
+     background-color: #198754; /* Green for share */
+     border: none;
+     border-radius: 6px;
+     cursor: pointer;
+     transition: background-color 0.2s ease;
+     font-weight: 500;
+}
+#share-score-btn:hover { background-color: #157347; }
+
+
+/* Collapsible Review Section */
+#review-section { margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px; text-align: center; }
+#review-toggle-btn { background-color: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.95em; margin-bottom: 15px; }
+#review-toggle-btn:hover { background-color: #5a6268; }
+#review-content { display: none; text-align: left; max-height: 300px; overflow-y: auto; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; }
+.review-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #ccc; }
+.review-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.review-item p { margin: 5px 0; font-size: 1em; color: #495057; }
+.review-item strong { color: #212529; }
+.review-correct-answer { color: #198754; font-weight: bold; }
+.review-user-answer { color: #dc3545; }
+
+/* Hide elements initially */
+#result-area, #submit-btn, #quiz-content {
+     display: none;
+}
+
+/* Class to temporarily hide elements during screenshot */
+.hide-for-screenshot {
+    display: none !important;
+}
