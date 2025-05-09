@@ -303,14 +303,14 @@ h1 {
 #navigation {
     margin-top: 25px;
     text-align: center;
-    display: flex; /* Use flexbox for button alignment */
-    justify-content: center; /* Center buttons */
-    gap: 10px; /* Space between buttons if both are visible */
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    min-height: 45px; /* Ensure space for buttons even if hidden */
 }
-#submit-btn { /* Only submit button now */
+#submit-btn, #next-question-btn {
     padding: 12px 30px;
     font-size: 1.05em;
-    background-color: #198754;
     color: white;
     border: none;
     border-radius: 6px;
@@ -318,12 +318,15 @@ h1 {
     transition: background-color 0.2s ease;
     font-weight: 500;
 }
-#submit-btn:disabled {
+#submit-btn { background-color: #198754; } /* Green */
+#next-question-btn { background-color: #0d6efd; } /* Blue */
+
+#submit-btn:disabled, #next-question-btn:disabled {
     background-color: #adb5bd;
     cursor: not-allowed;
 }
 #submit-btn:hover:not(:disabled) { background-color: #157347; }
-/* Next Question Button styling removed as button is removed */
+#next-question-btn:hover:not(:disabled) { background-color: #0b5ed7; }
 
 
 #result-area { text-align: center; padding: 30px; border: 1px solid #bcd0f7; border-radius: 12px; background-color: #e7f0fe; margin-top: 30px; }

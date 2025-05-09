@@ -8,7 +8,8 @@ let startQuizButton, quizContentElement, questionTextElement, optionsAreaElement
     liveIncorrectCountElement, streakCounterElement, feedbackFlashElement,
     reviewSection, reviewToggleButton, reviewContent, achievementsListElement,
     liveGiftsElement, timeTakenElement, nameInputElement,
-    resultNameElement, resultMessageElement, correctionModeSelectorElement; // Added correction mode selector
+    resultNameElement, resultMessageElement, correctionModeSelectorElement,
+    nextQuestionButtonElement; // Re-added
 
 // --- Quiz State ---
 let currentQuestionIndex = 0;
@@ -72,7 +73,7 @@ function getDOMElements() {
     resultNameElement = document.getElementById('result-name');
     resultMessageElement = document.getElementById('result-message');
     correctionModeSelectorElement = document.getElementById('correction-mode-selector');
-    // nextQuestionButtonElement removed
+    nextQuestionButtonElement = document.getElementById('next-question-btn');
 }
 
 
@@ -240,15 +241,24 @@ function updateLiveCountsAndStreak() {
 
 function proceedToNextQuestion() {
      clearTimeout(autoProceedTimeout);
-     // nextQuestionButtonElement.style.display = 'none'; // Button removed
+     nextQuestionButtonElement.style.display = 'none'; // Hide next button when proceeding
      currentQuestionIndex++;
      loadQuestion();
  }
 
-// Simplified to always auto-proceed
-function scheduleAutoProceed() {
+// Updated to handle progression mode
+function scheduleOrWaitForNext() {
     clearTimeout(autoProceedTimeout);
-    autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000);
+    const currentQuestion = currentQuizData[currentQuestionIndex];
+    // Check if it's an incorrect answer to a NON-BONUS question and immediate correction is ON
+    const isIncorrectAndImmediateCorrection = !currentQuestion.isBonus && showImmediateCorrection && feedbackAreaElement.classList.contains('feedback-incorrect');
+
+    if (isIncorrectAndImmediateCorrection) {
+        nextQuestionButtonElement.style.display = 'inline-block'; // Show next button
+        submitButton.style.display = 'none'; // Hide submit if next is shown (relevant for matching)
+    } else {
+        autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000); // Auto-proceed
+    }
 }
 
 function triggerFeedbackFlash(isCorrect, isBonus = false) {
@@ -269,8 +279,8 @@ function loadQuestion() {
     feedbackAreaElement.textContent = '';
     feedbackAreaElement.className = '';
     userAnswers = {};
-    submitButton.style.display = 'none'; // Hide submit by default
-    // nextQuestionButtonElement.style.display = 'none'; // Button removed
+    submitButton.style.display = 'none';
+    nextQuestionButtonElement.style.display = 'none'; // Hide next button by default
     submitButton.disabled = false;
 
     if (currentQuestionIndex >= currentQuizData.length) { // Use currentQuizData
@@ -307,7 +317,7 @@ function loadQuestion() {
     switch (currentQuestion.type) {
         case "MCQ": loadMCQOptions(currentQuestion); break;
         case "Matching": loadMatchingOptions(currentQuestion); submitButton.style.display = 'inline-block'; break;
-        default: optionsAreaElement.innerHTML = '<p>Unsupported question type.</p>'; scheduleAutoProceed(); break;
+        default: optionsAreaElement.innerHTML = '<p>Unsupported question type.</p>'; scheduleOrWaitForNext(); break;
     }
 }
 
@@ -343,8 +353,10 @@ function loadMCQOptions(question) {
 function handleMCQAnswer(selectedOption, question, buttonElement) {
     document.querySelectorAll('.mcq-option').forEach(btn => btn.disabled = true);
     buttonElement.classList.add('selected');
+    let isCorrect = false;
 
     if (selectedOption === question.answer) {
+        isCorrect = true;
         if (!question.isBonus) { // Only add to score if not bonus
             score += question.points;
             correctCount++;
@@ -356,6 +368,7 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
         triggerFeedbackFlash(true, question.isBonus);
         checkStreakForGift();
     } else {
+        isCorrect = false;
         if (!question.isBonus) {
             incorrectCount++;
         }
@@ -384,7 +397,9 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
     if (!question.isBonus) { // Only update live counts for regular questions
         updateLiveCountsAndStreak();
     }
-    scheduleAutoProceed(); // Always auto-proceed
+
+    // Use the new progression logic
+    scheduleOrWaitForNext();
 }
 
  function checkStreakForGift() {
@@ -477,7 +492,7 @@ function loadMatchingOptions(question) {
              playSound(incorrectSound, "C3", "8n");
              triggerFeedbackFlash(false);
              // Store for final review even if bonus
-             incorrectlyAnsweredQuestions.push({ // Always add to review for bonus if not all correct
+             incorrectlyAnsweredQuestions.push({
                  questionText: currentQuestion.question + " (Bonus)",
                  userAnswer: userMatches,
                  correctAnswer: correctPairs,
@@ -523,7 +538,14 @@ function loadMatchingOptions(question) {
      }
 
      optionsAreaElement.querySelectorAll('.match-select').forEach(sel => sel.disabled = true);
-     scheduleAutoProceed(); // Always auto-proceed
+
+     // Use new progression logic
+     if (showImmediateCorrection && !isAllCorrect && !currentQuestion.isBonus) {
+         nextQuestionButtonElement.style.display = 'inline-block';
+         submitButton.style.display = 'none'; // Hide submit button as Next is shown
+     } else {
+         scheduleAutoProceed();
+     }
  }
 
 
@@ -748,22 +770,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
          startQuizButton.style.display = 'none';
          quizContentElement.style.display = 'block';
-         startQuizFlow(); // This now shuffles and sets up currentQuizData
+         startQuizFlow();
      });
 
 
      submitButton.addEventListener('click', () => {
-        const currentQuestion = currentQuizData[currentQuestionIndex]; // Use currentQuizData
+        const currentQuestion = currentQuizData[currentQuestionIndex];
         if (currentQuestion.type === "Matching") {
             handleMatchingSubmit();
         }
      });
 
-    // nextQuestionButtonElement listener removed
+    nextQuestionButtonElement.addEventListener('click', () => {
+        proceedToNextQuestion();
+    });
+
     reviewToggleButton.addEventListener('click', toggleReview);
     shareScoreButton.addEventListener('click', shareScoreAsImage);
 
-    // Calculate total score initially based on the data file loaded
-    // This will be recalculated in startQuizFlow if quizData is modified/shuffled
-    // calculateTotalPossibleScore(); // No longer needed here, done in startQuizFlow
 });
