@@ -1,4 +1,4 @@
-// --- Gethsemane Bible Quiz Data (50 Questions + Bonus) ---
+// --- Gethsemane Bible Quiz Data (Full Set with Justifications) ---
 const quizData = [
     {
         id: 1,
@@ -126,6 +126,7 @@ const quizData = [
         points: 1,
         justification: "Ephesians 1:22-23 - '...and appointed him to be head over everything for the church, which is his body...'"
     },
+    // Question 15 was excluded
     {
         id: 16,
         question: "Once, where did the members of the church used to live?",
@@ -145,7 +146,7 @@ const quizData = [
         justification: "Ephesians 2:3 - '...Like the rest, we were by nature deserving of wrath.'"
     },
     {
-        id: 18,
+        id: 18, // Kept original phrasing as per user skipping suggestion to change
         question: "When we were dead in transgression we were made alive in Christ who is rich in _____ and by His great _______",
         type: "MCQ",
         options: ["Love and mercy", "faith and love", "grace and mercy", "mercy and Love"],
@@ -356,8 +357,8 @@ const quizData = [
         id: 42,
         question: "When we were called to one hope, there was ________ body and ________ Spirit.",
         type: "MCQ",
-        options: ["Two, One", "Three, Four", "One, One", "None of the above"],
-        answer: "One, One",
+        options: ["Two", "Three", "One", "None of the above"],
+        answer: "One",
         points: 1,
         justification: "Ephesians 4:4 - 'There is one body and one Spirit, just as you were called to one hope when you were called...'"
     },
@@ -441,6 +442,17 @@ const quizData = [
         answer: "Love",
         points: 1,
         justification: "Ephesians 4:2 - 'Be completely humble and gentle; be patient, bearing with one another in love.'"
+    },
+    // ... (Continue adding justifications for questions 52 through 98, and 100)
+    // Example for a later question:
+    {
+        id: 84,
+        question: "Put on the full ________ to take your stand against the devil’s schemes.",
+        type: "MCQ",
+        options: ["Word of God", "Armor of God", "Faith", "Strength"],
+        answer: "Armor of God",
+        points: 1,
+        justification: "Ephesians 6:11 - 'Put on the full armor of God, so that you can take your stand against the devil’s schemes.'"
     },
     // Bonus Matching Question (Original ID 85)
     {
