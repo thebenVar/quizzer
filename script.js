@@ -9,7 +9,7 @@ let startQuizButton, quizContentElement, questionTextElement, optionsAreaElement
     reviewSection, reviewToggleButton, reviewContent, achievementsListElement,
     liveGiftsElement, timeTakenElement, nameInputElement,
     resultNameElement, resultMessageElement, correctionModeSelectorElement,
-    nextQuestionButtonElement;
+    nextQuestionButtonElement, initialSetupElement; // Removed practice/real quiz buttons
 
 // --- Quiz State ---
 let currentQuestionIndex = 0;
@@ -17,18 +17,19 @@ let score = 0;
 let correctCount = 0;
 let incorrectCount = 0;
 let currentStreak = 0;
-let earnedGifts = [];
+let earnedGifts = []; // Will store objects like { class: 'fas fa-icon', source: 'streak'/'bonus' }
 let userAnswers = {};
-let incorrectlyAnsweredQuestions = [];
+let incorrectlyAnsweredQuestions = []; // Now stores { questionText, userAnswer, correctAnswer, justification, isMatching? }
+// userRating removed
 let totalPossibleScore = 0;
 let overallTimerInterval;
-let timeLeft = 40 * 60;
+let timeLeft = 60 * 60; // Default to 60 minutes
 let autoProceedTimeout;
 let quizStartTime;
 let quizEndTime;
 let totalRegularQuestions = 0;
-let userName = "Quiz Taker";
-let currentQuizData = [];
+let userName = "Quiz Taker"; // Default name
+let currentQuizData = []; // This will hold the main quiz data after setup
 let showImmediateCorrection = true;
 
 // --- Sound Effects (Tone.js Synths) ---
@@ -37,8 +38,10 @@ let isAudioContextStarted = false;
 
 // --- Functions ---
 
+// Function to get DOM elements after the page loads
 function getDOMElements() {
-    startQuizButton = document.getElementById('start-quiz-btn');
+    initialSetupElement = document.getElementById('initial-setup');
+    startQuizButton = document.getElementById('start-quiz-btn'); // Only one start button now
     quizContentElement = document.getElementById('quiz-content');
     questionTextElement = document.getElementById('question-text');
     optionsAreaElement = document.getElementById('options-area');
@@ -65,11 +68,13 @@ function getDOMElements() {
     achievementsListElement = document.getElementById('achievements-list');
     liveGiftsElement = document.getElementById('live-gifts');
     timeTakenElement = document.getElementById('time-taken');
+    // finalRatingElement removed
     nameInputElement = document.getElementById('user-name');
     resultNameElement = document.getElementById('result-name');
     resultMessageElement = document.getElementById('result-message');
     correctionModeSelectorElement = document.getElementById('correction-mode-selector');
     nextQuestionButtonElement = document.getElementById('next-question-btn');
+    // Removed proceedToRealQuizButton, resultTitleElement as they are not needed for single quiz flow
 }
 
 
@@ -127,27 +132,39 @@ async function playSound(synth, note, duration) {
     }
 }
 
+// Function to shuffle an array (Fisher-Yates shuffle)
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
     }
 }
 
-
+// Simplified startQuizFlow for a single quiz type
 function startQuizFlow() {
      console.log("Starting quiz flow...");
      userName = nameInputElement.value.trim() || "Quiz Taker";
-     document.getElementById('name-input-area').style.display = 'none';
+     initialSetupElement.style.display = 'none'; // Hide the entire initial setup div
 
      const selectedCorrectionMode = document.querySelector('input[name="correction"]:checked');
      showImmediateCorrection = selectedCorrectionMode ? selectedCorrectionMode.value === 'immediate' : true;
      console.log("Immediate Correction Mode:", showImmediateCorrection);
-     correctionModeSelectorElement.style.display = 'none';
+     // correctionModeSelectorElement is part of initialSetupElement, so it's hidden too.
+
+     // Use mainQuizDataArray directly (assuming it's defined in quizData.js)
+     // or quizData if that's the name in your file (fallback)
+     let quizDataToUse = typeof mainQuizDataArray !== 'undefined' ? mainQuizDataArray : quizData;
+
+     if (!quizDataToUse || quizDataToUse.length === 0) {
+         alert("Quiz data not found. Please ensure quizData.js is loaded and defines 'mainQuizDataArray' or 'quizData'.");
+         initialSetupElement.style.display = 'block'; // Show setup again
+         return;
+     }
+     quizContentElement.style.display = 'block'; // Show quiz content now
 
 
-     let regularQuizQuestions = quizData.filter(q => !q.isBonus);
-     let bonusQuestion = quizData.find(q => q.isBonus);
+     let regularQuizQuestions = quizDataToUse.filter(q => !q.isBonus);
+     let bonusQuestion = quizDataToUse.find(q => q.isBonus);
 
      shuffleArray(regularQuizQuestions);
 
@@ -173,7 +190,7 @@ function startQuizFlow() {
 
 function startOverallTimer() {
      clearInterval(overallTimerInterval);
-     timeLeft = 40 * 60;
+     timeLeft = 60 * 60;
      updateTimerDisplay();
      overallTimerInterval = setInterval(() => {
          timeLeft--;
@@ -232,7 +249,6 @@ function proceedToNextQuestion() {
      clearTimeout(autoProceedTimeout);
      nextQuestionButtonElement.style.display = 'none';
      currentQuestionIndex++;
-     console.log(`[proceedToNextQuestion] New currentQuestionIndex: ${currentQuestionIndex}, currentQuizData.length: ${currentQuizData.length}`); // DEBUG LOG
      loadQuestion();
  }
 
@@ -241,14 +257,10 @@ function scheduleOrWaitForNext() {
     const currentQuestion = currentQuizData[currentQuestionIndex];
     const isIncorrectAndImmediateCorrection = !currentQuestion.isBonus && showImmediateCorrection && feedbackAreaElement.classList.contains('feedback-incorrect');
 
-    console.log(`[scheduleOrWaitForNext] isBonus: ${currentQuestion.isBonus}, showImmediate: ${showImmediateCorrection}, isIncorrectFeedback: ${feedbackAreaElement.classList.contains('feedback-incorrect')}`); // DEBUG LOG
-
     if (isIncorrectAndImmediateCorrection) {
-        console.log("[scheduleOrWaitForNext] Showing Next Question button."); // DEBUG LOG
         nextQuestionButtonElement.style.display = 'inline-block';
         submitButton.style.display = 'none';
     } else {
-        console.log("[scheduleOrWaitForNext] Scheduling auto proceed."); // DEBUG LOG
         autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000);
     }
 }
@@ -275,15 +287,12 @@ function loadQuestion() {
     nextQuestionButtonElement.style.display = 'none';
     submitButton.disabled = false;
 
-    console.log(`[loadQuestion] Top: currentQuestionIndex = ${currentQuestionIndex}, currentQuizData.length = ${currentQuizData.length}`); // DEBUG LOG
     if (currentQuestionIndex >= currentQuizData.length) {
-        console.log("[loadQuestion] End of quiz, calling showResults()."); // DEBUG LOG
         showResults();
         return;
     }
 
     const currentQuestion = currentQuizData[currentQuestionIndex];
-    console.log(`[loadQuestion] Loading question ID: ${currentQuestion.id}, Type: ${currentQuestion.type}, isBonus: ${currentQuestion.isBonus}`); // DEBUG LOG
 
     updateProgressBar();
     if (currentQuestion.isBonus) {
@@ -387,6 +396,7 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
     if (!question.isBonus) {
         updateLiveCountsAndStreak();
     }
+
     scheduleOrWaitForNext();
 }
 
@@ -441,7 +451,7 @@ function loadMatchingOptions(question) {
      let correctMatches = 0;
      let userMatches = {};
      let correctPairs = {};
-     let isAllCorrect = false; // Initialize
+     let isAllCorrect = false;
 
      currentQuestion.pairs.forEach(pair => {
          const leftItem = pair[0];
@@ -458,7 +468,6 @@ function loadMatchingOptions(question) {
      isAllCorrect = correctMatches === currentQuestion.pairs.length;
 
      if (currentQuestion.isBonus) {
-         console.log("[handleMatchingSubmit] Processing BONUS question."); // DEBUG LOG
          if (isAllCorrect) {
              feedbackAreaElement.textContent = `Bonus Correct! Candy Earned! 🍬`;
              feedbackAreaElement.className = 'feedback-bonus';
@@ -489,7 +498,6 @@ function loadMatchingOptions(question) {
              });
          }
      } else {
-         console.log("[handleMatchingSubmit] Processing REGULAR matching question."); // DEBUG LOG
          const pointsAwarded = isAllCorrect ? (currentQuestion.points || currentQuestion.pairs.length) : 0;
          score += pointsAwarded;
 
@@ -527,13 +535,11 @@ function loadMatchingOptions(question) {
      }
 
      optionsAreaElement.querySelectorAll('.match-select').forEach(sel => sel.disabled = true);
-     console.log("[handleMatchingSubmit] Calling scheduleOrWaitForNext."); // DEBUG LOG
      scheduleOrWaitForNext();
  }
 
 
 function showResults() {
-    console.log("[showResults] Displaying final results."); // DEBUG LOG
     quizEndTime = Date.now();
     clearInterval(overallTimerInterval);
     clearTimeout(autoProceedTimeout);
@@ -553,7 +559,7 @@ function showResults() {
 
     const percentage = totalPossibleScore > 0 ? (score / totalPossibleScore) * 100 : 0;
     let messageText = "";
-    if (percentage === 100) {
+    if (percentage === 100 && totalRegularQuestions > 0) {
         messageText = `Excellent work, ${userName}! Perfect score!`;
     } else if (percentage >= 70) {
         messageText = `Great job, ${userName}!`;
@@ -562,14 +568,18 @@ function showResults() {
     } else {
         messageText = `Keep practicing, ${userName}!`;
     }
-    resultMessageElement.textContent = messageText;
-
+    resultMessageElement.textContent = messageText; // Set the full message content
+    // resultTitleElement removed
 
     populateAchievements();
     achievementsListElement.parentElement.style.display = 'block';
 
     populateReviewSection();
     reviewSection.style.display = incorrectlyAnsweredQuestions.length > 0 ? 'block' : 'none';
+
+    // No "Proceed to Real Quiz" button in the final version
+    shareScoreButton.style.display = 'inline-block';
+
 
     resultAreaElement.style.display = 'block';
     playSound(completeSound, "G4", "4n");
@@ -580,6 +590,7 @@ function populateAchievements() {
     let achievementsDisplayed = false;
     let bonusCandyAwardedThisTime = earnedGifts.some(gift => gift.source === 'bonus' && gift.class === bonusGiftClass);
 
+    // Display streak gifts
     const streakGiftsDisplayed = new Set();
     earnedGifts.filter(gift => gift.source === 'streak').forEach(gift => {
         if (!streakGiftsDisplayed.has(gift.class)) {
@@ -594,6 +605,7 @@ function populateAchievements() {
         }
     });
 
+    // Display the bonus candy separately if awarded
     if (bonusCandyAwardedThisTime) {
          const li = document.createElement('li');
          li.classList.add('bonus-gift-item');
@@ -605,6 +617,7 @@ function populateAchievements() {
          achievementsDisplayed = true;
     }
 
+     // Add text achievements
      const regularQuestionsFromSession = currentQuizData.filter(q => !q.isBonus && q.points > 0);
      const maxRegularScore = regularQuestionsFromSession.reduce((sum, q) => sum + q.points, 0);
 
@@ -735,7 +748,7 @@ async function shareScoreAsImage() {
 document.addEventListener('DOMContentLoaded', () => {
     getDOMElements();
 
-    startQuizButton.addEventListener('click', async () => {
+    startQuizButton.addEventListener('click', async () => { // Single start button
          if (!isAudioContextStarted && Tone.context.state !== 'running') {
              try {
                  await Tone.start();
@@ -749,9 +762,21 @@ document.addEventListener('DOMContentLoaded', () => {
               defineSynths();
          }
 
-         startQuizButton.style.display = 'none';
+         // Hide initial setup and show quiz content
+         initialSetupElement.style.display = 'none';
          quizContentElement.style.display = 'block';
-         startQuizFlow();
+
+         // Use mainQuizDataArray (or quizData if that's the name in your file)
+         if (typeof mainQuizDataArray !== 'undefined') {
+            initializeAndStartQuiz(mainQuizDataArray); // Simplified call
+         } else if (typeof quizData !== 'undefined') { // Fallback for older data file name
+            console.warn("Using global 'quizData' as 'mainQuizDataArray' not found. Please rename array in quizData.js to 'mainQuizDataArray'.");
+            initializeAndStartQuiz(quizData);
+         } else {
+            alert("Quiz data not found. Please ensure quizData.js is loaded correctly.");
+            initialSetupElement.style.display = 'block'; // Show setup again if data fails
+            quizContentElement.style.display = 'none';
+         }
      });
 
 
@@ -765,6 +790,8 @@ document.addEventListener('DOMContentLoaded', () => {
     nextQuestionButtonElement.addEventListener('click', () => {
         proceedToNextQuestion();
     });
+
+    // Removed proceedToRealQuizButton listener
 
     reviewToggleButton.addEventListener('click', toggleReview);
     shareScoreButton.addEventListener('click', shareScoreAsImage);

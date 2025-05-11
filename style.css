@@ -34,12 +34,15 @@ body {
 
 h1 {
     color: #2c3e50;
-    margin-bottom: 20px; /* Increased margin */
+    margin-bottom: 20px;
     font-size: 1.8em;
     font-weight: 600;
 }
 
-/* Name Input Area Styling */
+/* Initial Setup & Name Input Area Styling */
+#initial-setup {
+    display: block; /* Show by default */
+}
 #name-input-area {
     margin-bottom: 20px;
     text-align: center;
@@ -55,7 +58,7 @@ h1 {
     border: 1px solid #ced4da;
     border-radius: 6px;
     width: 80%;
-    max-width: 300px; /* Limit width */
+    max-width: 300px;
     font-size: 1em;
     box-sizing: border-box;
 }
@@ -92,14 +95,14 @@ h1 {
 #start-quiz-btn {
      padding: 15px 35px;
      font-size: 1.2em;
-     background-color: #0d6efd;
+     background-color: #0d6efd; /* Main start button color */
      color: white;
      border: none;
      border-radius: 8px;
      cursor: pointer;
      transition: background-color 0.2s ease;
      font-weight: 600;
-     margin-top: 15px; /* Adjusted Space */
+     margin-top: 15px;
 }
 #start-quiz-btn:hover {
      background-color: #0b5ed7;
@@ -114,8 +117,8 @@ h1 {
 /* Header Elements */
 #quiz-header {
     display: flex;
-    flex-direction: column; /* Stack elements vertically */
-    align-items: stretch; /* Make children take full width */
+    flex-direction: column;
+    align-items: stretch;
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid #e0e0e0;
@@ -123,16 +126,15 @@ h1 {
     text-align: left;
 }
 
- /* Progress Bar */
 #progress-bar-container {
     width: 100%;
     height: 10px;
     background-color: #e9ecef;
     border-radius: 5px;
-    overflow: hidden; /* Ensure inner bar stays contained */
+    overflow: hidden;
 }
 #progress-bar {
-    width: 0%; /* Start at 0 */
+    width: 0%;
     height: 100%;
     background-color: #0d6efd;
     border-radius: 5px;
@@ -155,14 +157,13 @@ h1 {
     font-weight: 500;
 }
 
-/* Live Counts, Streak & Gifts */
 #live-stats {
     display: flex;
-    gap: 10px; /* Space between count groups */
+    gap: 10px;
     font-size: 0.9em;
     font-weight: 500;
     flex-wrap: wrap;
-    align-items: center; /* Align items vertically */
+    align-items: center;
 }
 #live-counts span, #streak-counter span {
      padding: 3px 6px;
@@ -172,24 +173,23 @@ h1 {
 #live-incorrect-count { background-color: #f8d7da; color: #842029;}
 #streak-counter {
     font-weight: bold;
-    color: #ff7b00; /* Orange for streak */
+    color: #ff7b00;
     background-color: #fff3e0;
-    display: inline-block; /* Keep it neat */
-    visibility: hidden; /* Hide initially */
+    display: inline-block;
+    visibility: hidden;
     opacity: 0;
     transition: visibility 0s, opacity 0.3s linear;
-    margin-right: 5px; /* Space before gifts */
+    margin-right: 5px;
 }
 #streak-counter.visible {
     visibility: visible;
     opacity: 1;
 }
-/* Live Gifts Display */
 #live-gifts {
     display: flex;
     gap: 5px;
-    font-size: 1.1em; /* Slightly larger icons */
-    color: #ff7b00; /* Match streak color */
+    font-size: 1.1em;
+    color: #ff7b00;
 }
 
 
@@ -200,7 +200,7 @@ h1 {
     background-color: #fbeaea;
     padding: 5px 10px;
     border-radius: 5px;
-    white-space: nowrap; /* Prevent timer wrapping */
+    white-space: nowrap;
 }
 
 /* Question Area */
@@ -216,9 +216,9 @@ h1 {
     line-height: 1.5;
     font-weight: 500;
 }
-.bonus-question-label { /* Style for bonus question text */
+.bonus-question-label {
     font-weight: bold;
-    color: #fd7e14; /* Orange */
+    color: #fd7e14;
     display: block;
     margin-bottom: 10px;
 }
@@ -230,7 +230,6 @@ h1 {
     text-align: left;
 }
 
-/* MCQ Option Styling */
 .mcq-option {
     display: block; width: 100%; padding: 14px 18px; background-color: #f8f9fa;
     border: 1px solid #dee2e6; border-radius: 8px; cursor: pointer; text-align: left;
@@ -241,7 +240,6 @@ h1 {
 .mcq-option:disabled { cursor: not-allowed; opacity: 0.7; }
 .mcq-option.selected { background-color: #cfe2ff; border-color: #9ec5fe; font-weight: 600; color: #0a58ca; }
 
-/* Matching Question Styling */
 .matching-container {
     display: grid; grid-template-columns: auto 1fr; gap: 15px 15px; align-items: center;
     border: 1px solid #eee; padding: 15px; border-radius: 8px; background-color: #fafafa; text-align: left;
@@ -250,9 +248,8 @@ h1 {
 .match-select { padding: 10px; border: 1px solid #ced4da; border-radius: 6px; width: 100%; box-sizing: border-box; background-color: #fff; font-size: 0.95em; }
 .match-select:disabled { background-color: #e9ecef; cursor: not-allowed; }
 
-/* Feedback Styling & Flash Effect */
 #feedback-area {
-    margin-top: 20px; font-weight: 600; font-size: 1.1em; min-height: 2.5em; /* Increased min-height for justification */
+    margin-top: 20px; font-weight: 600; font-size: 1.1em; min-height: 2.5em;
     text-align: center; padding: 10px; border-radius: 6px;
     transition: background-color 0.3s ease, color 0.3s ease;
     line-height: 1.4;
@@ -265,22 +262,20 @@ h1 {
     font-size: 0.9em;
     font-style: italic;
     margin-top: 5px;
-    display: block; /* Ensure it takes its own line */
+    display: block;
 }
 
-
-/* Flash effect overlay */
 .feedback-flash {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     opacity: 0;
-    pointer-events: none; /* Allow clicks through */
+    pointer-events: none;
     z-index: 10;
-    animation: none; /* Reset animation */
+    animation: none;
 }
 .feedback-flash.correct-flash { animation: flash-green 0.5s ease-out; }
 .feedback-flash.incorrect-flash { animation: flash-red 0.5s ease-out; }
-.feedback-flash.bonus-flash { animation: flash-yellow 0.6s ease-out; } /* Bonus flash */
+.feedback-flash.bonus-flash { animation: flash-yellow 0.6s ease-out; }
 
 @keyframes flash-green {
     0% { opacity: 0; background-color: rgba(25, 135, 84, 0.3); }
@@ -292,21 +287,19 @@ h1 {
     50% { opacity: 1; background-color: rgba(220, 53, 69, 0.3); }
     100% { opacity: 0; background-color: rgba(220, 53, 69, 0.3); }
 }
-@keyframes flash-yellow { /* Bonus flash animation */
+@keyframes flash-yellow {
      0% { opacity: 0; background-color: rgba(255, 193, 7, 0.4); }
      50% { opacity: 1; background-color: rgba(255, 193, 7, 0.4); }
      100% { opacity: 0; background-color: rgba(255, 193, 7, 0.4); }
  }
 
-
-/* Navigation/Result Styling */
 #navigation {
     margin-top: 25px;
     text-align: center;
     display: flex;
     justify-content: center;
     gap: 10px;
-    min-height: 45px; /* Ensure space for buttons even if hidden */
+    min-height: 45px;
 }
 #submit-btn, #next-question-btn {
     padding: 12px 30px;
@@ -318,8 +311,8 @@ h1 {
     transition: background-color 0.2s ease;
     font-weight: 500;
 }
-#submit-btn { background-color: #198754; } /* Green */
-#next-question-btn { background-color: #0d6efd; } /* Blue */
+#submit-btn { background-color: #198754; }
+#next-question-btn { background-color: #0d6efd; }
 
 #submit-btn:disabled, #next-question-btn:disabled {
     background-color: #adb5bd;
@@ -337,7 +330,6 @@ h1 {
 .correct-count { color: #198754; }
 .incorrect-count { color: #dc3545; }
 
-/* Style for Time Taken */
 #time-taken-summary {
     font-size: 1.1em;
     color: #555;
@@ -348,10 +340,6 @@ h1 {
     gap: 8px;
 }
 
-/* Rating Summary Styling Removed */
-
-
-/* Achievements / Gifts Section */
 #achievements-section {
     margin-top: 20px;
     padding-top: 15px;
@@ -404,7 +392,6 @@ h1 {
 }
 
 
-/* Result Area Buttons */
 .result-buttons {
     display: flex;
     justify-content: center;
@@ -413,7 +400,6 @@ h1 {
     flex-wrap: wrap;
 }
 
- /* Share Button Style */
 #share-score-btn {
      padding: 12px 25px;
      font-size: 1.0em;
@@ -426,9 +412,9 @@ h1 {
      font-weight: 500;
 }
 #share-score-btn:hover { background-color: #157347; }
+/* Removed #proceed-to-real-quiz-btn styles as it's not in the final HTML */
 
 
-/* Collapsible Review Section */
 #review-section { margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px; text-align: center; }
 #review-toggle-btn { background-color: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.95em; margin-bottom: 15px; }
 #review-toggle-btn:hover { background-color: #5a6268; }
@@ -440,12 +426,10 @@ h1 {
 .review-correct-answer { color: #198754; font-weight: bold; }
 .review-user-answer { color: #dc3545; }
 
-/* Hide elements initially */
 #result-area, #submit-btn, #quiz-content {
      display: none;
 }
 
-/* Class to temporarily hide elements during screenshot */
 .hide-for-screenshot {
     display: none !important;
 }

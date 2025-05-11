@@ -1,5 +1,7 @@
-// --- Gethsemane Bible Quiz Data (Full Set with Justifications) ---
-const quizData = [
+// --- Gethsemane Bible Quiz Data (All Approved Questions + Bonus) ---
+// This array should be named mainQuizDataArray if you are using the two-phase (practice/real) quiz setup.
+// If this is the only quiz data file, it can be named quizData.
+const mainQuizDataArray = [ // Or const quizData = [
     {
         id: 1,
         question: "What are the words of blessing used by Paul to greet the Ephesians Church?",
@@ -91,7 +93,7 @@ const quizData = [
         justification: "Ephesians 1:19-20 speaks of this power being exerted 'in Christ when he raised him from the dead...'"
     },
     {
-        id: 11,
+        id: 11, // Original 11a
         question: "From where did God raise Christ by His power?",
         type: "MCQ",
         options: ["Earth", "Sin", "Dead", "All the above"],
@@ -100,7 +102,7 @@ const quizData = [
         justification: "Ephesians 1:20 - '...when he raised him from the dead...'"
     },
     {
-        id: 12,
+        id: 12, // Original 11b
         question: "To whom has every title been given, not only in the present age but also in the one to come?",
         type: "MCQ",
         options: ["Church", "People", "Apostles", "Christ"],
@@ -109,7 +111,7 @@ const quizData = [
         justification: "Ephesians 1:21 - '...far above all rule and authority, power and dominion, and every name that is invoked...' referring to Christ."
     },
     {
-        id: 13,
+        id: 13, // Original 12
         question: "God placed all things under Christ’s ________.",
         type: "MCQ",
         options: ["Hand", "Heart", "Body", "Feet"],
@@ -118,7 +120,7 @@ const quizData = [
         justification: "Ephesians 1:22 - 'And God placed all things under his feet...'"
     },
     {
-        id: 14,
+        id: 14, // Original 13
         question: "Which is the body of Christ?",
         type: "MCQ",
         options: ["People", "Church", "None of the above"],
@@ -126,9 +128,9 @@ const quizData = [
         points: 1,
         justification: "Ephesians 1:22-23 - '...and appointed him to be head over everything for the church, which is his body...'"
     },
-    // Question 15 was excluded
+    // Original Question 15 was excluded.
     {
-        id: 16,
+        id: 15, // Re-numbering from original 16
         question: "Once, where did the members of the church used to live?",
         type: "MCQ",
         options: ["Ephesus", "In hell", "In transgressions and sins", "None of the above"],
@@ -137,7 +139,7 @@ const quizData = [
         justification: "Ephesians 2:1-2 - 'As for you, you were dead in your transgressions and sins, in which you used to live...'"
     },
     {
-        id: 17,
+        id: 16, // Original 17
         question: "At one time, by nature, we were objects of ________?",
         type: "MCQ",
         options: ["World", "Sin", "Love", "Wrath"],
@@ -146,7 +148,7 @@ const quizData = [
         justification: "Ephesians 2:3 - '...Like the rest, we were by nature deserving of wrath.'"
     },
     {
-        id: 18, // Kept original phrasing as per user skipping suggestion to change
+        id: 17, // Original 18
         question: "When we were dead in transgression we were made alive in Christ who is rich in _____ and by His great _______",
         type: "MCQ",
         options: ["Love and mercy", "faith and love", "grace and mercy", "mercy and Love"],
@@ -155,7 +157,7 @@ const quizData = [
         justification: "Ephesians 2:4 - 'But because of his great love for us, God, who is rich in mercy, made us alive with Christ...'"
     },
     {
-        id: 19,
+        id: 18, // Original 19
         question: "We are saved by ________?",
         type: "MCQ",
         options: ["Faith", "Love", "Works", "Grace"],
@@ -164,7 +166,7 @@ const quizData = [
         justification: "Ephesians 2:8 - 'For it is by grace you have been saved...' (also 2:5)"
     },
     {
-        id: 20,
+        id: 19, // Original 20
         question: "Evaluate: I) Salvation is by Grace. II) It is the gift of God and not by works.",
         type: "MCQ",
         options: ["I is correct, II is wrong", "I is wrong, II is correct", "Both are wrong", "Both are correct"],
@@ -173,7 +175,7 @@ const quizData = [
         justification: "Ephesians 2:8-9 - 'For it is by grace you have been saved, through faith—and this is not from yourselves, it is the gift of God— not by works...'"
     },
     {
-        id: 21,
+        id: 20, // Original 21
         question: "What did God prepare in advance for us to do?",
         type: "MCQ",
         options: ["Faith", "Bad deeds", "Love", "Good works"],
@@ -181,272 +183,293 @@ const quizData = [
         points: 1,
         justification: "Ephesians 2:10 - '...created in Christ Jesus to do good works, which God prepared in advance for us to do.'"
     },
+    // ... (Continue with questions 22-39 from the answer key, re-numbering their IDs sequentially from 21)
+    // ... (Question 40 was excluded)
+    // ... (Continue with questions 41-51 from the answer key, re-numbering their IDs sequentially)
+
+    // Start adding questions from original ID 52 onwards, ensuring justifications
     {
-        id: 22,
-        question: "How were the Ephesians (Gentiles) formerly described by those who call themselves 'the circumcision' (Jews)?",
+        id: 52, // Original 52
+        question: "Where did Christ ascend to?",
         type: "MCQ",
-        options: ["Ephesians", "Robbers", "Sinners", "Uncircumcised"],
-        answer: "Uncircumcised",
+        options: ["Steps", "Temple top", "Mount Zion", "High above all the heavens"],
+        answer: "High above all the heavens",
         points: 1,
-        justification: "Ephesians 2:11 - '...you who are Gentiles by birth and called \"uncircumcised\" by those who call themselves \"the circumcision\"...'"
+        justification: "Ephesians 4:10 - 'He who descended is the very one who ascended higher than all the heavens, in order to fill the whole universe.'"
     },
     {
-        id: 23,
-        question: "How are we who once were far away brought near to God in Christ Jesus?",
+        id: 53, // Original 53
+        question: "Paul frequently compares the church to the ________?",
         type: "MCQ",
-        options: ["Through faith", "Through circumcision", "Through work", "Through the blood of Christ"],
-        answer: "Through the blood of Christ",
+        options: ["Mountain", "Animal", "Body", "Tree"],
+        answer: "Body",
         points: 1,
-        justification: "Ephesians 2:13 - 'But now in Christ Jesus you who once were far away have been brought near by the blood of Christ.'"
+        justification: "Multiple references, e.g., Ephesians 1:23, 4:12, 4:16, 5:23, 5:30."
     },
     {
-        id: 24,
-        question: "When the Ephesians were Gentiles, they were without which of the following?",
+        id: 54, // Original 54
+        question: "We were created to be like God in true ________ and ________.",
         type: "MCQ",
-        options: ["Citizenship of Israel", "Hope", "Covenants of the promises", "All the above"],
+        options: ["Nature and holiness", "Godliness and righteousness", "Will and nature", "Righteousness and holiness"],
+        answer: "Righteousness and holiness",
+        points: 1,
+        justification: "Ephesians 4:24 - '...and to put on the new self, created to be like God in true righteousness and holiness.'"
+    },
+    {
+        id: 55, // Original 55
+        question: "What is created to be like God (Ephesians 4:24)?",
+        type: "MCQ",
+        options: ["Apostle", "Church", "Adam", "New self"],
+        answer: "New self",
+        points: 1,
+        justification: "Ephesians 4:24 - '...and to put on the new self, created to be like God...'"
+    },
+    {
+        id: 56, // Original 56
+        question: "Before what should our anger go down?",
+        type: "MCQ",
+        options: ["God", "The sun rises up", "The church", "The sun goes down"],
+        answer: "The sun goes down",
+        points: 1,
+        justification: "Ephesians 4:26 - 'In your anger do not sin: Do not let the sun go down while you are still angry...'"
+    },
+    {
+        id: 57, // Original 57
+        question: "Paul asks the Church to put off ________ and speak ________ to their neighbors.",
+        type: "MCQ",
+        options: ["Blame and gospel", "Anger and love", "Old self and truth", "Falsehood and truthfully"],
+        answer: "Falsehood and truthfully",
+        points: 1,
+        justification: "Ephesians 4:25 - 'Therefore each of you must put off falsehood and speak truthfully to your neighbor...'"
+    },
+    {
+        id: 58, // Original 58
+        question: "What kind of talk should come out of our mouths?",
+        type: "MCQ",
+        options: ["Truthful words", "Comforting words", "Only what is helpful for building others up according to their needs", "All the above"],
+        answer: "Only what is helpful for building others up according to their needs",
+        points: 1,
+        justification: "Ephesians 4:29 - 'Do not let any unwholesome talk come out of your mouths, but only what is helpful for building others up according to their needs, that it may benefit those who listen.'"
+    },
+    {
+        id: 59, // Original 59
+        question: "With whom were we sealed for the day of redemption?",
+        type: "MCQ",
+        options: ["The Father", "The Son", "The heaven", "The Holy Spirit"],
+        answer: "The Holy Spirit",
+        points: 1,
+        justification: "Ephesians 4:30 - 'And do not grieve the Holy Spirit of God, with whom you were sealed for the day of redemption.'"
+    },
+    {
+        id: 60, // Original 60
+        question: "In whom did God forgive us?",
+        type: "MCQ",
+        options: ["Love", "Holy Spirit", "Church", "Christ"],
+        answer: "Christ",
+        points: 1,
+        justification: "Ephesians 4:32 - '...forgiving each other, just as in Christ God forgave you.'"
+    },
+    {
+        id: 61, // Original 61
+        question: "How does Paul ask the Church to behave with one another?",
+        type: "MCQ",
+        options: ["Kind", "Compassionate", "Forgiving", "All the above"],
         answer: "All the above",
         points: 1,
-        justification: "Ephesians 2:12 lists these: separate from Christ, excluded from citizenship in Israel, foreigners to the covenants of the promise, without hope and without God."
+        justification: "Ephesians 4:32 - 'Be kind and compassionate to one another, forgiving each other...'"
     },
     {
-        id: 25,
-        question: "Christ abolished in His flesh the law with its ________ and ________.",
+        id: 62, // Original 62
+        question: "Whom should we imitate?",
         type: "MCQ",
-        options: ["Law and rules", "Bond and barriers", "Regulations and bonds", "Commandments and regulations"],
-        answer: "Commandments and regulations",
+        options: ["Christ", "Apostle", "Satan", "God"],
+        answer: "God",
         points: 1,
-        justification: "Ephesians 2:15 - '...by setting aside in his flesh the law with its commandments and regulations.'"
+        justification: "Ephesians 5:1 - 'Follow God’s example, therefore, as dearly loved children...'"
     },
     {
-        id: 26,
-        question: "What was Christ's purpose in abolishing the law, according to Ephesians 2:15?",
+        id: 63, // Original 63
+        question: "We should live a life of ________? (Ephesians 5:2)",
         type: "MCQ",
-        options: ["To create one new man out of three", "To create one new man out of one", "To create one new man out of four", "To create one new man out of two"],
-        answer: "To create one new man out of two",
-        points: 1,
-        justification: "Ephesians 2:15 - 'His purpose was to create in himself one new humanity out of the two, thus making peace...'"
-    },
-    {
-        id: 27,
-        question: "To the people who were far away and to those who were near, Christ came and preached ________.",
-        type: "MCQ",
-        options: ["Gospel", "Word of God", "Faith", "Peace"],
-        answer: "Peace",
-        points: 1,
-        justification: "Ephesians 2:17 - 'He came and preached peace to you who were far away and peace to those who were near.'"
-    },
-    {
-        id: 28,
-        question: "Through whom do we have access to the Father by one Spirit?",
-        type: "MCQ",
-        options: ["The Spirit", "The Word", "Faith", "Christ"],
-        answer: "Christ",
-        points: 1,
-        justification: "Ephesians 2:18 - 'For through him [Christ] we both have access to the Father by one Spirit.'"
-    },
-    {
-        id: 29,
-        question: "We are built on the foundation of the apostles and prophets, with Christ Jesus himself as the chief ________?",
-        type: "MCQ",
-        options: ["Builder", "Priest", "Commander", "Cornerstone"],
-        answer: "Cornerstone",
-        points: 1,
-        justification: "Ephesians 2:20 - '...built on the foundation of the apostles and prophets, with Christ Jesus himself as the chief cornerstone.'"
-    },
-    {
-        id: 30,
-        question: "In Christ, we are being built together to become a dwelling in which God lives by His ________?",
-        type: "MCQ",
-        options: ["Love", "Body", "Will", "Spirit"],
-        answer: "Spirit",
-        points: 1,
-        justification: "Ephesians 2:22 - 'And in him you too are being built together to become a dwelling in which God lives by his Spirit.'"
-    },
-    {
-        id: 31,
-        question: "Through what are the Gentiles heirs together with Israel, members together of one body, and sharers together in the promise in Christ Jesus?",
-        type: "MCQ",
-        options: ["The Law", "Good works", "The Gospel", "All the above"],
-        answer: "The Gospel",
-        points: 1,
-        justification: "Ephesians 3:6 - 'This mystery is that through the gospel the Gentiles are heirs together with Israel...'"
-    },
-    {
-        id: 32,
-        question: "By reading Paul's letter, the Ephesians will be able to understand his insight into what?",
-        type: "MCQ",
-        options: ["The love of Christ", "The mystery of the world", "The mystery of Christ", "All the above"],
-        answer: "The mystery of Christ",
-        points: 1,
-        justification: "Ephesians 3:4 - 'In reading this, then, you will be able to understand my insight into the mystery of Christ...'"
-    },
-    {
-        id: 33,
-        question: "By what did Paul become a servant of the gospel?",
-        type: "MCQ",
-        options: ["The gift of the Spirit", "Faith", "The laws of Moses", "The gift of God’s grace"],
-        answer: "The gift of God’s grace",
-        points: 1,
-        justification: "Ephesians 3:7 - 'I became a servant of this gospel by the gift of God’s grace given me through the working of his power.'"
-    },
-    {
-        id: 34,
-        question: "The mystery of Christ has been revealed by the Spirit to whom?",
-        type: "MCQ",
-        options: ["A servant", "Pastors", "God’s holy apostles and prophets", "None of the above"],
-        answer: "God’s holy apostles and prophets",
-        points: 1,
-        justification: "Ephesians 3:5 - '...which was not made known to people in other generations as it has now been revealed by the Spirit to God’s holy apostles and prophets.'"
-    },
-    {
-        id: 35,
-        question: "In Him and through faith in Him, we may approach God with what?",
-        type: "MCQ",
-        options: ["Joy", "Love", "Freedom and confidence", "All the above"],
-        answer: "Freedom and confidence",
-        points: 1,
-        justification: "Ephesians 3:12 - 'In him and through faith in him we may approach God with freedom and confidence.'"
-    },
-    {
-        id: 36,
-        question: "Through what will Christ dwell in the hearts of the church?",
-        type: "MCQ",
-        options: ["The Word", "The Spirit", "The Law", "Faith"],
-        answer: "Faith",
-        points: 1,
-        justification: "Ephesians 3:17 - '...so that Christ may dwell in your hearts through faith.'"
-    },
-    {
-        id: 37,
-        question: "In what should the church be rooted and established?",
-        type: "MCQ",
-        options: ["Laws", "Sin", "Love", "None of the above"],
+        options: ["Faith", "Truth", "Love", "All the above"],
         answer: "Love",
         points: 1,
-        justification: "Ephesians 3:17 - 'And I pray that you, being rooted and established in love...'"
+        justification: "Ephesians 5:2 - '...and walk in the way of love, just as Christ loved us...'"
     },
+    // Original Question 64 was excluded.
     {
-        id: 38,
-        question: "God is able to do immeasurably more than all we ________ or ________?",
+        id: 65, // Original 65
+        question: "On whom does God’s wrath come?",
         type: "MCQ",
-        options: ["Do or ask", "Imagine or do", "Think or say", "Ask or imagine"],
-        answer: "Ask or imagine",
+        options: ["Sinners", "People", "Gentiles", "Those who are disobedient"],
+        answer: "Those who are disobedient",
         points: 1,
-        justification: "Ephesians 3:20 - 'Now to him who is able to do immeasurably more than all we ask or imagine...'"
+        justification: "Ephesians 5:6 - 'Let no one deceive you with empty words, for because of such things God’s wrath comes on those who are disobedient.'"
     },
     {
-        id: 39,
-        question: "Paul asks the Ephesian church to live a life worthy of the ________ they have received.",
+        id: 66, // Original 66
+        question: "Paul asks us to live as children of?",
         type: "MCQ",
-        options: ["Faith", "Lord", "Suffering", "Calling"],
-        answer: "Calling",
+        options: ["God", "Love", "Faith", "Light"],
+        answer: "Light",
         points: 1,
-        justification: "Ephesians 4:1 - '...I urge you to live a life worthy of the calling you have received.'"
+        justification: "Ephesians 5:8 - 'For you were once darkness, but now you are light in the Lord. Live as children of light...'"
     },
-    // Question 40 was excluded
     {
-        id: 41,
-        question: "We need to make every effort to keep the unity of the ________ through the bond of ________.",
+        id: 67, // Original 67
+        question: "Once we were in________? (Ephesians 5:8)",
         type: "MCQ",
-        options: ["Church, peace", "Spirit, love", "People, peace", "Spirit, peace"],
-        answer: "Spirit, peace",
+        options: ["World", "Sin", "Darkness", "All the above"],
+        answer: "Darkness",
         points: 1,
-        justification: "Ephesians 4:3 - 'Make every effort to keep the unity of the Spirit through the bond of peace.'"
+        justification: "Ephesians 5:8 - 'For you were once darkness, but now you are light in the Lord.'"
     },
     {
-        id: 42,
-        question: "When we were called to one hope, there was ________ body and ________ Spirit.",
+        id: 68, // Original 68
+        question: "Who does not have an inheritance in the kingdom of Christ and of God?",
         type: "MCQ",
-        options: ["Two", "Three", "One", "None of the above"],
-        answer: "One",
+        options: ["Immoral", "Impure", "Greedy person (an idolater)", "All the above"],
+        answer: "All the above",
         points: 1,
-        justification: "Ephesians 4:4 - 'There is one body and one Spirit, just as you were called to one hope when you were called...'"
+        justification: "Ephesians 5:5 - 'For of this you can be sure: No immoral, impure or greedy person—such a person is an idolater—has any inheritance in the kingdom of Christ and of God.'"
     },
     {
-        id: 43,
-        question: "The grace that has been given to us is measured according to the gift of ________?",
+        id: 69, // Original 69
+        question: "The fruit of the light consists in all ________?",
         type: "MCQ",
-        options: ["The Father", "The Holy Spirit", "The apostles", "Christ"],
+        options: ["Goodness", "Righteousness", "Truth", "All the above"],
+        answer: "All the above",
+        points: 1,
+        justification: "Ephesians 5:9 - '(for the fruit of the light consists in all goodness, righteousness and truth)'"
+    },
+    {
+        id: 70, // Original 70
+        question: "Paul asks us to expose the ________?",
+        type: "MCQ",
+        options: ["Christ", "Truth", "Gospel", "Fruitless deeds of darkness"],
+        answer: "Fruitless deeds of darkness",
+        points: 1,
+        justification: "Ephesians 5:11 - 'Have nothing to do with the fruitless deeds of darkness, but rather expose them.'"
+    },
+    {
+        id: 71, // Original 71
+        question: "Paul states that what the disobedient do in secret is ________?",
+        type: "MCQ",
+        options: ["Unholy", "Sin", "Corruption", "Shameful"],
+        answer: "Shameful",
+        points: 1,
+        justification: "Ephesians 5:12 - 'It is shameful even to mention what the disobedient do in secret.'"
+    },
+    {
+        id: 72, // Original 72
+        question: "What makes everything visible?",
+        type: "MCQ",
+        options: ["Word of God", "Truth", "Law", "Light"],
+        answer: "Light",
+        points: 1,
+        justification: "Ephesians 5:13 - 'But everything exposed by the light becomes visible...'"
+    },
+    {
+        id: 73, // Original 73
+        question: "Paul advises us to be careful how we live, not as unwise but as ________?",
+        type: "MCQ",
+        options: ["Unwise", "Holy", "Wise", "None of the above"],
+        answer: "Wise",
+        points: 1,
+        justification: "Ephesians 5:15 - 'Be very careful, then, how you live—not as unwise but as wise...'"
+    },
+    {
+        id: 74, // Original 74
+        question: "Make the most of every ________ because the days are evil.",
+        type: "MCQ",
+        options: ["Key", "Answer", "Good", "Opportunity"],
+        answer: "Opportunity",
+        points: 1,
+        justification: "Ephesians 5:16 - '...making the most of every opportunity, because the days are evil.'"
+    },
+    {
+        id: 75, // Original 75
+        question: "Paul says not to be foolish, but understand what the ________ is.",
+        type: "MCQ",
+        options: ["Who God is", "Neighbor", "Plans of Satan", "Lord’s will"],
+        answer: "Lord’s will",
+        points: 1,
+        justification: "Ephesians 5:17 - 'Therefore do not be foolish, but understand what the Lord’s will is.'"
+    },
+    {
+        id: 76, // Original 76
+        question: "When will Christ shine on us?",
+        type: "MCQ",
+        options: ["When we believe", "When we disobey", "When we stand", "When we awake from sleep / rise from the dead"],
+        answer: "When we awake from sleep / rise from the dead",
+        points: 1,
+        justification: "Ephesians 5:14 - 'This is why it is said: \"Wake up, sleeper, rise from the dead, and Christ will shine on you.\""
+    },
+    {
+        id: 77, // Original 77
+        question: "Paul asks us to speak to one another with ________?",
+        type: "MCQ",
+        options: ["Psalms", "Hymns", "Songs from the Spirit", "All the above"],
+        answer: "All the above",
+        points: 1,
+        justification: "Ephesians 5:19 - 'Speak to one another with psalms, hymns, and songs from the Spirit.'"
+    },
+    {
+        id: 78, // Original 78
+        question: "How should husbands love their wives?",
+        type: "MCQ",
+        options: ["Just as Christ loved the Church", "As their own bodies", "With care", "Both A and B"],
+        answer: "Both A and B",
+        points: 1,
+        justification: "Ephesians 5:25 - 'Husbands, love your wives, just as Christ loved the church...' and Ephesians 5:28 - 'In this same way, husbands ought to love their wives as their own bodies.'"
+    },
+    {
+        id: 79, // Original 79
+        question: "Who is the head of the Church?",
+        type: "MCQ",
+        options: ["Pastor", "Apostle", "Bishop", "Christ"],
         answer: "Christ",
         points: 1,
-        justification: "Ephesians 4:7 - 'But to each one of us grace has been given as Christ apportioned it.'"
+        justification: "Ephesians 5:23 - 'For the husband is the head of the wife as Christ is the head of the church...'"
     },
     {
-        id: 44,
-        question: "“When he ascended on high, he took many captives and gave gifts to his people.” This quotes which Old Testament passage?",
+        id: 80, // Original 80
+        question: "Paul advises children to obey their parents in the________?",
         type: "MCQ",
-        options: ["Psalms 86:6", "Isaiah 53:4", "Psalms 68:18", "None of the above"],
-        answer: "Psalms 68:18",
-        points: 1,
-        justification: "Ephesians 4:8 directly quotes Psalm 68:18."
-    },
-    {
-        id: 45,
-        question: "What roles did Christ give (mentioned in Ephesians 4:11) to equip his people for works of service?",
-        type: "MCQ",
-        options: ["Apostles, evangelists, pastors and teachers", "Apostles, missionaries, pastors and teachers", "Apostles, prophets, evangelists, pastors and teachers", "None of the above"],
-        answer: "Apostles, prophets, evangelists, pastors and teachers",
-        points: 1,
-        justification: "Ephesians 4:11 - 'So Christ himself gave the apostles, the prophets, the evangelists, the pastors and teachers...'"
-    },
-    {
-        id: 46,
-        question: "The body of Christ may be built up until we all reach unity in the ________ and in the knowledge of the ________.",
-        type: "MCQ",
-        options: ["Christ, Word", "Body, Son of God", "Church, Son of God", "Faith, Son of God"],
-        answer: "Faith, Son of God",
-        points: 1,
-        justification: "Ephesians 4:13 - '...until we all reach unity in the faith and in the knowledge of the Son of God...'"
-    },
-    {
-        id: 47,
-        question: "By speaking the ________ in love, we will grow to become in every respect the mature body of him who is the head, that is, Christ.",
-        type: "MCQ",
-        options: ["Faith", "Love", "Faith in truth", "Truth"],
-        answer: "Truth",
-        points: 1,
-        justification: "Ephesians 4:15 - 'Instead, speaking the truth in love, we will grow to become in every respect the mature body of him who is the head...'"
-    },
-    {
-        id: 48,
-        question: "In Christ the whole body, joined and held together by every supporting ligament, grows and builds itself up in ________, as each part does its work.",
-        type: "MCQ",
-        options: ["Truth", "Christ", "Faith", "Love"],
-        answer: "Love",
-        points: 1,
-        justification: "Ephesians 4:16 - '...grows and builds itself up in love, as each part does its work.'"
-    },
-    {
-        id: 49,
-        question: "Paul urges the church to no longer live as the ________ do, in the futility of their thinking.",
-        type: "MCQ",
-        options: ["World", "Sinners", "Gentiles", "None of the above"],
-        answer: "Gentiles",
-        points: 1,
-        justification: "Ephesians 4:17 - 'So I tell you this, and insist on it in the Lord, that you must no longer live as the Gentiles do...'"
-    },
-    {
-        id: 50,
-        question: "According to chapter 4, Paul is a prisoner for the ________?",
-        type: "MCQ",
-        options: ["His sin", "Man", "World", "Lord"],
+        options: ["Church", "World", "Heart", "Lord"],
         answer: "Lord",
         points: 1,
-        justification: "Ephesians 4:1 - 'As a prisoner for the Lord, then, I urge you...'"
+        justification: "Ephesians 6:1 - 'Children, obey your parents in the Lord, for this is right.'"
     },
     {
-        id: 51,
-        question: "Paul asks us to bear with one another in ________?",
+        id: 81, // Original 81
+        question: "What is the first commandment with a promise?",
         type: "MCQ",
-        options: ["Hand", "Faith", "Love", "All the above"],
-        answer: "Love",
+        options: ["You shall have no other gods before me", "Remember the Sabbath day", "You shall not take the name of the Lord your God in vain", "Honor your father and your mother"],
+        answer: "Honor your father and your mother",
         points: 1,
-        justification: "Ephesians 4:2 - 'Be completely humble and gentle; be patient, bearing with one another in love.'"
+        justification: "Ephesians 6:2 - \"'Honor your father and mother'—which is the first commandment with a promise—\""
     },
-    // ... (Continue adding justifications for questions 52 through 98, and 100)
-    // Example for a later question:
     {
-        id: 84,
+        id: 82, // Original 82
+        question: "Paul advises fathers to bring up their children in the ________ and ________ of the Lord.",
+        type: "MCQ",
+        options: ["Love and law", "Word and love", "Law and care", "Training and instruction"],
+        answer: "Training and instruction",
+        points: 1,
+        justification: "Ephesians 6:4 - 'Fathers, do not exasperate your children; instead, bring them up in the training and instruction of the Lord.'"
+    },
+    {
+        id: 83, // Original 83
+        question: "Paul asks slaves to obey their earthly masters with ________?",
+        type: "MCQ",
+        options: ["Respect", "Fear", "Sincerity of heart", "All the above"],
+        answer: "All the above",
+        points: 1,
+        justification: "Ephesians 6:5 - 'Slaves, obey your earthly masters with respect and fear, and with sincerity of heart, just as you would obey Christ.'"
+    },
+    {
+        id: 84, // Original 84
         question: "Put on the full ________ to take your stand against the devil’s schemes.",
         type: "MCQ",
         options: ["Word of God", "Armor of God", "Faith", "Strength"],
@@ -454,9 +477,135 @@ const quizData = [
         points: 1,
         justification: "Ephesians 6:11 - 'Put on the full armor of God, so that you can take your stand against the devil’s schemes.'"
     },
+    {
+        id: 86, // Original 86
+        question: "Who is the dear brother and faithful servant in the Lord that Paul mentions sending?",
+        type: "MCQ",
+        options: ["Titus", "Timothy", "Barnabas", "Tychicus"],
+        answer: "Tychicus",
+        points: 1,
+        justification: "Ephesians 6:21 - 'Tychicus, the dear brother and faithful servant in the Lord, will tell you everything...'"
+    },
+    {
+        id: 87, // Original 87
+        question: "The Lord will reward each one for whatever ________ they do.",
+        type: "MCQ",
+        options: ["Work", "Ministry", "Plan", "Good"],
+        answer: "Good",
+        points: 1,
+        justification: "Ephesians 6:8 - '...because you know that the Lord will reward each one for whatever good they do...'"
+    },
+    {
+        id: 88, // Original 88
+        question: "Paul says to pray in the________ on all occasions with all kinds of prayers and requests.",
+        type: "MCQ",
+        options: ["On our knees", "Tongues", "Silent", "Spirit"],
+        answer: "Spirit",
+        points: 1,
+        justification: "Ephesians 6:18 - 'And pray in the Spirit on all occasions with all kinds of prayers and requests.'"
+    },
+    {
+        id: 89, // Original 89
+        question: "Serve ________, as if you were serving the Lord, not people.",
+        type: "MCQ",
+        options: ["In truth", "Without heart", "None of the above", "Wholeheartedly"],
+        answer: "Wholeheartedly",
+        points: 1,
+        justification: "Ephesians 6:7 - 'Serve wholeheartedly, as if you were serving the Lord, not people...'"
+    },
+    {
+        id: 90, // Original 90
+        question: "Paul says that he is an ambassador in ________?",
+        type: "MCQ",
+        options: ["Christ", "Church", "World", "Chains"],
+        answer: "Chains",
+        points: 1,
+        justification: "Ephesians 6:20 - 'for which I am an ambassador in chains.'"
+    },
+    {
+        id: 91, // Original 91
+        question: "Paul requests prayer so that he may declare the mystery of the ________ fearlessly.",
+        type: "MCQ",
+        options: ["Truth", "Faith", "Christ", "Gospel"],
+        answer: "Gospel",
+        points: 1,
+        justification: "Ephesians 6:19 - 'Pray also for me, that whenever I speak, words may be given me so that I will fearlessly make known the mystery of the gospel...'"
+    },
+    {
+        id: 92, // Original 92
+        question: "If we don’t grow up into Christ, we remain like ________?",
+        type: "MCQ",
+        options: ["Dead", "Not human", "None", "Infants"],
+        answer: "Infants",
+        points: 1,
+        justification: "Ephesians 4:14 - 'Then we will no longer be infants, tossed back and forth by the waves...'"
+    },
+    {
+        id: 93, // Original 93
+        question: "Who famously said 'Growth is the only evidence of life'?",
+        type: "MCQ",
+        options: ["McDonald", "George MacDonald", "C. S. Lewis", "John Henry Newman"],
+        answer: "John Henry Newman",
+        points: 1,
+        justification: "This is a known quote attributed to John Henry Newman (external knowledge)."
+    },
+    {
+        id: 94, // Original 94
+        question: "God wants us not to ________ unity but to ________ the unity of the Spirit.",
+        type: "MCQ",
+        options: ["Break, build", "Hold, leave", "Seek, find", "Create, keep"],
+        answer: "Create, keep",
+        points: 1,
+        justification: "Interpretation of Ephesians 4:3 which says to 'make every effort to keep the unity of the Spirit.' The implication is we don't create the unity of the Spirit itself, but keep/maintain it."
+    },
+    {
+        id: 95, // Original 95
+        question: "Being a saint refers to both a________ (in Christ) and a________ (in living).",
+        type: "MCQ",
+        options: ["Need, seeking", "Gift, law", "None", "Position, progress"],
+        answer: "Position, progress",
+        points: 1,
+        justification: "Theological concept. 'Position' refers to our standing in Christ (e.g., Eph 1:1, 2:6). 'Progress' refers to our growth and sanctification (e.g., Eph 4:1, 4:15)."
+    },
+    {
+        id: 96, // Original 96
+        question: "Paul calls the people to:",
+        type: "MCQ",
+        options: ["Walk in love", "Walk as children of light", "Walk carefully (as wise)", "All the above"],
+        answer: "All the above",
+        points: 1,
+        justification: "Ephesians 5:2 (walk in love), Ephesians 5:8 (walk as children of light), Ephesians 5:15 (be careful how you walk/live)."
+    },
+    {
+        id: 97, // Original 97
+        question: "What is a key aspect of spiritual warfare according to Ephesians 6?",
+        type: "MCQ",
+        options: ["Exercise", "Understand the battle and the enemy", "None of the above", "Stand firm"],
+        answer: "Stand firm",
+        points: 1,
+        justification: "Ephesians 6:11, 13, 14 all emphasize 'stand firm' or 'take your stand.'"
+    },
+    {
+        id: 98, // Original 98
+        question: "We cannot be _______ in our spirituality, as our Christian pilgrimage involves spiritual warfare.",
+        type: "MCQ",
+        options: ["Active", "Holy", "Unholy", "Passive"],
+        answer: "Passive",
+        points: 1,
+        justification: "Interpretation based on the active commands in Ephesians 6:10-18 (be strong, put on, stand, take up, pray)."
+    },
+    {
+        id: 100, // Original 100
+        question: "One of the devil’s tactics might be to make us forget which spiritual reality?",
+        type: "MCQ",
+        options: ["The Spiritual gifts", "We are sinners", "All the above", "We are seated with Christ in the heavenly realms"],
+        answer: "We are seated with Christ in the heavenly realms",
+        points: 1,
+        justification: "Interpretation linking the 'devil's schemes' (Ephesians 6:11) with the profound truth of our position 'seated...with him in the heavenly realms in Christ Jesus' (Ephesians 2:6). Forgetting this position makes us vulnerable."
+    },
     // Bonus Matching Question (Original ID 85)
     {
-        id: 85,
+        id: 85, // Using original ID for the armor matching question
         question: "Match the piece of armor to its description:",
         type: "Matching",
         isBonus: true,

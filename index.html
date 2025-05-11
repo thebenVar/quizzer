@@ -21,37 +21,38 @@
              >
         <h1>Gethsemane Bible Quiz</h1>
 
-        <div id="name-input-area">
-             <label for="user-name">Enter Your Name:</label>
-             <input type="text" id="user-name" name="user-name" placeholder="Your Name">
+        <div id="initial-setup">
+            <div id="name-input-area">
+                 <label for="user-name">Enter Your Name:</label>
+                 <input type="text" id="user-name" name="user-name" placeholder="Your Name">
+            </div>
+
+            <div id="correction-mode-selector">
+                <p>Feedback on incorrect answers:</p>
+                <label>
+                    <input type="radio" name="correction" value="immediate" checked> Show correction immediately
+                </label>
+                <label>
+                    <input type="radio" name="correction" value="end"> Show only in final review
+                </label>
+            </div>
+            <button id="start-quiz-btn">Start Quiz</button>
         </div>
 
-        <div id="correction-mode-selector">
-            <p>Feedback on incorrect answers:</p>
-            <label>
-                <input type="radio" name="correction" value="immediate" checked> Show correction immediately
-            </label>
-            <label>
-                <input type="radio" name="correction" value="end"> Show only in final review
-            </label>
-        </div>
 
-        <button id="start-quiz-btn">Start Quiz</button>
-
-        <div id="quiz-content">
+        <div id="quiz-content" style="display: none;">
             <div id="quiz-header">
                 <div id="progress-bar-container">
                     <div id="progress-bar"></div>
                 </div>
                 <div id="header-info">
-                    <span id="progress-text">Question 1 / X</span>
-                    <div id="live-stats">
+                    <span id="progress-text">Question 1 / X</span> <div id="live-stats">
                         <span id="live-correct-count">✔️ 0</span>
                         <span id="live-incorrect-count">❌ 0</span>
                         <span id="streak-counter">🔥 Streak: 0</span>
                         <div id="live-gifts"></div>
                     </div>
-                    <span id="overall-timer">Time Left: 30:00</span>
+                    <span id="overall-timer">Time Left: 40:00</span>
                 </div>
             </div>
 
@@ -66,10 +67,10 @@
                 </div>
 
             <div id="navigation">
-                <button id="submit-btn">Submit Answer</button>
+                <button id="submit-btn" style="display: none;">Submit Answer</button>
                 <button id="next-question-btn" style="display: none;">Next Question <i class="fas fa-arrow-right"></i></button>
             </div>
-        </div> <div id="result-area">
+        </div> <div id="result-area" style="display: none;">
             <div id="score-card">
                 <h2>Quiz Complete!</h2>
                 <p id="result-message">Well done, <span id="result-name">User</span>!</p>
@@ -86,7 +87,7 @@
                         <li>No gifts earned yet.</li>
                     </ul>
                 </div>
-            </div> <div id="review-section">
+            </div> <div id="review-section" style="display: none;">
                 <button id="review-toggle-btn">Review Incorrect Answers</button>
                 <div id="review-content">
                     </div>
