@@ -357,7 +357,7 @@ const quizData = [
         question: "When we were called to one hope, there was ________ body and ________ Spirit.",
         type: "MCQ",
         options: ["Two, One", "Three, Four", "One, One", "None of the above"],
-        answer: "One",
+        answer: "One, One",
         points: 1,
         justification: "Ephesians 4:4 - 'There is one body and one Spirit, just as you were called to one hope when you were called...'"
     },
