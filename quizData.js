@@ -1,7 +1,8 @@
 // --- Gethsemane Bible Quiz Data (All Approved Questions + Bonus) ---
 // This array should be named mainQuizDataArray if you are using the two-phase (practice/real) quiz setup.
 // If this is the only quiz data file, it can be named quizData.
-const mainQuizDataArray = [ // Or const quizData = [
+const mainQuizDataArray = [ // 
+// const quizData = [
     {
         id: 1,
         question: "What are the words of blessing used by Paul to greet the Ephesians Church?",
@@ -622,8 +623,8 @@ const mainQuizDataArray = [ // Or const quizData = [
 
 // --- Gamification Settings ---
 const streakThresholds = {
-    10: "fas fa-candy-cane",
-    25: "fas fa-pencil-alt",
-    40: "fas fa-book"
+    5: "fas fa-candy-cane",
+    20: "fas fa-pencil-alt",
+    30: "fas fa-book"
 };
 const bonusGiftClass = "fas fa-candy-cane"; // Candy for bonus question

@@ -9,7 +9,7 @@ let startQuizButton, quizContentElement, questionTextElement, optionsAreaElement
     reviewSection, reviewToggleButton, reviewContent, achievementsListElement,
     liveGiftsElement, timeTakenElement, nameInputElement,
     resultNameElement, resultMessageElement, correctionModeSelectorElement,
-    nextQuestionButtonElement, initialSetupElement; // Removed practice/real quiz buttons
+    nextQuestionButtonElement, initialSetupElement;
 
 // --- Quiz State ---
 let currentQuestionIndex = 0;
@@ -20,10 +20,9 @@ let currentStreak = 0;
 let earnedGifts = []; // Will store objects like { class: 'fas fa-icon', source: 'streak'/'bonus' }
 let userAnswers = {};
 let incorrectlyAnsweredQuestions = []; // Now stores { questionText, userAnswer, correctAnswer, justification, isMatching? }
-// userRating removed
 let totalPossibleScore = 0;
 let overallTimerInterval;
-let timeLeft = 60 * 60; // Default to 60 minutes
+let timeLeft = 60 * 60; // Updated to 60 minutes
 let autoProceedTimeout;
 let quizStartTime;
 let quizEndTime;
@@ -38,10 +37,9 @@ let isAudioContextStarted = false;
 
 // --- Functions ---
 
-// Function to get DOM elements after the page loads
 function getDOMElements() {
     initialSetupElement = document.getElementById('initial-setup');
-    startQuizButton = document.getElementById('start-quiz-btn'); // Only one start button now
+    startQuizButton = document.getElementById('start-quiz-btn');
     quizContentElement = document.getElementById('quiz-content');
     questionTextElement = document.getElementById('question-text');
     optionsAreaElement = document.getElementById('options-area');
@@ -68,13 +66,11 @@ function getDOMElements() {
     achievementsListElement = document.getElementById('achievements-list');
     liveGiftsElement = document.getElementById('live-gifts');
     timeTakenElement = document.getElementById('time-taken');
-    // finalRatingElement removed
     nameInputElement = document.getElementById('user-name');
     resultNameElement = document.getElementById('result-name');
     resultMessageElement = document.getElementById('result-message');
     correctionModeSelectorElement = document.getElementById('correction-mode-selector');
     nextQuestionButtonElement = document.getElementById('next-question-btn');
-    // Removed proceedToRealQuizButton, resultTitleElement as they are not needed for single quiz flow
 }
 
 
@@ -132,15 +128,14 @@ async function playSound(synth, note, duration) {
     }
 }
 
-// Function to shuffle an array (Fisher-Yates shuffle)
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+        [array[i], array[j]] = [array[j], array[i]];
     }
 }
 
-// Simplified startQuizFlow for a single quiz type
+// Simplified to use mainQuizDataArray (or quizData if that's the name in your file)
 function startQuizFlow() {
      console.log("Starting quiz flow...");
      userName = nameInputElement.value.trim() || "Quiz Taker";
@@ -149,7 +144,6 @@ function startQuizFlow() {
      const selectedCorrectionMode = document.querySelector('input[name="correction"]:checked');
      showImmediateCorrection = selectedCorrectionMode ? selectedCorrectionMode.value === 'immediate' : true;
      console.log("Immediate Correction Mode:", showImmediateCorrection);
-     // correctionModeSelectorElement is part of initialSetupElement, so it's hidden too.
 
      // Use mainQuizDataArray directly (assuming it's defined in quizData.js)
      // or quizData if that's the name in your file (fallback)
@@ -158,6 +152,7 @@ function startQuizFlow() {
      if (!quizDataToUse || quizDataToUse.length === 0) {
          alert("Quiz data not found. Please ensure quizData.js is loaded and defines 'mainQuizDataArray' or 'quizData'.");
          initialSetupElement.style.display = 'block'; // Show setup again
+         quizContentElement.style.display = 'none';
          return;
      }
      quizContentElement.style.display = 'block'; // Show quiz content now
@@ -190,7 +185,7 @@ function startQuizFlow() {
 
 function startOverallTimer() {
      clearInterval(overallTimerInterval);
-     timeLeft = 60 * 60;
+     timeLeft = 60 * 60; // Updated to 60 minutes
      updateTimerDisplay();
      overallTimerInterval = setInterval(() => {
          timeLeft--;
@@ -568,8 +563,7 @@ function showResults() {
     } else {
         messageText = `Keep practicing, ${userName}!`;
     }
-    resultMessageElement.textContent = messageText; // Set the full message content
-    // resultTitleElement removed
+    resultMessageElement.textContent = messageText;
 
     populateAchievements();
     achievementsListElement.parentElement.style.display = 'block';
@@ -577,7 +571,6 @@ function showResults() {
     populateReviewSection();
     reviewSection.style.display = incorrectlyAnsweredQuestions.length > 0 ? 'block' : 'none';
 
-    // No "Proceed to Real Quiz" button in the final version
     shareScoreButton.style.display = 'inline-block';
 
 
@@ -617,7 +610,6 @@ function populateAchievements() {
          achievementsDisplayed = true;
     }
 
-     // Add text achievements
      const regularQuestionsFromSession = currentQuizData.filter(q => !q.isBonus && q.points > 0);
      const maxRegularScore = regularQuestionsFromSession.reduce((sum, q) => sum + q.points, 0);
 
@@ -768,10 +760,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
          // Use mainQuizDataArray (or quizData if that's the name in your file)
          if (typeof mainQuizDataArray !== 'undefined') {
-            initializeAndStartQuiz(mainQuizDataArray); // Simplified call
+            startQuizFlow(); // Simplified call
          } else if (typeof quizData !== 'undefined') { // Fallback for older data file name
             console.warn("Using global 'quizData' as 'mainQuizDataArray' not found. Please rename array in quizData.js to 'mainQuizDataArray'.");
-            initializeAndStartQuiz(quizData);
+            startQuizFlow(); // This will now use the global quizData if mainQuizDataArray is not found
          } else {
             alert("Quiz data not found. Please ensure quizData.js is loaded correctly.");
             initialSetupElement.style.display = 'block'; // Show setup again if data fails
