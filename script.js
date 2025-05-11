@@ -9,7 +9,7 @@ let startQuizButton, quizContentElement, questionTextElement, optionsAreaElement
     reviewSection, reviewToggleButton, reviewContent, achievementsListElement,
     liveGiftsElement, timeTakenElement, nameInputElement,
     resultNameElement, resultMessageElement, correctionModeSelectorElement,
-    nextQuestionButtonElement; // Re-added
+    nextQuestionButtonElement;
 
 // --- Quiz State ---
 let currentQuestionIndex = 0;
@@ -17,21 +17,19 @@ let score = 0;
 let correctCount = 0;
 let incorrectCount = 0;
 let currentStreak = 0;
-let earnedGifts = []; // Will store objects like { class: 'fas fa-icon', source: 'streak'/'bonus' }
+let earnedGifts = [];
 let userAnswers = {};
-let incorrectlyAnsweredQuestions = []; // Now stores { questionText, userAnswer, correctAnswer, justification, isMatching? }
-// userRating removed
+let incorrectlyAnsweredQuestions = [];
 let totalPossibleScore = 0;
 let overallTimerInterval;
-let timeLeft = 40 * 60; // Default to 40 minutes
+let timeLeft = 40 * 60;
 let autoProceedTimeout;
 let quizStartTime;
 let quizEndTime;
 let totalRegularQuestions = 0;
-let userName = "Quiz Taker"; // Default name
-let currentQuizData = []; // To hold the (potentially shuffled) questions for the current session
-let showImmediateCorrection = true; // Default to immediate correction
-
+let userName = "Quiz Taker";
+let currentQuizData = [];
+let showImmediateCorrection = true;
 
 // --- Sound Effects (Tone.js Synths) ---
 let correctSound, incorrectSound, completeSound, giftSound;
@@ -39,7 +37,6 @@ let isAudioContextStarted = false;
 
 // --- Functions ---
 
-// Function to get DOM elements after the page loads
 function getDOMElements() {
     startQuizButton = document.getElementById('start-quiz-btn');
     quizContentElement = document.getElementById('quiz-content');
@@ -68,7 +65,6 @@ function getDOMElements() {
     achievementsListElement = document.getElementById('achievements-list');
     liveGiftsElement = document.getElementById('live-gifts');
     timeTakenElement = document.getElementById('time-taken');
-    // finalRatingElement removed
     nameInputElement = document.getElementById('user-name');
     resultNameElement = document.getElementById('result-name');
     resultMessageElement = document.getElementById('result-message');
@@ -131,11 +127,10 @@ async function playSound(synth, note, duration) {
     }
 }
 
-// Function to shuffle an array (Fisher-Yates shuffle)
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+        [array[i], array[j]] = [array[j], array[i]];
     }
 }
 
@@ -145,25 +140,22 @@ function startQuizFlow() {
      userName = nameInputElement.value.trim() || "Quiz Taker";
      document.getElementById('name-input-area').style.display = 'none';
 
-     // Get selected correction mode
      const selectedCorrectionMode = document.querySelector('input[name="correction"]:checked');
-     showImmediateCorrection = selectedCorrectionMode ? selectedCorrectionMode.value === 'immediate' : true; // Default to true if not found
+     showImmediateCorrection = selectedCorrectionMode ? selectedCorrectionMode.value === 'immediate' : true;
      console.log("Immediate Correction Mode:", showImmediateCorrection);
-     correctionModeSelectorElement.style.display = 'none'; // Hide mode selector
+     correctionModeSelectorElement.style.display = 'none';
 
 
-     // Prepare quiz data for the current session
      let regularQuizQuestions = quizData.filter(q => !q.isBonus);
      let bonusQuestion = quizData.find(q => q.isBonus);
 
-     shuffleArray(regularQuizQuestions); // Shuffle regular questions
+     shuffleArray(regularQuizQuestions);
 
-     currentQuizData = [...regularQuizQuestions]; // Start with shuffled regular questions
+     currentQuizData = [...regularQuizQuestions];
      if (bonusQuestion) {
-         currentQuizData.push(bonusQuestion); // Add bonus question at the end
+         currentQuizData.push(bonusQuestion);
      }
 
-     // Reset quiz state variables
      currentQuestionIndex = 0;
      score = 0;
      correctCount = 0;
@@ -173,7 +165,7 @@ function startQuizFlow() {
      incorrectlyAnsweredQuestions = [];
 
      quizStartTime = Date.now();
-     calculateTotalPossibleScore(); // Calculate based on the potentially new currentQuizData
+     calculateTotalPossibleScore();
      startOverallTimer();
      loadQuestion();
 }
@@ -181,7 +173,7 @@ function startQuizFlow() {
 
 function startOverallTimer() {
      clearInterval(overallTimerInterval);
-     timeLeft = 40 * 60; // Updated to 40 minutes
+     timeLeft = 40 * 60;
      updateTimerDisplay();
      overallTimerInterval = setInterval(() => {
          timeLeft--;
@@ -204,7 +196,6 @@ function updateTimerDisplay() {
  }
 
 function calculateTotalPossibleScore() {
-     // Calculate based on the questions in the current session (currentQuizData)
      totalPossibleScore = currentQuizData
          .filter(q => !q.isBonus)
          .reduce((sum, question) => sum + (question.points || 0), 0);
@@ -223,14 +214,12 @@ function updateLiveCountsAndStreak() {
 }
 
  function updateProgressBar() {
-     // Progress bar should reflect progress through all questions including bonus
      const progress = currentQuizData.length > 0 ? ((currentQuestionIndex) / currentQuizData.length) * 100 : 0;
      progressBarElement.style.width = `${progress}%`;
  }
 
  function displayLiveGifts() {
      liveGiftsElement.innerHTML = '';
-     // Display only unique base gift classes live
      const uniqueLiveGiftClasses = [...new Set(earnedGifts.map(gift => gift.class))];
      uniqueLiveGiftClasses.forEach(giftClass => {
          const icon = document.createElement('i');
@@ -241,23 +230,26 @@ function updateLiveCountsAndStreak() {
 
 function proceedToNextQuestion() {
      clearTimeout(autoProceedTimeout);
-     nextQuestionButtonElement.style.display = 'none'; // Hide next button when proceeding
+     nextQuestionButtonElement.style.display = 'none';
      currentQuestionIndex++;
+     console.log(`[proceedToNextQuestion] New currentQuestionIndex: ${currentQuestionIndex}, currentQuizData.length: ${currentQuizData.length}`); // DEBUG LOG
      loadQuestion();
  }
 
-// Updated to handle progression mode
 function scheduleOrWaitForNext() {
     clearTimeout(autoProceedTimeout);
     const currentQuestion = currentQuizData[currentQuestionIndex];
-    // Check if it's an incorrect answer to a NON-BONUS question and immediate correction is ON
     const isIncorrectAndImmediateCorrection = !currentQuestion.isBonus && showImmediateCorrection && feedbackAreaElement.classList.contains('feedback-incorrect');
 
+    console.log(`[scheduleOrWaitForNext] isBonus: ${currentQuestion.isBonus}, showImmediate: ${showImmediateCorrection}, isIncorrectFeedback: ${feedbackAreaElement.classList.contains('feedback-incorrect')}`); // DEBUG LOG
+
     if (isIncorrectAndImmediateCorrection) {
-        nextQuestionButtonElement.style.display = 'inline-block'; // Show next button
-        submitButton.style.display = 'none'; // Hide submit if next is shown (relevant for matching)
+        console.log("[scheduleOrWaitForNext] Showing Next Question button."); // DEBUG LOG
+        nextQuestionButtonElement.style.display = 'inline-block';
+        submitButton.style.display = 'none';
     } else {
-        autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000); // Auto-proceed
+        console.log("[scheduleOrWaitForNext] Scheduling auto proceed."); // DEBUG LOG
+        autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000);
     }
 }
 
@@ -280,15 +272,18 @@ function loadQuestion() {
     feedbackAreaElement.className = '';
     userAnswers = {};
     submitButton.style.display = 'none';
-    nextQuestionButtonElement.style.display = 'none'; // Hide next button by default
+    nextQuestionButtonElement.style.display = 'none';
     submitButton.disabled = false;
 
-    if (currentQuestionIndex >= currentQuizData.length) { // Use currentQuizData
+    console.log(`[loadQuestion] Top: currentQuestionIndex = ${currentQuestionIndex}, currentQuizData.length = ${currentQuizData.length}`); // DEBUG LOG
+    if (currentQuestionIndex >= currentQuizData.length) {
+        console.log("[loadQuestion] End of quiz, calling showResults()."); // DEBUG LOG
         showResults();
         return;
     }
 
-    const currentQuestion = currentQuizData[currentQuestionIndex]; // Use currentQuizData
+    const currentQuestion = currentQuizData[currentQuestionIndex];
+    console.log(`[loadQuestion] Loading question ID: ${currentQuestion.id}, Type: ${currentQuestion.type}, isBonus: ${currentQuestion.isBonus}`); // DEBUG LOG
 
     updateProgressBar();
     if (currentQuestion.isBonus) {
@@ -323,9 +318,8 @@ function loadQuestion() {
 
 function loadMCQOptions(question) {
      let regularOptions = [];
-     let specialOptions = []; // To hold "All" or "None" type options
+     let specialOptions = [];
 
-     // Separate special options
      question.options.forEach(optionText => {
          const lowerCaseOption = optionText.toLowerCase().trim();
          if (lowerCaseOption === "all the above" || lowerCaseOption === "none of the above") {
@@ -335,10 +329,7 @@ function loadMCQOptions(question) {
          }
      });
 
-     // Shuffle only the regular options
      shuffleArray(regularOptions);
-
-     // Combine shuffled regular options with special options at the end
      const finalOptions = [...regularOptions, ...specialOptions];
 
      finalOptions.forEach(optionText => {
@@ -357,7 +348,7 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
 
     if (selectedOption === question.answer) {
         isCorrect = true;
-        if (!question.isBonus) { // Only add to score if not bonus
+        if (!question.isBonus) {
             score += question.points;
             correctCount++;
         }
@@ -374,17 +365,16 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
         }
         currentStreak = 0;
         let feedbackText = `Incorrect!`;
-        if (showImmediateCorrection && !question.isBonus) { // Show correction if mode is set and not bonus
+        if (showImmediateCorrection && !question.isBonus) {
             feedbackText += ` The correct answer was: ${question.answer}.`;
             if (question.justification) {
                 feedbackText += `<br><span class="feedback-justification">Why? ${question.justification}</span>`;
             }
         }
-        feedbackAreaElement.innerHTML = feedbackText; // Use innerHTML for line break
+        feedbackAreaElement.innerHTML = feedbackText;
         feedbackAreaElement.className = 'feedback-incorrect';
         playSound(incorrectSound, "C3", "8n");
         triggerFeedbackFlash(false, question.isBonus);
-        // Only add to review if it's not a bonus question or if you want to review bonus too
         if (!question.isBonus) {
             incorrectlyAnsweredQuestions.push({
                 questionText: question.question,
@@ -394,18 +384,15 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
             });
         }
     }
-    if (!question.isBonus) { // Only update live counts for regular questions
+    if (!question.isBonus) {
         updateLiveCountsAndStreak();
     }
-
-    // Use the new progression logic
     scheduleOrWaitForNext();
 }
 
  function checkStreakForGift() {
      const streakLevel = currentStreak;
      const giftClass = streakThresholds[streakLevel];
-     // Award only if the exact threshold is met and this specific streak gift hasn't been awarded yet
      if (giftClass && !earnedGifts.some(gift => gift.class === giftClass && gift.source === 'streak')) {
          earnedGifts.push({ class: giftClass, source: 'streak' });
          console.log(`Streak Gift earned: ${giftClass} for streak ${streakLevel}`);
@@ -420,7 +407,7 @@ function loadMatchingOptions(question) {
      container.classList.add('matching-container');
      const leftItems = question.pairs.map(pair => pair[0]);
      const rightItems = question.pairs.map(pair => pair[1]);
-     shuffleArray(rightItems); // Shuffle the items for the dropdowns
+     shuffleArray(rightItems);
 
      leftItems.forEach((leftItem) => {
          const leftElement = document.createElement('div');
@@ -433,7 +420,7 @@ function loadMatchingOptions(question) {
          defaultOption.value = "";
          defaultOption.textContent = "Select match...";
          selectElement.appendChild(defaultOption);
-         rightItems.forEach(rightItem => { // Use the shuffled right items
+         rightItems.forEach(rightItem => {
              const optionElement = document.createElement('option');
              optionElement.value = rightItem;
              optionElement.textContent = rightItem;
@@ -450,10 +437,11 @@ function loadMatchingOptions(question) {
 
  function handleMatchingSubmit() {
      submitButton.disabled = true;
-     const currentQuestion = currentQuizData[currentQuestionIndex]; // Use currentQuizData
+     const currentQuestion = currentQuizData[currentQuestionIndex];
      let correctMatches = 0;
      let userMatches = {};
      let correctPairs = {};
+     let isAllCorrect = false; // Initialize
 
      currentQuestion.pairs.forEach(pair => {
          const leftItem = pair[0];
@@ -467,9 +455,10 @@ function loadMatchingOptions(question) {
          }
      });
 
-     const isAllCorrect = correctMatches === currentQuestion.pairs.length;
+     isAllCorrect = correctMatches === currentQuestion.pairs.length;
 
      if (currentQuestion.isBonus) {
+         console.log("[handleMatchingSubmit] Processing BONUS question."); // DEBUG LOG
          if (isAllCorrect) {
              feedbackAreaElement.textContent = `Bonus Correct! Candy Earned! 🍬`;
              feedbackAreaElement.className = 'feedback-bonus';
@@ -481,7 +470,7 @@ function loadMatchingOptions(question) {
              triggerFeedbackFlash(true, true);
          } else {
              let feedbackText = `Bonus Incorrect (${correctMatches}/${currentQuestion.pairs.length})`;
-             if (showImmediateCorrection) { // Check mode for bonus feedback too
+             if (showImmediateCorrection) {
                  feedbackText += ` Review correct matches at the end.`;
                  if (currentQuestion.justification) {
                      feedbackText += `<br><span class="feedback-justification">Hint: ${currentQuestion.justification}</span>`;
@@ -491,7 +480,6 @@ function loadMatchingOptions(question) {
              feedbackAreaElement.className = 'feedback-incorrect';
              playSound(incorrectSound, "C3", "8n");
              triggerFeedbackFlash(false);
-             // Store for final review even if bonus
              incorrectlyAnsweredQuestions.push({
                  questionText: currentQuestion.question + " (Bonus)",
                  userAnswer: userMatches,
@@ -501,7 +489,8 @@ function loadMatchingOptions(question) {
              });
          }
      } else {
-         const pointsAwarded = isAllCorrect ? (currentQuestion.points || currentQuestion.pairs.length) : 0; // Award points only if all correct
+         console.log("[handleMatchingSubmit] Processing REGULAR matching question."); // DEBUG LOG
+         const pointsAwarded = isAllCorrect ? (currentQuestion.points || currentQuestion.pairs.length) : 0;
          score += pointsAwarded;
 
          if (isAllCorrect) {
@@ -523,7 +512,7 @@ function loadMatchingOptions(question) {
                  }
              }
              feedbackAreaElement.innerHTML = feedbackText;
-             feedbackAreaElement.className = 'feedback-submitted'; // Or incorrect if desired
+             feedbackAreaElement.className = 'feedback-submitted';
              playSound(incorrectSound, "C3", "8n");
              triggerFeedbackFlash(false);
              incorrectlyAnsweredQuestions.push({
@@ -538,18 +527,13 @@ function loadMatchingOptions(question) {
      }
 
      optionsAreaElement.querySelectorAll('.match-select').forEach(sel => sel.disabled = true);
-
-     // Use new progression logic
-     if (showImmediateCorrection && !isAllCorrect && !currentQuestion.isBonus) {
-         nextQuestionButtonElement.style.display = 'inline-block';
-         submitButton.style.display = 'none'; // Hide submit button as Next is shown
-     } else {
-         scheduleAutoProceed();
-     }
+     console.log("[handleMatchingSubmit] Calling scheduleOrWaitForNext."); // DEBUG LOG
+     scheduleOrWaitForNext();
  }
 
 
 function showResults() {
+    console.log("[showResults] Displaying final results."); // DEBUG LOG
     quizEndTime = Date.now();
     clearInterval(overallTimerInterval);
     clearTimeout(autoProceedTimeout);
@@ -596,10 +580,9 @@ function populateAchievements() {
     let achievementsDisplayed = false;
     let bonusCandyAwardedThisTime = earnedGifts.some(gift => gift.source === 'bonus' && gift.class === bonusGiftClass);
 
-    // Display streak gifts
     const streakGiftsDisplayed = new Set();
     earnedGifts.filter(gift => gift.source === 'streak').forEach(gift => {
-        if (!streakGiftsDisplayed.has(gift.class)) { // Ensure each type of streak gift is shown once
+        if (!streakGiftsDisplayed.has(gift.class)) {
             const li = document.createElement('li');
             li.classList.add('gift-icon');
             const icon = document.createElement('i');
@@ -611,7 +594,6 @@ function populateAchievements() {
         }
     });
 
-    // Display the bonus candy separately if awarded
     if (bonusCandyAwardedThisTime) {
          const li = document.createElement('li');
          li.classList.add('bonus-gift-item');
@@ -623,8 +605,7 @@ function populateAchievements() {
          achievementsDisplayed = true;
     }
 
-     // Add text achievements
-     const regularQuestionsFromSession = currentQuizData.filter(q => !q.isBonus && q.points > 0); // Use currentQuizData
+     const regularQuestionsFromSession = currentQuizData.filter(q => !q.isBonus && q.points > 0);
      const maxRegularScore = regularQuestionsFromSession.reduce((sum, q) => sum + q.points, 0);
 
      if (correctCount === regularQuestionsFromSession.length && regularQuestionsFromSession.length > 0) {
