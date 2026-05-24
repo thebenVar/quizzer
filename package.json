@@ -1,0 +1,25 @@
+{
+  "name": "quizzer",
+  "version": "1.0.0",
+  "description": "A quiz app (with demo examples from the book of ephesians)",
+  "main": "quizData.js",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thebenVar/quizzer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/thebenVar/quizzer/issues"
+  },
+  "homepage": "https://github.com/thebenVar/quizzer#readme",
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.7"
+  }
+}
