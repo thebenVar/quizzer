@@ -32,29 +32,57 @@ function skillAnchor(skill) {
   return `skill-${skill.id.replace(/[^a-z0-9_-]/gi, '-')}`;
 }
 
-function renderOptions(question, text) {
+function renderMatchList(pairs, className, marks) {
+  const list = el('ul', 'ak-match-list');
+  pairs.forEach(([left, right], index) => {
+    const item = el('li', className);
+    const mark = marks ? marks[index] : null;
+    if (mark === 'wrong') item.classList.add('ak-match-wrong');
+    item.append(el('span', 'ak-match-left', left), el('span', 'ak-match-arrow', '→'), el('span', 'ak-match-right', right));
+    if (mark === 'wrong') item.appendChild(el('span', 'ak-cross', '✗'));
+    list.appendChild(item);
+  });
+  return list;
+}
+
+// `response` (optional) is a participant's answer, for the review at the end:
+// { answer: option text | { left: right }, hasAnswer, isCorrect, optionOrder? }.
+function renderOptions(question, text, response) {
   if (question.type === 'matching') {
     const wrap = el('div', 'ak-matches');
-    wrap.appendChild(el('p', 'ak-matches-heading', text.answerKeyMatchingHeading));
-    const list = el('ul', 'ak-match-list');
-    for (const [left, right] of question.pairs) {
-      const item = el('li', 'ak-match');
-      item.append(el('span', 'ak-match-left', left), el('span', 'ak-match-arrow', '→'), el('span', 'ak-match-right', right));
-      list.appendChild(item);
+    if (response && response.hasAnswer) {
+      const given = question.pairs.map(([left]) => [left, (response.answer && response.answer[left]) || text.reviewNotAnswered]);
+      const marks = question.pairs.map(([left, right]) => (response.answer && response.answer[left] === right ? 'right' : 'wrong'));
+      wrap.appendChild(el('p', 'ak-matches-heading ak-matches-heading-yours', text.reviewYourMatchesHeading));
+      wrap.appendChild(renderMatchList(given, 'ak-match ak-match-yours', marks));
     }
-    wrap.appendChild(list);
+    wrap.appendChild(el('p', 'ak-matches-heading', text.answerKeyMatchingHeading));
+    wrap.appendChild(renderMatchList(question.pairs, 'ak-match'));
     return wrap;
   }
 
+  // In a review, options are lettered in the order the participant saw them.
+  const shown = response && Array.isArray(response.optionOrder) &&
+    response.optionOrder.length === question.options.length &&
+    question.options.every((option) => response.optionOrder.includes(option))
+    ? response.optionOrder
+    : question.options;
   const list = el('ol', 'ak-options');
-  question.options.forEach((option, index) => {
+  shown.forEach((option, index) => {
     const isCorrect = option === question.answer;
-    const item = el('li', isCorrect ? 'ak-option ak-option-correct' : 'ak-option');
+    const isChosen = Boolean(response && response.hasAnswer && response.answer === option);
+    const item = el('li', 'ak-option');
+    if (isCorrect) item.classList.add('ak-option-correct');
+    if (isChosen) item.classList.add('ak-option-chosen');
+    if (isChosen && !isCorrect) item.classList.add('ak-option-wrong');
     item.appendChild(el('span', 'ak-option-letter', String.fromCharCode(65 + index)));
     item.appendChild(el('span', 'ak-option-text', option));
-    if (isCorrect) {
+    if (isCorrect || isChosen) {
       const tag = el('span', 'ak-option-tag');
-      tag.append(el('span', 'ak-check', '✓'), ` ${text.answerKeyCorrect}`);
+      const parts = [];
+      if (isChosen) parts.push(text.reviewYourAnswerTag);
+      if (isCorrect) parts.push(text.answerKeyCorrect);
+      tag.append(el('span', isCorrect ? 'ak-check' : 'ak-cross', isCorrect ? '✓' : '✗'), ` ${parts.join(' · ')}`);
       item.appendChild(tag);
     }
     list.appendChild(item);
@@ -68,8 +96,14 @@ function renderNote(kind, label, body) {
   return note;
 }
 
-function renderQuestion(question, number, text) {
+// One question card: prompt, options with the correct one marked, Why and How to
+// approach. Used by the answer key page and, with `response`, by the review of a
+// participant's answers (on the results screen and in the downloaded results file).
+export function renderQuestionCard(question, number, text, response) {
   const card = el('article', 'ak-card');
+  if (response) {
+    card.classList.add(response.isCorrect ? 'ak-card-right' : 'ak-card-wrong');
+  }
 
   const head = el('div', 'ak-card-head');
   head.appendChild(el('span', 'ak-number', String(number)));
@@ -80,7 +114,11 @@ function renderQuestion(question, number, text) {
   head.appendChild(prompt);
   card.appendChild(head);
 
-  card.appendChild(renderOptions(question, text));
+  if (response && !response.hasAnswer) {
+    card.appendChild(el('p', 'ak-not-answered', text.reviewNotAnsweredCard));
+  }
+
+  card.appendChild(renderOptions(question, text, response));
 
   if (question.explanation) {
     card.appendChild(renderNote('why', text.answerKeyWhy, question.explanation));
@@ -136,7 +174,7 @@ export function renderAnswerKey(root, { meta, questions }) {
     }
     for (const question of group.questions) {
       number += 1;
-      section.appendChild(renderQuestion(question, number, text));
+      section.appendChild(renderQuestionCard(question, number, text));
     }
     root.appendChild(section);
   }

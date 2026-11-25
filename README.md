@@ -137,8 +137,8 @@ Only `title` is required; everything else has a default.
 
 - `mode` — `"quiz"` (default) or `"test"`. See [Test mode](#test-mode-assessments) below.
 - `skills` — optional list of `{ "id", "label", "description" }`. When present, every question names its `skill`, and the results screen shows a score per skill in this order. The optional `description` introduces the skill on the answer key page.
-- `showAnswerReview` — default `true`. Set `false` to hide the review of wrong answers at the end (for example, to keep a test's questions from circulating).
-- `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language.
+- `showAnswerReview` — default `true`. Set `false` to hide the review of answers at the end, and to leave the answers out of the downloaded results file (for example, to keep a test's questions from circulating).
+- `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language. This includes the test-mode buttons and summary (`testNextButtonLabel`, `finishHeading`, `submitTestLabel`, …), the resume panel (`resumeHeading`, `resumeDetails`, …), the keyboard tip (`keyboardHint`), the review (`reviewFilterWrong`, `reviewFilterAll`, …), the per-skill time (`skillScoreWithTime`) and the results file (`downloadResultsLabel`, `resultsFile…`).
 - `branding.logoSrc` is relative to the quiz folder (a full `https://` URL also works). Without it, no logo is shown.
 - `timing.timeLimitSeconds` is the time for the whole quiz; `autoAdvanceDelayMs` is the pause before the next question.
 - `{name}` in a result message is replaced with the player's name.
@@ -149,12 +149,26 @@ Only `title` is required; everything else has a default.
 
 A quiz with `"mode": "test"` in `meta.json` is an assessment rather than a game:
 
-- No feedback while answering: each answer just shows "Answer saved." and the test moves on. There are no right/wrong counts, streaks, sounds, flashes, gifts or bonus question, and no choice of feedback mode.
-- At the end: the score, time taken and, if the quiz lists `skills`, a score per skill.
+- **Name required.** The Start button stays disabled until a name is typed.
+- **Select, then Next.** Clicking an option only selects it (it can be changed). **Next** moves on and **Back** returns to the previous question; nothing moves on by itself. Matching questions use their dropdowns and Next. Each choice shows a quiet "Answer saved." — no right/wrong feedback, streaks, sounds, flashes, gifts or bonus question, and no choice of feedback mode.
+- **Finish and submit.** On the last question Next reads **Finish** and opens a summary: how many questions are answered and a button for each unanswered one (it jumps to that question), with **Back to the test** and **Submit test**. Only Submit grades the test. When the time runs out, the test is submitted with whatever has been answered.
+- **Results.** The score, time taken, the number not answered and, if the quiz lists `skills`, a score per skill with the time spent on that skill's questions (for example "4 / 5 · 3:20"). Time counts only while a question is on screen, adding up revisits.
+- **Resume.** Progress is saved in the browser (localStorage) after every change: question order, current question, answers, name, per-question time and the deadline. Opening the test again shows **Resume your test** (with question N of M and the time left) or **Start over**. The deadline is a fixed time, so the clock keeps running while the page is closed; if it has passed, the test is submitted with the saved answers and the results are shown. The browser warns before leaving a test in progress. Saved progress is removed after submitting, and is discarded if the quiz's questions change. Without browser storage (some private windows) the test still works, it just cannot be resumed. Resume is for test mode only; a quiz (game mode) starts over when reopened.
 - Combine with `"showAnswerReview": false` so the answers are not shown at the end, and list the test under `"unlisted"` in `registry.json` if it should be reached only by its link.
 - This does not make a test secret: `questions.json`, answers included, is loaded by the browser and can be opened by anyone who knows where to look. Keeping answers private needs grading on a server.
 
 `quizzes/cit-aptitude/` is an example: an aptitude test for consultants in training, with 40 questions over eight skills.
+
+## Keyboard
+
+In both modes, keys **1–9** or **A–Z** choose that option of a multiple-choice question (in a test this selects it; in a quiz it answers, like a click). **Enter** goes to the next question (in a quiz, when the Next Question button shows). In a test, **←** and **→** are Back and Next. Keys typed into a text field or dropdown are left alone. A small tip under the question says so (hidden on touch screens).
+
+## Review and results file
+
+- **Review my answers** (when `showAnswerReview` is true): the questions as cards in the answer key's style, with the participant's answer marked (green if right, red with ✗ if wrong), the correct answer, "Not answered" for skipped ones, and the question's Why and How to approach. Matching questions show the participant's pairs above the correct ones. A switch shows **Wrong only** (the default) or **All questions**.
+- **Download my results** saves one self-contained `.html` file (`<quiz-id>-results-<name>-<YYYY-MM-DD>.html`): quiz title, name, date, time taken, score, the per-skill table (with times) and, when `showAnswerReview` is true, every question with the answer given, the correct answer, Why and How to approach. It has no external links, opens offline in any browser and prints cleanly.
+- **Share my results** appears where the device can share files (most phones); it shares that same file.
+- **Share Score** (quiz mode only) saves the score card as an image, as before.
 
 ## Answer key
 
@@ -169,8 +183,10 @@ index.html, style.css, script.js   page, styles and quiz flow (shared by all qui
 app/loader.js                      finds and loads a quiz folder
 app/validate.js                    content rules and defaults for meta.json / questions.json
 app/runtime.js                     answer checking
-app/answerKey.js                   the answer key page (?quiz=<id>-ans)
-app/utils.js                       scoring, timer and shuffle helpers
+app/answerKey.js                   the answer key page (?quiz=<id>-ans) and its question cards, also used by the review
+app/progress.js                    saving and resuming a test in progress (localStorage, deadline, quiz fingerprint)
+app/results.js                     grading stored answers, time per skill, the downloadable results file
+app/utils.js                       scoring, timer, shuffle and keyboard helpers
 quizzes/registry.json              the home page: which quizzes are listed, and in what order
 quizzes/<id>/                      one folder per quiz
 tests/                             Vitest tests, including a check of every quiz folder

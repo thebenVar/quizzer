@@ -31,9 +31,20 @@
         <div id="answer-key" hidden></div>
 
         <div id="initial-setup" style="display: none;">
+            <!-- Test mode: shown instead of the name and Start button when a test was saved part-way -->
+            <div id="resume-panel" hidden>
+                <p id="resume-heading"></p>
+                <p id="resume-details"></p>
+                <div class="resume-buttons">
+                    <button type="button" id="resume-btn"></button>
+                    <button type="button" id="start-over-btn"></button>
+                </div>
+            </div>
+
             <div id="name-input-area">
                  <label for="user-name" id="name-label"></label>
-                 <input type="text" id="user-name" name="user-name">
+                 <input type="text" id="user-name" name="user-name" autocomplete="name">
+                 <p id="name-hint" class="setup-hint" hidden></p>
             </div>
 
             <div id="correction-mode-selector">
@@ -65,19 +76,37 @@
                 </div>
             </div>
 
-            <div id="question-area">
-                <p id="question-text"></p>
+            <div id="question-view">
+                <div id="question-area">
+                    <p id="question-text"></p>
+                </div>
+
+                <div id="options-area">
+                    </div>
+
+                <div id="feedback-area">
+                    </div>
+
+                <div id="navigation">
+                    <!-- Test mode: Back / Next (Finish on the last question) -->
+                    <button type="button" id="test-back-btn" class="test-nav-btn" hidden><i class="fas fa-arrow-left"></i> <span id="test-back-label"></span></button>
+                    <button id="submit-btn" style="display: none;"></button>
+                    <button id="next-question-btn" style="display: none;"><span id="next-question-label"></span> <i class="fas fa-arrow-right"></i></button>
+                    <button type="button" id="test-next-btn" class="test-nav-btn" hidden><span id="test-next-label"></span> <i class="fas fa-arrow-right"></i></button>
+                </div>
+                <p id="keyboard-hint" class="keyboard-hint" hidden></p>
             </div>
 
-            <div id="options-area">
+            <!-- Test mode: summary before submitting -->
+            <div id="finish-screen" hidden>
+                <h2 id="finish-heading" tabindex="-1"></h2>
+                <p id="finish-answered"></p>
+                <p id="finish-unanswered-label"></p>
+                <div id="finish-unanswered-list"></div>
+                <div class="finish-buttons">
+                    <button type="button" id="back-to-test-btn"></button>
+                    <button type="button" id="submit-test-btn"></button>
                 </div>
-
-            <div id="feedback-area">
-                </div>
-
-            <div id="navigation">
-                <button id="submit-btn" style="display: none;"></button>
-                <button id="next-question-btn" style="display: none;"><span id="next-question-label"></span> <i class="fas fa-arrow-right"></i></button>
             </div>
         </div> <div id="result-area" style="display: none;">
             <div id="score-card">
@@ -87,6 +116,7 @@
                 <div id="result-summary">
                     <span class="correct-count"><span id="correct-count-label"></span> <span id="correct-answers-count">0</span></span>
                     <span class="incorrect-count"><span id="incorrect-count-label"></span> <span id="incorrect-answers-count">0</span></span>
+                    <span class="unanswered-count" id="unanswered-summary" hidden><span id="unanswered-count-label"></span> <span id="unanswered-answers-count">0</span></span>
                 </div>
                 <p id="time-taken-summary"><span id="time-taken-label"></span> <span id="time-taken">--:--</span></p>
 
@@ -102,11 +132,18 @@
             </div> <div id="review-section" style="display: none;">
                 <button id="review-toggle-btn"></button>
                 <div id="review-content">
+                    <div id="review-filter" role="group">
+                        <button type="button" id="review-filter-wrong" class="review-filter-btn" aria-pressed="true"></button>
+                        <button type="button" id="review-filter-all" class="review-filter-btn" aria-pressed="false"></button>
                     </div>
+                    <div id="review-cards"></div>
+                </div>
             </div>
 
              <div class="result-buttons">
-                 <button id="share-score-btn"><i class="fas fa-share-alt"></i> <span id="share-score-label"></span></button>
+                 <button type="button" id="download-results-btn"><i class="fas fa-download"></i> <span id="download-results-label"></span></button>
+                 <button type="button" id="share-results-btn" hidden><i class="fas fa-share-alt"></i> <span id="share-results-label"></span></button>
+                 <button id="share-score-btn"><i class="fas fa-image"></i> <span id="share-score-label"></span></button>
                  </div>
         </div> </div> </body>
 </html>

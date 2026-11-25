@@ -10,6 +10,11 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   immediateCorrectionLabel: 'Show correction immediately',
   delayedCorrectionLabel: 'Show only in final review',
   startButtonLabel: 'Start Quiz',
+  nameRequiredHint: 'Enter your name to begin.',
+  resumeHeading: 'You have a test in progress.',
+  resumeDetails: 'Question {current} of {total} · {time} left',
+  resumeButtonLabel: 'Resume your test',
+  startOverButtonLabel: 'Start over',
 
   // While answering
   questionProgress: 'Question {current} / {total}',
@@ -24,6 +29,24 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   answerSaved: 'Answer saved.',
   submitButtonLabel: 'Submit Answer',
   nextButtonLabel: 'Next Question',
+  keyboardHint: 'Tip: press 1–{max} to choose, Enter for next',
+  keyboardHintMatching: 'Tip: press Enter for next',
+  keyboardHintQuiz: 'Tip: press 1–{max} to choose',
+
+  // Test mode: moving between questions and submitting
+  testNextButtonLabel: 'Next',
+  testBackButtonLabel: 'Back',
+  testFinishButtonLabel: 'Finish',
+  finishHeading: 'Ready to submit?',
+  finishAnsweredCount: 'You have answered {answered} of {total} questions.',
+  finishUnansweredLabel: 'Not answered yet (tap a number to go to it):',
+  finishAllAnswered: 'You have answered every question.',
+  finishJumpToQuestion: 'Go to question {number}',
+  finishPartlyAnsweredTag: '{number} · partly answered',
+  finishJumpToPartlyAnswered: 'Go to question {number} (partly answered)',
+  backToTestLabel: 'Back to the test',
+  submitTestLabel: 'Submit test',
+  leaveTestWarning: 'Your test is still in progress. Leave anyway?',
 
   // Feedback after an answer
   correctFeedback: 'Correct!',
@@ -45,13 +68,30 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   achievementsHeading: 'Achievements / Gifts Earned:',
   skillBreakdownHeading: 'Results by skill',
   skillScore: '{correct} / {total}',
+  skillScoreWithTime: '{correct} / {total} · {time}',
+  unansweredCountLabel: 'Not answered:',
   bonusGiftLabel: '(Bonus!)',
   shareButtonLabel: 'Share Score',
   shareNotReady: 'Share functionality is still loading, please try again in a moment.',
   shareFailed: 'Sorry, there was an error generating the score image.',
+  downloadResultsLabel: 'Download my results',
+  shareResultsLabel: 'Share my results',
+  shareResultsFailed: 'Sorry, the results could not be shared.',
+  shareResultsTitle: '{title}: results for {name}',
 
-  // Review of incorrect answers
-  reviewToggleClosed: 'Review Incorrect Answers',
+  // Downloaded results file
+  resultsFileHeading: 'Results',
+  resultsFileNameLabel: 'Name',
+  resultsFileDateLabel: 'Date',
+  resultsFileTimeTakenLabel: 'Time taken',
+  resultsFileScoreLabel: 'Score',
+  resultsFileSkillColumn: 'Skill',
+  resultsFileScoreColumn: 'Score',
+  resultsFileTimeColumn: 'Time',
+  resultsFileReviewHeading: 'Your answers',
+
+  // Review of answers at the end
+  reviewToggleClosed: 'Review my answers',
   reviewToggleOpen: 'Hide Review',
   reviewNothingToReview: 'No incorrect answers to review!',
   reviewQuestionLabel: 'Q:',
@@ -63,6 +103,11 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   reviewBonusSuffix: '(Bonus)',
   reviewNoExplanation: 'No specific justification provided.',
   reviewMatchingNoExplanation: 'Match all pairs correctly.',
+  reviewFilterWrong: 'Wrong only',
+  reviewFilterAll: 'All questions',
+  reviewYourAnswerTag: 'Your answer',
+  reviewNotAnsweredCard: 'Not answered',
+  reviewYourMatchesHeading: 'Your matches',
 
   // Answer key page (?quiz=<id>-ans)
   answerKeyLabel: 'Answer key',

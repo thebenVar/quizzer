@@ -178,3 +178,26 @@ describe('calculateSkillBreakdown', () => {
     expect(calculateSkillBreakdown([], questions, [])).toEqual([]);
   });
 });
+
+describe('keyboard shortcuts', () => {
+  it('maps 1–9 and A–Z to option positions', async () => {
+    const { optionIndexForKey } = await import('../app/utils.js');
+    expect(optionIndexForKey('1')).toBe(0);
+    expect(optionIndexForKey('9')).toBe(8);
+    expect(optionIndexForKey('a')).toBe(0);
+    expect(optionIndexForKey('D')).toBe(3);
+    expect(optionIndexForKey('0')).toBeNull();
+    expect(optionIndexForKey('Enter')).toBeNull();
+    expect(optionIndexForKey('é')).toBeNull();
+  });
+
+  it('ignores keys typed into text fields and dropdowns', async () => {
+    const { isTypingTarget } = await import('../app/utils.js');
+    expect(isTypingTarget({ tagName: 'INPUT' })).toBe(true);
+    expect(isTypingTarget({ tagName: 'textarea' })).toBe(true);
+    expect(isTypingTarget({ tagName: 'SELECT' })).toBe(true);
+    expect(isTypingTarget({ tagName: 'DIV', isContentEditable: true })).toBe(true);
+    expect(isTypingTarget({ tagName: 'BUTTON' })).toBe(false);
+    expect(isTypingTarget(null)).toBe(false);
+  });
+});

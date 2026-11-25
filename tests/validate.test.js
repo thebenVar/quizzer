@@ -186,3 +186,16 @@ describe('test mode and skills', () => {
     expect(() => validateQuizConsistency(meta, questions)).toThrow(/cannot have a bonus question/);
   });
 });
+
+describe('DEFAULT_UI_TEXT covers the app', () => {
+  it('has every text key that script.js asks for', async () => {
+    const fs = await import('node:fs');
+    const { DEFAULT_UI_TEXT } = await import('../app/validate.js');
+    const source = fs.readFileSync(new URL('../script.js', import.meta.url), 'utf8');
+    const keys = [...source.matchAll(/uiText\(\s*'(\w+)'/g), ...source.matchAll(/\btext\.(\w+)/g)].map((match) => match[1]);
+    expect(keys.length).toBeGreaterThan(20);
+    for (const key of keys) {
+      expect(DEFAULT_UI_TEXT, `uiText key "${key}"`).toHaveProperty(key);
+    }
+  });
+});

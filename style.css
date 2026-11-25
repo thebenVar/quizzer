@@ -396,8 +396,8 @@ a.quiz-card:focus-visible {
 
 
 #result-area { text-align: center; padding: 30px; border: 1px solid #bcd0f7; border-radius: 12px; background-color: #e7f0fe; margin-top: 30px; }
-#result-area h2 { margin-bottom: 15px; color: #0a58ca; font-size: 1.6em; }
-#result-area p { font-size: 1.25em; color: #333; margin-bottom: 10px; }
+#score-card h2 { margin-bottom: 15px; color: #0a58ca; font-size: 1.6em; }
+#score-card p { font-size: 1.25em; color: #333; margin-bottom: 10px; }
 #result-summary { margin-bottom: 15px; }
 #result-summary span { display: inline-block; margin: 0 15px; font-weight: 500; }
 .correct-count { color: #198754; }
@@ -536,13 +536,219 @@ a.quiz-card:focus-visible {
 #review-section { margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px; text-align: center; }
 #review-toggle-btn { background-color: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.95em; margin-bottom: 15px; }
 #review-toggle-btn:hover { background-color: #5a6268; }
-#review-content { display: none; text-align: left; max-height: 300px; overflow-y: auto; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; }
+#review-content { display: none; text-align: left; }
 .review-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #ccc; }
 .review-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .review-item p { margin: 5px 0; font-size: 1em; color: #495057; }
 .review-item strong { color: #212529; }
 .review-correct-answer { color: #198754; font-weight: bold; }
 .review-user-answer { color: #dc3545; }
+
+/* ------------------------------------------------------------------ */
+/* Start screen: name hint and resuming a saved test                    */
+/* ------------------------------------------------------------------ */
+.setup-hint {
+    margin: 8px 0 0;
+    font-size: 0.9em;
+    color: #6c757d;
+}
+#start-quiz-btn:disabled {
+    background-color: #adb5bd;
+    cursor: not-allowed;
+}
+#resume-panel {
+    margin-bottom: 10px;
+    padding: 18px;
+    border: 1px solid #bcd0f7;
+    border-radius: 10px;
+    background-color: #e7f0fe;
+}
+#resume-heading {
+    margin: 0 0 4px;
+    font-weight: 600;
+    color: #0a58ca;
+}
+#resume-details {
+    margin: 0 0 14px;
+    color: #495057;
+}
+.resume-buttons,
+.finish-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+#resume-btn,
+#submit-test-btn,
+#test-next-btn {
+    padding: 12px 26px;
+    font-size: 1.05em;
+    font-weight: 500;
+    color: #fff;
+    background-color: #0d6efd;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+#resume-btn:hover,
+#submit-test-btn:hover,
+#test-next-btn:hover {
+    background-color: #0b5ed7;
+}
+#start-over-btn,
+#back-to-test-btn,
+#test-back-btn {
+    padding: 12px 22px;
+    font-size: 1.05em;
+    font-weight: 500;
+    color: #495057;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+#start-over-btn:hover,
+#back-to-test-btn:hover,
+#test-back-btn:hover {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+/* Test mode: Back / Next, the quiet "Answer saved." and the keyboard tip */
+#navigation [hidden] {
+    display: none;
+}
+#test-back-btn {
+    margin-right: auto;
+}
+#test-next-btn {
+    margin-left: auto;
+}
+.feedback-quiet {
+    color: #6c757d;
+    font-weight: 400;
+    font-size: 0.95em;
+}
+.keyboard-hint {
+    margin: 14px 0 0;
+    font-size: 0.8em;
+    color: #adb5bd;
+}
+/* Phones and tablets have no keyboard to use the tip with */
+@media (hover: none) {
+    .keyboard-hint {
+        display: none;
+    }
+}
+
+/* Test mode: summary before submitting */
+#finish-screen {
+    padding: 10px 0;
+}
+#finish-screen h2 {
+    color: #2c3e50;
+    margin-top: 0;
+}
+#finish-answered {
+    font-size: 1.1em;
+    color: #343a40;
+}
+#finish-unanswered-label {
+    color: #6c757d;
+}
+#finish-unanswered-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 24px;
+}
+.finish-jump-btn {
+    min-width: 42px;
+    height: 42px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid #f1aeb5;
+    background-color: #fdecee;
+    color: #842029;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+.finish-jump-btn:hover,
+.finish-jump-btn:focus-visible {
+    border-color: #dc3545;
+}
+.finish-jump-partial {
+    border-color: #ffe69c;
+    background-color: #fff3cd;
+    color: #664d03;
+}
+.finish-jump-partial:hover,
+.finish-jump-partial:focus-visible {
+    border-color: #fd7e14;
+}
+#finish-heading:focus {
+    outline: none;
+}
+
+.unanswered-count { color: #6c757d; }
+
+/* Results: download and share */
+#download-results-btn,
+#share-results-btn {
+    padding: 12px 25px;
+    font-size: 1em;
+    font-weight: 500;
+    color: #fff;
+    background-color: #0d6efd;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+#download-results-btn:hover,
+#share-results-btn:hover {
+    background-color: #0b5ed7;
+}
+#share-results-btn[hidden] {
+    display: none;
+}
+
+/* Review of the participant's answers (answer key cards) */
+#review-filter {
+    display: inline-flex;
+    margin: 0 0 6px;
+    border: 1px solid #ced4da;
+    border-radius: 999px;
+    overflow: hidden;
+    background-color: #fff;
+}
+.review-filter-btn {
+    border: none;
+    background: none;
+    padding: 7px 16px;
+    font-size: 0.9em;
+    color: #495057;
+    cursor: pointer;
+}
+.review-filter-btn[aria-pressed="true"] {
+    background-color: #0d6efd;
+    color: #fff;
+}
+#review-content {
+    text-align: center;
+}
+#review-cards {
+    text-align: left;
+}
+.review-empty {
+    text-align: center;
+    color: #495057;
+}
 
 #result-area, #submit-btn, #quiz-content {
      display: none;
@@ -817,6 +1023,51 @@ a.quiz-card:focus-visible {
     color: #198754;
 }
 
+/* A participant's answer, in the review at the end */
+.ak-card-right {
+    border-left: 4px solid #198754;
+}
+.ak-card-wrong {
+    border-left: 4px solid #dc3545;
+}
+.ak-option-wrong {
+    background-color: #fdecee;
+    border-color: #f1aeb5;
+    color: #842029;
+    font-weight: 600;
+}
+.ak-option-wrong .ak-option-letter {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+}
+.ak-option-wrong .ak-option-tag {
+    color: #dc3545;
+}
+.ak-cross {
+    color: #dc3545;
+    font-weight: 700;
+}
+.ak-not-answered {
+    margin: 12px 0 0 46px;
+    color: #842029;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+.ak-matches-heading-yours {
+    color: #495057;
+}
+.ak-matches-heading + .ak-match-list + .ak-matches-heading {
+    margin-top: 12px;
+}
+.ak-match-yours {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 1em;
+}
+.ak-match-wrong {
+    background-color: #fdecee;
+    color: #842029;
+}
+
 /* Why / How to approach */
 .ak-note {
     margin-top: 12px;
@@ -859,15 +1110,26 @@ a.quiz-card:focus-visible {
     }
     .ak-options,
     .ak-matches,
-    .ak-note {
+    .ak-note,
+    .ak-not-answered {
         margin-left: 0;
     }
-    .ak-match {
+    .ak-match,
+    .ak-match-yours {
         grid-template-columns: 1fr;
         gap: 2px;
     }
     .ak-match-arrow {
         display: none;
+    }
+    .ak-match-yours {
+        position: relative;
+        padding-right: 32px;
+    }
+    .ak-match-yours .ak-cross {
+        position: absolute;
+        top: 8px;
+        right: 12px;
     }
     /* One swipeable row instead of several wrapped rows that would cover the screen */
     .ak-nav {
@@ -892,6 +1154,33 @@ a.quiz-card:focus-visible {
         flex-basis: 100%;
         margin-left: 34px;
         padding: 0;
+    }
+}
+
+/* Phone width: give the results and review cards room */
+@media (max-width: 560px) {
+    body {
+        padding: 10px;
+    }
+    #quiz-container {
+        padding: 22px 16px;
+        margin-top: 10px;
+    }
+    #result-area {
+        padding: 18px 12px;
+    }
+    #result-summary span {
+        margin: 0 8px;
+    }
+    #skill-breakdown-list li {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+    #skill-breakdown-list .skill-bar {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+    #review-cards .ak-card {
+        padding: 14px;
     }
 }
 

@@ -85,3 +85,20 @@ export function calculateSkillBreakdown(skills, questions, answers) {
     })
     .filter((row) => row.total > 0);
 }
+
+// Keyboard shortcuts: "1"–"9" and "a"–"z" (by position) pick the Nth option (0-based); other keys give null.
+export function optionIndexForKey(key) {
+  if (typeof key !== 'string' || key.length !== 1) return null;
+  if (key >= '1' && key <= '9') return Number(key) - 1;
+  const lower = key.toLowerCase();
+  if (lower >= 'a' && lower <= 'z') return lower.charCodeAt(0) - 97;
+  return null;
+}
+
+// True when a key press is meant for a text field or dropdown, not for a shortcut.
+export function isTypingTarget(target) {
+  if (!target || typeof target !== 'object') return false;
+  if (target.isContentEditable) return true;
+  const tag = typeof target.tagName === 'string' ? target.tagName.toUpperCase() : '';
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}

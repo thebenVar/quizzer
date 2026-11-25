@@ -2,7 +2,7 @@
   "title": "Consultant Aptitude Test",
   "description": "Problem solving and critical thinking, in eight short sections. About 45 minutes.",
   "mode": "test",
-  "showAnswerReview": false,
+  "showAnswerReview": true,
   "skills": [
     {
       "id": "pattern",

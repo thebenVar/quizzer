@@ -9,7 +9,10 @@ let startQuizButton, quizContentElement, questionTextElement, optionsAreaElement
     reviewSection, reviewToggleButton, reviewContent, achievementsListElement,
     liveGiftsElement, timeTakenElement, nameInputElement,
     resultMessageElement, correctionModeSelectorElement,
-    nextQuestionButtonElement, initialSetupElement;
+    nextQuestionButtonElement, initialSetupElement,
+    questionViewElement, finishScreenElement, testBackButton, testNextButton,
+    keyboardHintElement, nameHintElement, resumePanelElement, reviewCardsElement,
+    downloadResultsButton, shareResultsButton;
 
 // --- Quiz State ---
 let currentQuestionIndex = 0;
@@ -19,7 +22,6 @@ let incorrectCount = 0;
 let currentStreak = 0;
 let earnedGifts = []; // Will store objects like { class: 'fas fa-icon', source: 'streak'/'bonus' }
 let userAnswers = {};
-let incorrectlyAnsweredQuestions = []; // Now stores { questionText, userAnswer, correctAnswer, justification, isMatching? }
 let totalPossibleScore = 0;
 let overallTimerInterval;
 let timeLeft = 0;
@@ -36,6 +38,23 @@ let currentStreakRewards = {};
 let currentBonusGiftClass = null;
 let quizLib = null; // Functions from app/utils.js and app/runtime.js, loaded when the quiz starts
 let showImmediateCorrection = true;
+
+// Answers and timing, for grading at the end (test mode), the review and the results file
+let selections = {};        // the participant's answer by question id (as a string)
+let timeSpent = {};         // ms each question was on screen, by question id
+let optionOrders = {};      // the order options were shown in, by question id (kept on revisits)
+let questionShownAt = null; // when the current question's on-screen time started
+let questionDisplayed = false;
+let unansweredCount = 0;
+let lastResults = null;     // what the results screen shows, kept for the review and the download
+let reviewFilter = 'wrong';
+
+// Test mode: saved progress and the deadline
+let quizDeadline = null;    // absolute timestamp (ms), so time keeps running while away
+let testInProgress = false;
+let progressStorage = null;
+let quizFingerprintValue = '';
+let ticksSinceSave = 0;
 
 // --- Sound Effects (Tone.js Synths) ---
 let correctSound, incorrectSound, completeSound, giftSound;
@@ -76,6 +95,16 @@ function getDOMElements() {
     resultMessageElement = document.getElementById('result-message');
     correctionModeSelectorElement = document.getElementById('correction-mode-selector');
     nextQuestionButtonElement = document.getElementById('next-question-btn');
+    questionViewElement = document.getElementById('question-view');
+    finishScreenElement = document.getElementById('finish-screen');
+    testBackButton = document.getElementById('test-back-btn');
+    testNextButton = document.getElementById('test-next-btn');
+    keyboardHintElement = document.getElementById('keyboard-hint');
+    nameHintElement = document.getElementById('name-hint');
+    resumePanelElement = document.getElementById('resume-panel');
+    reviewCardsElement = document.getElementById('review-cards');
+    downloadResultsButton = document.getElementById('download-results-btn');
+    shareResultsButton = document.getElementById('share-results-btn');
 }
 
 
@@ -94,43 +123,19 @@ function defineSynths() {
     }
 }
 
+// Sounds play only once a click (the Start button) has started the audio;
+// before that (e.g. a test submitted on page load) they are silently skipped.
 async function playSound(synth, note, duration) {
-    if (typeof Tone === 'undefined') return;
-
-    if (!isAudioContextStarted && Tone.context.state !== 'running') {
+    if (typeof Tone === 'undefined' || !isAudioContextStarted || !synth) return;
+    if (Tone.context.state !== 'running') {
         try {
             await Tone.start();
-            isAudioContextStarted = true;
-            console.log("Audio Context Started by playSound.");
-            defineSynths();
-        } catch (e) {
-            console.error("Error starting Audio Context:", e);
+        } catch {
             return;
         }
-    } else if (!isAudioContextStarted && Tone.context.state === 'running') {
-        isAudioContextStarted = true;
-         defineSynths();
+        if (Tone.context.state !== 'running') return;
     }
-
-    if (synth) {
-        if (Tone.context.state === 'running') {
-            synth.triggerAttackRelease(note, duration, Tone.now());
-        } else {
-            console.warn("Audio context suspended, trying to resume and play.");
-             Tone.start().then(() => {
-                 isAudioContextStarted = true;
-                 synth.triggerAttackRelease(note, duration, Tone.now());
-             }).catch(e => console.error("Could not resume context to play sound:", e));
-        }
-    } else {
-        console.warn("Synth not ready, attempting to define and play again.");
-        defineSynths();
-        if(synth && Tone.context.state === 'running') {
-             synth.triggerAttackRelease(note, duration, Tone.now());
-        } else {
-            console.error("Synth still not defined or context not running after attempting re-initialization.");
-        }
-    }
+    synth.triggerAttackRelease(note, duration, Tone.now());
 }
 
 // With ?quiz=<id>, loads that quiz and fills the page with its title, logo and
@@ -138,13 +143,16 @@ async function playSound(synth, note, duration) {
 async function initPage() {
     let loader;
     try {
-        let utils, runtime;
-        [loader, utils, runtime] = await Promise.all([
+        let utils, runtime, progress, results, answerKey;
+        [loader, utils, runtime, progress, results, answerKey] = await Promise.all([
             import('./app/loader.js'),
             import('./app/utils.js'),
             import('./app/runtime.js'),
+            import('./app/progress.js'),
+            import('./app/results.js'),
+            import('./app/answerKey.js'),
         ]);
-        quizLib = { ...utils, ...runtime };
+        quizLib = { ...utils, ...runtime, ...progress, ...results, renderQuestionCard: answerKey.renderQuestionCard };
     } catch (error) {
         showQuizLoadError(error);
         return;
@@ -211,10 +219,107 @@ async function initQuiz(loader, quizId) {
 
         applyQuizMetaToPage(currentQuizMeta);
         initialSetupElement.style.display = 'block';
-        startQuizButton.disabled = false;
+        updateStartButton();
+
+        if (isTestMode()) {
+            progressStorage = quizLib.getStorage(window);
+            quizFingerprintValue = quizLib.quizFingerprint(quizQuestions);
+            offerSavedProgress();
+        }
     } catch (error) {
         showQuizLoadError(error);
     }
+}
+
+// Test mode needs a name before it can start; a quiz falls back to the default name.
+function updateStartButton() {
+    if (!isTestMode()) {
+        startQuizButton.disabled = false;
+        return;
+    }
+    const hasName = nameInputElement.value.trim().length > 0;
+    startQuizButton.disabled = !hasName;
+    nameHintElement.hidden = hasName;
+}
+
+// Test mode: a test saved part-way can be resumed, or is submitted if its time ran out meanwhile.
+function offerSavedProgress() {
+    const saved = quizLib.loadProgress(progressStorage, currentQuizMeta.id, quizFingerprintValue);
+    const order = saved ? quizLib.restoreQuestionOrder(saved.order, quizQuestions) : null;
+    if (!order) {
+        if (saved) quizLib.clearProgress(progressStorage, currentQuizMeta.id);
+        return;
+    }
+
+    if (quizLib.isExpired(saved.deadline)) {
+        restoreTestState(saved, order);
+        submitTest();
+        return;
+    }
+
+    const current = Math.min(Math.max(saved.index, 0), order.length - 1) + 1;
+    document.getElementById('resume-heading').textContent = uiText('resumeHeading');
+    // The time left counts down while the panel is shown; at zero the saved answers are submitted.
+    const updateResumeDetails = () => {
+        const left = quizLib.secondsLeft(saved.deadline);
+        document.getElementById('resume-details').textContent = uiText('resumeDetails', {
+            current,
+            total: order.length,
+            time: quizLib.formatMinutesSeconds(left),
+        });
+        if (left <= 0) {
+            stopResumeCountdown();
+            restoreTestState(saved, order);
+            submitTest();
+        }
+    };
+    stopResumeCountdown();
+    resumeCountdown = setInterval(updateResumeDetails, 1000);
+    updateResumeDetails();
+    document.getElementById('resume-btn').onclick = () => {
+        stopResumeCountdown();
+        startAudioFromClick();
+        // Re-check in case the time ran out while the start screen was open.
+        restoreTestState(saved, order);
+        if (quizLib.isExpired(quizDeadline)) {
+            submitTest();
+        } else {
+            beginTest();
+        }
+    };
+    if (resumeCountdown !== null) { // not already submitted because the time ran out
+        resumePanelElement.hidden = false;
+        setStartAreaVisible(false);
+    }
+}
+
+let resumeCountdown = null;
+function stopResumeCountdown() {
+    clearInterval(resumeCountdown);
+    resumeCountdown = null;
+}
+
+// Lets the end-of-test sound play after resuming (browsers need a click to start audio).
+function startAudioFromClick() {
+    if (typeof Tone === 'undefined' || isAudioContextStarted) return;
+    Tone.start().then(() => {
+        isAudioContextStarted = true;
+        defineSynths();
+    }).catch(() => {});
+}
+
+function setStartAreaVisible(visible) {
+    document.getElementById('name-input-area').style.display = visible ? '' : 'none';
+    startQuizButton.style.display = visible ? '' : 'none';
+}
+
+function startOver() {
+    stopResumeCountdown();
+    quizLib.clearProgress(progressStorage, currentQuizMeta.id);
+    resumePanelElement.hidden = true;
+    setStartAreaVisible(true);
+    updateStartButton();
+    nameInputElement.focus();
 }
 
 async function showHomePage(loader) {
@@ -330,6 +435,19 @@ function applyQuizMetaToPage(meta) {
     document.getElementById('achievements-heading').textContent = text.achievementsHeading;
     document.getElementById('skill-breakdown-heading').textContent = text.skillBreakdownHeading;
 
+    nameHintElement.textContent = text.nameRequiredHint;
+    document.getElementById('resume-btn').textContent = text.resumeButtonLabel;
+    document.getElementById('start-over-btn').textContent = text.startOverButtonLabel;
+    document.getElementById('test-back-label').textContent = text.testBackButtonLabel;
+    document.getElementById('finish-heading').textContent = text.finishHeading;
+    document.getElementById('back-to-test-btn').textContent = text.backToTestLabel;
+    document.getElementById('submit-test-btn').textContent = text.submitTestLabel;
+    document.getElementById('unanswered-count-label').textContent = text.unansweredCountLabel;
+    document.getElementById('review-filter-wrong').textContent = text.reviewFilterWrong;
+    document.getElementById('review-filter-all').textContent = text.reviewFilterAll;
+    document.getElementById('download-results-label').textContent = text.downloadResultsLabel;
+    document.getElementById('share-results-label').textContent = text.shareResultsLabel;
+
     // A test gives no hints while it runs: no feedback choice, no live right/wrong counts.
     correctionModeSelectorElement.style.display = meta.mode === 'test' ? 'none' : '';
     document.getElementById('live-stats').style.display = meta.mode === 'test' ? 'none' : '';
@@ -358,27 +476,310 @@ function isTestMode() {
     return currentQuizMeta.mode === 'test';
 }
 
-// In test mode an answer is recorded silently, then the test moves on.
-function recordTestAnswer(question, result) {
-    score += result.pointsAwarded;
-    if (result.isCorrect) {
-        correctCount++;
-    } else {
-        incorrectCount++;
-        if (result.reviewItem) {
-            incorrectlyAnsweredQuestions.push(result.reviewItem);
-        }
-    }
-    feedbackAreaElement.textContent = uiText('answerSaved');
-    feedbackAreaElement.className = 'feedback-submitted';
-    scheduleOrWaitForNext();
-}
-
 function getAchievementLabel(labelKey) {
     return currentQuizMeta.gamification.achievementLabels[labelKey];
 }
 
+// --- Time on each question (only while it is on screen; revisits add up) ---
+function startQuestionClock() {
+    questionShownAt = document.hidden ? null : Date.now();
+}
+
+function stopQuestionClock() {
+    const question = currentQuizData[currentQuestionIndex];
+    if (questionShownAt !== null && question) {
+        const id = String(question.id);
+        timeSpent[id] = (timeSpent[id] || 0) + (Date.now() - questionShownAt);
+    }
+    questionShownAt = null;
+}
+
+// The order a question's options (or a matching question's right-hand items) are
+// shown in: shuffled once, then kept, so going back shows them in the same place.
+function getOptionOrder(question) {
+    const id = String(question.id);
+    const items = question.type === 'matching' ? question.pairs.map(pair => pair[1]) : question.options;
+    const saved = optionOrders[id];
+    if (Array.isArray(saved) && saved.length === items.length && items.every(item => saved.includes(item))) {
+        return saved;
+    }
+    let order;
+    if (question.type === 'matching') {
+        order = quizLib.shuffleArray([...items]);
+    } else {
+        // "All the above" / "None of the above" stay last
+        const isSpecial = option => ['all the above', 'none of the above'].includes(option.toLowerCase().trim());
+        order = [...quizLib.shuffleArray(items.filter(option => !isSpecial(option))), ...items.filter(isSpecial)];
+    }
+    optionOrders[id] = order;
+    return order;
+}
+
+function showKeyboardHint(question) {
+    if (question.type === 'mcq') {
+        // In a quiz a right answer moves on by itself, so the tip only mentions choosing.
+        keyboardHintElement.textContent = uiText(isTestMode() ? 'keyboardHint' : 'keyboardHintQuiz', { max: Math.min(question.options.length, 9) });
+        keyboardHintElement.hidden = false;
+    } else if (isTestMode()) {
+        keyboardHintElement.textContent = uiText('keyboardHintMatching');
+        keyboardHintElement.hidden = false;
+    } else {
+        keyboardHintElement.hidden = true;
+    }
+}
+
+// --- Test mode: select, then Next; submit at the end ---
+
+function startTestFlow() {
+    const name = nameInputElement.value.trim();
+    if (!name) {
+        updateStartButton();
+        return;
+    }
+    quizLib.clearProgress(progressStorage, currentQuizMeta.id);
+    userName = name;
+    currentQuizData = quizLib.shuffleArray(quizQuestions.filter(q => !q.isBonus));
+    currentQuestionIndex = 0;
+    selections = {};
+    timeSpent = {};
+    optionOrders = {};
+    quizStartTime = Date.now();
+    quizDeadline = quizLib.computeDeadline(quizStartTime, currentQuizMeta.timing.timeLimitSeconds);
+    beginTest();
+}
+
+function restoreTestState(saved, order) {
+    currentQuizData = order;
+    currentQuestionIndex = Math.min(Math.max(saved.index, 0), order.length - 1);
+    selections = { ...saved.selections };
+    timeSpent = { ...saved.timeSpent };
+    optionOrders = { ...saved.optionOrder };
+    userName = saved.name || uiText('defaultPlayerName');
+    quizStartTime = saved.startedAt;
+    quizDeadline = saved.deadline;
+    testInProgress = true;
+}
+
+function beginTest() {
+    initialSetupElement.style.display = 'none';
+    setHomeLinkVisible(false);
+    quizContentElement.style.display = 'block';
+    testInProgress = true;
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    calculateTotalPossibleScore();
+    startDeadlineTimer();
+    if (testInProgress) {
+        showTestQuestion(currentQuestionIndex);
+    }
+}
+
+function warnBeforeLeaving(event) {
+    if (!testInProgress) return undefined;
+    saveTestProgress();
+    event.preventDefault();
+    event.returnValue = uiText('leaveTestWarning');
+    return event.returnValue;
+}
+
+function saveTestProgress() {
+    if (!testInProgress) return;
+    // Include the time on the current question so far, without stopping its clock.
+    const spent = { ...timeSpent };
+    const question = currentQuizData[currentQuestionIndex];
+    if (questionShownAt !== null && question) {
+        const id = String(question.id);
+        spent[id] = (spent[id] || 0) + (Date.now() - questionShownAt);
+    }
+    quizLib.saveProgress(progressStorage, currentQuizMeta.id, quizFingerprintValue, {
+        order: currentQuizData.map(q => q.id),
+        index: currentQuestionIndex,
+        selections,
+        name: userName,
+        startedAt: quizStartTime,
+        deadline: quizDeadline,
+        timeSpent: spent,
+        optionOrder: optionOrders,
+    });
+}
+
+function startDeadlineTimer() {
+    clearInterval(overallTimerInterval);
+    ticksSinceSave = 0;
+    const tick = () => {
+        timeLeft = quizLib.secondsLeft(quizDeadline);
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+            clearInterval(overallTimerInterval);
+            submitTest();
+            return;
+        }
+        ticksSinceSave++;
+        if (ticksSinceSave >= 10) { // keeps the saved time per question roughly current
+            ticksSinceSave = 0;
+            saveTestProgress();
+        }
+    };
+    overallTimerInterval = setInterval(tick, 1000);
+    tick();
+}
+
+function countCompleteAnswers() {
+    return currentQuizData.filter(q => quizLib.answerStatus(q, quizLib.selectionFor(selections, q)) === 'complete').length;
+}
+
+function updateTestProgressBar() {
+    const total = currentQuizData.length;
+    progressBarElement.style.width = `${total > 0 ? (countCompleteAnswers() / total) * 100 : 0}%`;
+}
+
+function showTestQuestion(index) {
+    if (!testInProgress) return;
+    stopQuestionClock();
+    currentQuestionIndex = Math.max(0, Math.min(index, currentQuizData.length - 1));
+    const question = currentQuizData[currentQuestionIndex];
+    const isLast = currentQuestionIndex === currentQuizData.length - 1;
+
+    finishScreenElement.hidden = true;
+    questionViewElement.hidden = false;
+    optionsAreaElement.innerHTML = '';
+    feedbackAreaElement.textContent = '';
+    feedbackAreaElement.className = '';
+    submitButton.style.display = 'none';
+    nextQuestionButtonElement.style.display = 'none';
+
+    progressTextElement.textContent = uiText('questionProgress', { current: currentQuestionIndex + 1, total: currentQuizData.length });
+    updateTestProgressBar();
+    questionTextElement.textContent = question.prompt;
+
+    const selection = quizLib.selectionFor(selections, question);
+    if (question.type === 'mcq') {
+        getOptionOrder(question).forEach(optionText => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = optionText;
+            button.classList.add('mcq-option');
+            button.setAttribute('aria-pressed', String(selection === optionText));
+            if (selection === optionText) button.classList.add('selected');
+            button.onclick = () => selectTestOption(question, optionText, button);
+            optionsAreaElement.appendChild(button);
+        });
+    } else {
+        const initial = selection && typeof selection === 'object' ? selection : {};
+        loadMatchingOptions(question, initial, (left, value) => {
+            const id = String(question.id);
+            const current = { ...(selections[id] || {}) };
+            if (value) current[left] = value; else delete current[left];
+            selections[id] = current;
+            updateTestProgressBar();
+            saveTestProgress();
+        });
+    }
+
+    testBackButton.hidden = currentQuestionIndex === 0;
+    testNextButton.hidden = false;
+    document.getElementById('test-next-label').textContent = uiText(isLast ? 'testFinishButtonLabel' : 'testNextButtonLabel');
+    showKeyboardHint(question);
+
+    questionDisplayed = true;
+    startQuestionClock();
+    saveTestProgress();
+}
+
+function selectTestOption(question, optionText, button) {
+    selections[String(question.id)] = optionText;
+    optionsAreaElement.querySelectorAll('.mcq-option').forEach(btn => {
+        const isSelected = btn === button;
+        btn.classList.toggle('selected', isSelected);
+        btn.setAttribute('aria-pressed', String(isSelected));
+    });
+    feedbackAreaElement.textContent = uiText('answerSaved');
+    feedbackAreaElement.className = 'feedback-quiet';
+    updateTestProgressBar();
+    saveTestProgress();
+}
+
+function goToNextTestQuestion() {
+    if (currentQuestionIndex >= currentQuizData.length - 1) {
+        showFinishScreen();
+    } else {
+        showTestQuestion(currentQuestionIndex + 1);
+    }
+}
+
+function goToPreviousTestQuestion() {
+    if (currentQuestionIndex > 0) {
+        showTestQuestion(currentQuestionIndex - 1);
+    }
+}
+
+// The summary before submitting: how many are answered, and links to the others.
+function showFinishScreen() {
+    stopQuestionClock();
+    questionDisplayed = false;
+    questionViewElement.hidden = true;
+    finishScreenElement.hidden = false;
+
+    const total = currentQuizData.length;
+    // Not complete: unanswered, or a matching question with only some pairs chosen
+    // (those count as answered, and are graded, but are flagged here).
+    const unanswered = [];
+    let answered = 0;
+    currentQuizData.forEach((q, index) => {
+        const status = quizLib.answerStatus(q, quizLib.selectionFor(selections, q));
+        if (status !== 'none') answered++;
+        if (status !== 'complete') unanswered.push({ index, partial: status === 'partial' });
+    });
+    progressTextElement.textContent = uiText('finishHeading');
+    updateTestProgressBar();
+    document.getElementById('finish-answered').textContent = uiText('finishAnsweredCount', { answered, total });
+    document.getElementById('finish-unanswered-label').textContent = uiText(unanswered.length > 0 ? 'finishUnansweredLabel' : 'finishAllAnswered');
+
+    const list = document.getElementById('finish-unanswered-list');
+    list.replaceChildren();
+    list.hidden = unanswered.length === 0;
+    unanswered.forEach(({ index, partial }) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = partial ? 'finish-jump-btn finish-jump-partial' : 'finish-jump-btn';
+        button.textContent = partial ? uiText('finishPartlyAnsweredTag', { number: index + 1 }) : String(index + 1);
+        button.title = uiText(partial ? 'finishJumpToPartlyAnswered' : 'finishJumpToQuestion', { number: index + 1 });
+        button.setAttribute('aria-label', button.title);
+        button.onclick = () => showTestQuestion(index);
+        list.appendChild(button);
+    });
+    saveTestProgress();
+    // Focus the heading, not "Submit test", so a second Enter cannot submit by accident.
+    document.getElementById('finish-heading').focus();
+}
+
+// Grades the stored answers. Called by "Submit test", and when the time runs out.
+function submitTest() {
+    if (!testInProgress) return;
+    stopQuestionClock();
+    questionDisplayed = false;
+    testInProgress = false;
+    window.removeEventListener('beforeunload', warnBeforeLeaving);
+    clearInterval(overallTimerInterval);
+
+    const graded = quizLib.gradeSelections(currentQuizData, selections, currentQuizMeta.uiText);
+    score = graded.score;
+    correctCount = graded.correctCount;
+    incorrectCount = graded.incorrectCount;
+    unansweredCount = graded.unansweredCount;
+    answerLog = graded.answerLog;
+    calculateTotalPossibleScore();
+    quizLib.clearProgress(progressStorage, currentQuizMeta.id);
+
+    initialSetupElement.style.display = 'none';
+    resumePanelElement.hidden = true;
+    showResults(Math.min(Date.now(), quizDeadline));
+}
+
 function startQuizFlow() {
+     if (isTestMode()) {
+         startTestFlow();
+         return;
+     }
      console.log("Starting quiz flow...");
      userName = nameInputElement.value.trim() || uiText('defaultPlayerName');
      initialSetupElement.style.display = 'none'; // Hide the entire initial setup div
@@ -407,8 +808,11 @@ function startQuizFlow() {
      incorrectCount = 0;
      currentStreak = 0;
      earnedGifts = [];
-     incorrectlyAnsweredQuestions = [];
      answerLog = [];
+     selections = {};
+     timeSpent = {};
+     optionOrders = {};
+     unansweredCount = 0;
 
      quizStartTime = Date.now();
      calculateTotalPossibleScore();
@@ -474,6 +878,7 @@ function updateLiveCountsAndStreak() {
 function proceedToNextQuestion() {
      clearTimeout(autoProceedTimeout);
      nextQuestionButtonElement.style.display = 'none';
+     stopQuestionClock();
      currentQuestionIndex++;
      loadQuestion();
  }
@@ -548,25 +953,13 @@ function loadQuestion() {
         case "mcq": loadMCQOptions(currentQuestion); break;
         case "matching": loadMatchingOptions(currentQuestion); submitButton.style.display = 'inline-block'; break;
     }
+    showKeyboardHint(currentQuestion);
+    questionDisplayed = true;
+    startQuestionClock();
 }
 
 function loadMCQOptions(question) {
-     let regularOptions = [];
-     let specialOptions = [];
-
-     question.options.forEach(optionText => {
-         const lowerCaseOption = optionText.toLowerCase().trim();
-         if (lowerCaseOption === "all the above" || lowerCaseOption === "none of the above") {
-             specialOptions.push(optionText);
-         } else {
-             regularOptions.push(optionText);
-         }
-     });
-
-     quizLib.shuffleArray(regularOptions);
-     const finalOptions = [...regularOptions, ...specialOptions];
-
-     finalOptions.forEach(optionText => {
+     getOptionOrder(question).forEach(optionText => {
         const button = document.createElement('button');
         button.textContent = optionText;
         button.classList.add('mcq-option');
@@ -581,10 +974,7 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
 
     const result = quizLib.checkMCQAnswer(question, selectedOption, showImmediateCorrection, currentQuizMeta.uiText);
     answerLog.push({ questionId: question.id, isCorrect: result.isCorrect });
-    if (isTestMode()) {
-        recordTestAnswer(question, result);
-        return;
-    }
+    selections[String(question.id)] = selectedOption;
     if (result.isCorrect) {
         score += result.pointsAwarded;
         if (!question.isBonus) {
@@ -605,9 +995,6 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
         feedbackAreaElement.className = 'feedback-incorrect';
         playSound(incorrectSound, "C3", "8n");
         triggerFeedbackFlash(false, question.isBonus);
-        if (result.reviewItem) {
-            incorrectlyAnsweredQuestions.push(result.reviewItem);
-        }
     }
 
     if (!question.isBonus) {
@@ -629,12 +1016,12 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
  }
 
 
-function loadMatchingOptions(question) {
+// `initial`: matches already chosen ({ left: right }); `onChange(left, right)` is called on each change.
+function loadMatchingOptions(question, initial = {}, onChange = (left, value) => { userAnswers[left] = value; }) {
      const container = document.createElement('div');
      container.classList.add('matching-container');
      const leftItems = question.pairs.map(pair => pair[0]);
-     const rightItems = question.pairs.map(pair => pair[1]);
-     quizLib.shuffleArray(rightItems);
+     const rightItems = getOptionOrder(question);
 
      leftItems.forEach((leftItem) => {
          const leftElement = document.createElement('div');
@@ -653,8 +1040,9 @@ function loadMatchingOptions(question) {
              optionElement.textContent = rightItem;
              selectElement.appendChild(optionElement);
          });
+         selectElement.value = initial[leftItem] || '';
           selectElement.onchange = (event) => {
-              userAnswers[leftItem] = event.target.value;
+              onChange(leftItem, event.target.value);
           };
          container.appendChild(leftElement);
          container.appendChild(selectElement);
@@ -668,11 +1056,8 @@ function loadMatchingOptions(question) {
 
      const result = quizLib.checkMatchingAnswer(currentQuestion, userAnswers, showImmediateCorrection, currentQuizMeta.uiText);
      answerLog.push({ questionId: currentQuestion.id, isCorrect: result.isCorrect });
+     selections[String(currentQuestion.id)] = { ...userAnswers };
      optionsAreaElement.querySelectorAll('.match-select').forEach(sel => sel.disabled = true);
-     if (isTestMode()) {
-         recordTestAnswer(currentQuestion, result);
-         return;
-     }
      if (currentQuestion.isBonus) {
          if (result.isCorrect) {
              feedbackAreaElement.textContent = result.feedback;
@@ -688,9 +1073,6 @@ function loadMatchingOptions(question) {
              feedbackAreaElement.className = 'feedback-incorrect';
              playSound(incorrectSound, "C3", "8n");
              triggerFeedbackFlash(false);
-             if (result.reviewItem) {
-                 incorrectlyAnsweredQuestions.push(result.reviewItem);
-             }
          }
      } else {
          score += result.pointsAwarded;
@@ -709,9 +1091,6 @@ function loadMatchingOptions(question) {
              feedbackAreaElement.className = 'feedback-submitted';
              playSound(incorrectSound, "C3", "8n");
              triggerFeedbackFlash(false);
-             if (result.reviewItem) {
-                 incorrectlyAnsweredQuestions.push(result.reviewItem);
-             }
          }
          updateLiveCountsAndStreak();
      }
@@ -720,10 +1099,13 @@ function loadMatchingOptions(question) {
  }
 
 
-function showResults() {
-    quizEndTime = Date.now();
+// `endTime` (ms): when the quiz ended; defaults to now.
+function showResults(endTime) {
+    quizEndTime = endTime ?? Date.now();
     clearInterval(overallTimerInterval);
     clearTimeout(autoProceedTimeout);
+    stopQuestionClock();
+    questionDisplayed = false;
 
     quizContentElement.style.display = 'none';
 
@@ -731,12 +1113,22 @@ function showResults() {
     totalPossibleScoreElement.textContent = totalPossibleScore;
     correctAnswersCountElement.textContent = correctCount;
     incorrectAnswersCountElement.textContent = incorrectCount;
+    document.getElementById('unanswered-answers-count').textContent = unansweredCount;
+    document.getElementById('unanswered-summary').hidden = !(isTestMode() && unansweredCount > 0);
 
-    const durationMs = quizEndTime - quizStartTime;
-    const durationSeconds = Math.floor(durationMs / 1000);
-    const minutesTaken = Math.floor(durationSeconds / 60);
-    const secondsTaken = durationSeconds % 60;
-    timeTakenElement.textContent = `${minutesTaken}:${secondsTaken < 10 ? '0' : ''}${secondsTaken}`;
+    const durationSeconds = Math.max(0, Math.floor((quizEndTime - quizStartTime) / 1000));
+    timeTakenElement.textContent = quizLib.formatMinutesSeconds(durationSeconds);
+
+    // Every question asked, with the participant's answer, for the review and the results file
+    const graded = quizLib.gradeSelections(currentQuizData, selections, currentQuizMeta.uiText, optionOrders);
+    lastResults = {
+        date: new Date(quizEndTime),
+        durationSeconds,
+        score,
+        totalPossibleScore,
+        items: graded.items,
+        skillRows: quizLib.calculateSkillResults(currentQuizMeta.skills, currentQuizData, answerLog, timeSpent),
+    };
 
     resultMessageElement.textContent = quizLib.getResultMessage({
         score,
@@ -755,11 +1147,14 @@ function showResults() {
         achievementsListElement.parentElement.style.display = 'block';
     }
 
-    populateReviewSection();
-    const canReview = currentQuizMeta.showAnswerReview && incorrectlyAnsweredQuestions.length > 0;
-    reviewSection.style.display = canReview ? 'block' : 'none';
+    reviewFilter = 'wrong';
+    renderReview();
+    reviewSection.style.display = currentQuizMeta.showAnswerReview ? 'block' : 'none';
 
-    shareScoreButton.style.display = 'inline-block';
+    // The score image is part of the quiz game; a test shares its results file instead.
+    shareScoreButton.style.display = isTestMode() ? 'none' : 'inline-block';
+    downloadResultsButton.style.display = 'inline-block';
+    shareResultsButton.hidden = !canShareResultsFile();
 
 
     resultAreaElement.style.display = 'block';
@@ -770,7 +1165,7 @@ function showResults() {
 function populateSkillBreakdown() {
     const section = document.getElementById('skill-breakdown');
     const list = document.getElementById('skill-breakdown-list');
-    const rows = quizLib.calculateSkillBreakdown(currentQuizMeta.skills, currentQuizData, answerLog);
+    const rows = lastResults.skillRows;
 
     list.innerHTML = '';
     section.hidden = rows.length === 0;
@@ -787,7 +1182,7 @@ function populateSkillBreakdown() {
         bar.appendChild(fill);
         const value = document.createElement('span');
         value.className = 'skill-score';
-        value.textContent = uiText('skillScore', { correct: row.correct, total: row.total });
+        value.textContent = quizLib.skillScoreText(row, currentQuizMeta.uiText);
         item.append(label, bar, value);
         list.appendChild(item);
     }
@@ -852,64 +1247,87 @@ function populateAchievements() {
 }
 
 
-function populateReviewSection() {
-     reviewContent.innerHTML = '';
-     if (incorrectlyAnsweredQuestions.length === 0) {
-         reviewContent.innerHTML = `<p>${uiText('reviewNothingToReview')}</p>`;
-         return;
-     }
-     incorrectlyAnsweredQuestions.forEach(item => {
-         const div = document.createElement('div');
-         div.classList.add('review-item');
-         const qText = document.createElement('p');
-         qText.innerHTML = `<strong>${uiText('reviewQuestionLabel')}</strong> ${item.questionText}`;
-         div.appendChild(qText);
+// Review of the participant's answers: answer key cards with their answer marked.
+function renderReview() {
+    if (!lastResults) return;
+    const items = quizLib.filterReviewItems(lastResults.items, reviewFilter);
+    reviewCardsElement.replaceChildren();
+    if (items.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'review-empty';
+        empty.textContent = uiText('reviewNothingToReview');
+        reviewCardsElement.appendChild(empty);
+    }
+    for (const item of items) {
+        reviewCardsElement.appendChild(quizLib.renderQuestionCard(item.question, item.number, currentQuizMeta.uiText, item.response));
+    }
+    document.getElementById('review-filter-wrong').setAttribute('aria-pressed', String(reviewFilter === 'wrong'));
+    document.getElementById('review-filter-all').setAttribute('aria-pressed', String(reviewFilter === 'all'));
+}
 
-         if (item.isMatching) {
-             const userAnsText = document.createElement('p');
-             userAnsText.innerHTML = `<strong>${uiText('reviewYourMatchesLabel')}</strong>`;
-             div.appendChild(userAnsText);
-             const userList = document.createElement('ul');
-             userList.style.listStyle = 'none'; userList.style.paddingLeft = '15px';
-              for (const left in item.userAnswer) {
-                  const li = document.createElement('li');
-                  li.innerHTML = `${left} &rarr; <span class="review-user-answer">${item.userAnswer[left]}</span>`;
-                  userList.appendChild(li);
-              }
-              div.appendChild(userList);
-             const correctAnsText = document.createElement('p');
-             correctAnsText.innerHTML = `<strong>${uiText('reviewCorrectMatchesLabel')}</strong>`;
-              div.appendChild(correctAnsText);
-              const correctList = document.createElement('ul');
-              correctList.style.listStyle = 'none'; correctList.style.paddingLeft = '15px';
-              for (const left in item.correctAnswer) {
-                  const li = document.createElement('li');
-                  li.innerHTML = `${left} &rarr; <span class="review-correct-answer">${item.correctAnswer[left]}</span>`;
-                  correctList.appendChild(li);
-              }
-              div.appendChild(correctList);
-         } else {
-             const userAnsText = document.createElement('p');
-             userAnsText.innerHTML = `<strong>${uiText('reviewYourAnswerLabel')}</strong> <span class="review-user-answer">${item.userAnswer}</span>`;
-             div.appendChild(userAnsText);
+function setReviewFilter(filter) {
+    reviewFilter = filter;
+    renderReview();
+}
 
-             const correctAnsText = document.createElement('p');
-             correctAnsText.innerHTML = `<strong>${uiText('reviewCorrectAnswerLabel')}</strong> <span class="review-correct-answer">${item.correctAnswer}</span>`;
-             div.appendChild(correctAnsText);
-         }
+// --- Download and share the results as a single HTML file ---
+function buildResultsFile() {
+    const html = quizLib.buildResultsHtml({
+        meta: currentQuizMeta,
+        name: userName,
+        date: lastResults.date,
+        durationSeconds: lastResults.durationSeconds,
+        score: lastResults.score,
+        totalPossibleScore: lastResults.totalPossibleScore,
+        skillRows: lastResults.skillRows,
+        items: lastResults.items,
+        review: currentQuizMeta.showAnswerReview,
+        doc: document,
+    });
+    const fileName = quizLib.resultsFileName(currentQuizMeta.id, userName, lastResults.date);
+    return { html, fileName };
+}
 
-         if (item.justification) {
-             const justificationText = document.createElement('p');
-             justificationText.style.marginTop = '8px';
-             justificationText.style.fontStyle = 'italic';
-             justificationText.style.fontSize = '0.9em';
-             justificationText.innerHTML = `<strong>${uiText('explanationPrefix')}</strong> ${item.justification}`;
-             div.appendChild(justificationText);
-         }
+function downloadResults() {
+    if (!lastResults) return;
+    const { html, fileName } = buildResultsFile();
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
 
-         reviewContent.appendChild(div);
-     });
- }
+function makeResultsFile() {
+    const { html, fileName } = buildResultsFile();
+    return new File([html], fileName, { type: 'text/html' });
+}
+
+function canShareResultsFile() {
+    try {
+        return Boolean(lastResults && typeof File === 'function' && navigator.canShare && navigator.share &&
+            navigator.canShare({ files: [makeResultsFile()] }));
+    } catch {
+        return false;
+    }
+}
+
+async function shareResults() {
+    if (!lastResults) return;
+    try {
+        await navigator.share({
+            files: [makeResultsFile()],
+            title: uiText('shareResultsTitle', { title: currentQuizMeta.title, name: userName }),
+        });
+    } catch (error) {
+        if (error && error.name === 'AbortError') return; // the participant closed the share sheet
+        console.error('Error sharing results:', error);
+        alert(uiText('shareResultsFailed'));
+    }
+}
 
 function toggleReview() {
      if (reviewContent.style.display === 'none' || reviewContent.style.display === '') {
@@ -953,6 +1371,52 @@ async function shareScoreAsImage() {
 }
 
 
+// --- Keyboard shortcuts ---
+// 1–9 / A–Z choose that option; Enter = Next; in test mode ← / → = Back / Next.
+function handleShortcutKey(event) {
+    if (!quizLib || !currentQuizMeta || !questionDisplayed) return;
+    if (quizLib.isTypingTarget(event.target)) return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    const question = currentQuizData[currentQuestionIndex];
+    if (!question) return;
+
+    if (event.key === 'Enter') {
+        // A focused button outside the options (Back, Next…) handles Enter itself.
+        if (event.target instanceof HTMLButtonElement && !optionsAreaElement.contains(event.target)) return;
+        if (isTestMode()) {
+            event.preventDefault();
+            // Enter on a focused option that is not yet chosen chooses it; otherwise it is Next.
+            const option = event.target instanceof HTMLElement ? event.target.closest('.mcq-option') : null;
+            if (option && optionsAreaElement.contains(option) && !option.classList.contains('selected')) {
+                option.click();
+            } else {
+                goToNextTestQuestion();
+            }
+        } else if (nextQuestionButtonElement.style.display !== 'none') {
+            event.preventDefault();
+            proceedToNextQuestion();
+        }
+        return;
+    }
+    if (isTestMode() && event.key === 'ArrowRight') {
+        event.preventDefault();
+        goToNextTestQuestion();
+        return;
+    }
+    if (isTestMode() && event.key === 'ArrowLeft') {
+        event.preventDefault();
+        goToPreviousTestQuestion();
+        return;
+    }
+
+    const index = quizLib.optionIndexForKey(event.key);
+    if (index === null || question.type !== 'mcq') return;
+    const button = optionsAreaElement.querySelectorAll('.mcq-option')[index];
+    if (!button || button.disabled) return;
+    event.preventDefault();
+    button.click();
+}
+
 // --- Event Listeners ---
 document.addEventListener('DOMContentLoaded', () => {
     getDOMElements();
@@ -967,8 +1431,9 @@ document.addEventListener('DOMContentLoaded', () => {
              } catch (e) {
                  console.error("Error starting Audio Context on start button:", e);
              }
-         } else if (!correctSound){
-              defineSynths();
+         } else {
+              isAudioContextStarted = true;
+              if (!correctSound) defineSynths();
          }
 
             startQuizFlow();
@@ -990,6 +1455,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     reviewToggleButton.addEventListener('click', toggleReview);
     shareScoreButton.addEventListener('click', shareScoreAsImage);
+    document.getElementById('review-filter-wrong').addEventListener('click', () => setReviewFilter('wrong'));
+    document.getElementById('review-filter-all').addEventListener('click', () => setReviewFilter('all'));
+    downloadResultsButton.addEventListener('click', downloadResults);
+    shareResultsButton.addEventListener('click', shareResults);
+
+    // Test mode
+    nameInputElement.addEventListener('input', () => { if (currentQuizMeta) updateStartButton(); });
+    testNextButton.addEventListener('click', goToNextTestQuestion);
+    testBackButton.addEventListener('click', goToPreviousTestQuestion);
+    document.getElementById('back-to-test-btn').addEventListener('click', () => showTestQuestion(currentQuestionIndex));
+    document.getElementById('submit-test-btn').addEventListener('click', submitTest);
+    document.getElementById('start-over-btn').addEventListener('click', startOver);
+
+    document.addEventListener('keydown', handleShortcutKey);
+
+    // On-screen time stops while the page is hidden (another tab, phone locked).
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stopQuestionClock();
+            saveTestProgress();
+        } else if (questionDisplayed) {
+            startQuestionClock();
+        }
+    });
+    window.addEventListener('pagehide', () => saveTestProgress());
 
     initPage();
 
