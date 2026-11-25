@@ -36,6 +36,12 @@ export function getResultMessage({ score, totalPossibleScore, userName = 'Quiz T
   return selectedBand.message.replaceAll('{name}', userName);
 }
 
+export function getShareFileName(scoring = {}) {
+  return typeof scoring.shareFileName === 'string' && scoring.shareFileName.trim().length > 0
+    ? scoring.shareFileName.trim()
+    : 'quiz-score.png';
+}
+
 export function getNewStreakGiftClass({ currentStreak, streakRewards = {}, earnedGifts = [] }) {
   const giftClass = streakRewards[currentStreak];
 

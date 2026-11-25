@@ -4,6 +4,7 @@ import {
   calculateRegularQuestionStats,
   formatMinutesSeconds,
   getResultMessage,
+  getShareFileName,
   getNewStreakGiftClass,
   shuffleArray,
 } from '../app/utils.js';
@@ -72,6 +73,31 @@ describe('getResultMessage', () => {
     });
 
     expect(message).toBe('Keep practicing, Ben!');
+  });
+
+  it('uses metadata result bands to override the default tone', () => {
+    const message = getResultMessage({
+      score: 3,
+      totalPossibleScore: 5,
+      userName: 'Ben',
+      resultBands: [
+        { minPercent: 60, message: 'Solid work, {name}.' },
+        { minPercent: 0, message: 'Study a bit more, {name}.' },
+      ],
+    });
+
+    expect(message).toBe('Solid work, Ben.');
+  });
+});
+
+describe('getShareFileName', () => {
+  it('returns the configured metadata filename when present', () => {
+    expect(getShareFileName({ shareFileName: 'custom-score.png' })).toBe('custom-score.png');
+  });
+
+  it('falls back to the default filename when metadata is missing', () => {
+    expect(getShareFileName()).toBe('quiz-score.png');
+    expect(getShareFileName({})).toBe('quiz-score.png');
   });
 });
 

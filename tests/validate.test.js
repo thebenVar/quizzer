@@ -68,6 +68,28 @@ describe('validateMeta', () => {
     expect(validated.uiText.startButtonLabel).toBe('Start Quiz');
     expect(validated.scoring.shareFileName).toBe('quiz-score.png');
     expect(validated.gamification.streakRewards).toEqual({});
+    expect(validated.gamification.achievementLabels).toEqual({
+      perfectScore: 'Perfect Score! ✨',
+      highScore: 'Bible Whiz! 👍',
+      noAchievements: 'No special achievements or gifts this time.',
+    });
+  });
+
+  it('merges custom achievement labels with defaults', () => {
+    const validated = validateMeta({
+      ...baseMeta,
+      gamification: {
+        achievementLabels: {
+          highScore: 'Quiz Champ!',
+        },
+      },
+    });
+
+    expect(validated.gamification.achievementLabels).toEqual({
+      perfectScore: 'Perfect Score! ✨',
+      highScore: 'Quiz Champ!',
+      noAchievements: 'No special achievements or gifts this time.',
+    });
   });
 });
 

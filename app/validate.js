@@ -20,7 +20,8 @@ const DEFAULT_RESULT_BANDS = Object.freeze([
 
 const DEFAULT_ACHIEVEMENT_LABELS = Object.freeze({
   perfectScore: 'Perfect Score! ✨',
-  highScore: 'High Score!',
+  highScore: 'Bible Whiz! 👍',
+  noAchievements: 'No special achievements or gifts this time.',
 });
 
 function assert(condition, message) {
