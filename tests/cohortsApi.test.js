@@ -80,7 +80,7 @@ describe('cohort codes', () => {
 describe('GET /api/cohort (public check)', () => {
   async function setup() {
     const db = createMemoryDb();
-    await addCohort(db, 'apt', 'NLCI Nov 2026', 'ABC234');
+    await addCohort(db, 'apt', 'Nov 2026 workshop', 'ABC234');
     await addCohort(db, 'apt', 'Old group', 'DEF567', false);
     await addCohort(db, 'req', 'Other quiz', 'GHJ892');
     return { db, handler: createCohortCheckHandler({ db: () => db }) };
@@ -90,7 +90,7 @@ describe('GET /api/cohort (public check)', () => {
     const { handler } = await setup();
     const response = await call(handler, fakeRequest({ url: '/api/cohort?quiz=apt&code=%20abc%20234%20' }));
     expect(response.status).toBe(200);
-    expect(response.json).toEqual({ ok: true, code: 'ABC234', label: 'NLCI Nov 2026' });
+    expect(response.json).toEqual({ ok: true, code: 'ABC234', label: 'Nov 2026 workshop' });
     expect(response.headers['cache-control']).toBe('no-store');
   });
 
@@ -130,10 +130,10 @@ describe('/api/cohorts (facilitators)', () => {
   it('creates, lists with counts, deactivates and reactivates', async () => {
     const db = createMemoryDb();
     const handler = cohortsHandler(db, { now: () => new Date('2026-11-25T10:00:00Z') });
-    const created = await call(handler, jsonRequest({ quizId: 'apt', label: '  NLCI <Nov> 2026 ' }, auth));
+    const created = await call(handler, jsonRequest({ quizId: 'apt', label: '  Workshop <Nov> 2026 ' }, auth));
     expect(created.status).toBe(201);
     const { cohort } = created.json;
-    expect(cohort).toMatchObject({ label: 'NLCI <Nov> 2026', quizId: 'apt', active: true, submissionCount: 0 });
+    expect(cohort).toMatchObject({ label: 'Workshop <Nov> 2026', quizId: 'apt', active: true, submissionCount: 0 });
     expect(normalizeCohortCode(cohort.code)).toBe(cohort.code);
 
     await db.insertSubmission({ id: 's1', quizId: 'apt', submittedAt: '2026-11-25T11:00:00Z', cohortCode: cohort.code, cohortId: cohort.id });
@@ -168,7 +168,7 @@ describe('submissions with a cohort code (never refused because of it)', () => {
   const ID = '1b4e28ba-2fa1-4d2b-883f-0016d3cca427';
   async function setup() {
     const db = createMemoryDb();
-    const active = await addCohort(db, 'apt', 'NLCI Nov 2026', 'ABC234');
+    const active = await addCohort(db, 'apt', 'Nov 2026 workshop', 'ABC234');
     await addCohort(db, 'apt', 'Old group', 'DEF567', false);
     await addCohort(db, 'req', 'Other quiz', 'GHJ892');
     const handler = createSubmitHandler({ db: () => db, loadQuiz, now: () => new Date('2026-11-25T10:00:00Z') });
@@ -193,7 +193,7 @@ describe('submissions with a cohort code (never refused because of it)', () => {
     const response = await call(handler, jsonRequest(body(quizId, sent)));
     expect(response.status).toBe(201);
     expect(response.json.cohort).toBe(hasCohort);
-    expect(response.json.cohortLabel).toBe(hasCohort ? 'NLCI Nov 2026' : null);
+    expect(response.json.cohortLabel).toBe(hasCohort ? 'Nov 2026 workshop' : null);
     const stored = db.rows.get(ID);
     expect(stored.cohortCode).toBe(storedCode);
     expect(stored.cohortId).toBe(hasCohort ? active.id : null);
@@ -205,7 +205,7 @@ describe('submissions with a cohort code (never refused because of it)', () => {
     await db.setCohortActive(active.id, false);
     const retry = await call(handler, jsonRequest(body('apt', 'ABC234')));
     expect(retry.status).toBe(200);
-    expect(retry.json).toMatchObject({ duplicate: true, cohort: true, cohortLabel: 'NLCI Nov 2026' });
+    expect(retry.json).toMatchObject({ duplicate: true, cohort: true, cohortLabel: 'Nov 2026 workshop' });
   });
 
   it('filters the results list by cohort and shows its label', async () => {
@@ -214,7 +214,7 @@ describe('submissions with a cohort code (never refused because of it)', () => {
     await call(handler, jsonRequest({ ...body('apt', 'ZZZ999'), id: '2b4e28ba-2fa1-4d2b-883f-0016d3cca427', name: 'Ben' }));
     const results = createResultsHandler({ db: () => db, env });
     const inCohort = await call(results, fakeRequest({ url: '/api/results?quiz=apt&cohort=abc234', headers: auth }));
-    expect(inCohort.json.submissions.map((row) => [row.name, row.cohortLabel])).toEqual([['Asha', 'NLCI Nov 2026']]);
+    expect(inCohort.json.submissions.map((row) => [row.name, row.cohortLabel])).toEqual([['Asha', 'Nov 2026 workshop']]);
     const none = await call(results, fakeRequest({ url: '/api/results?quiz=apt&cohort=none', headers: auth }));
     expect(none.json.submissions.map((row) => [row.name, row.cohortCode, row.cohortLabel])).toEqual([['Ben', 'ZZZ999', null]]);
     const all = await call(results, fakeRequest({ url: '/api/results?quiz=apt', headers: auth }));

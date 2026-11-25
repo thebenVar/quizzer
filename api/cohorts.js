@@ -49,7 +49,7 @@ export function createCohortsHandler({
         const quizId = typeof body.quizId === 'string' ? body.quizId : '';
         if (!QUIZ_ID_PATTERN.test(quizId)) throw new HttpError(400, '"quizId" is not a valid quiz name.');
         const label = cleanCohortLabel(body.label);
-        if (!label) throw new HttpError(400, 'Give the cohort a name (at most 80 characters), e.g. "NLCI Nov 2026".');
+        if (!label) throw new HttpError(400, 'Give the cohort a name (at most 80 characters), e.g. "Nov 2026 workshop".');
         const quiz = await loadQuiz(quizId);
         if (!quiz) throw new HttpError(404, `There is no quiz "${quizId}".`);
         if (quiz.meta.cohortCodes === 'off') {

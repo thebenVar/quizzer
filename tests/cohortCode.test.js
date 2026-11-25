@@ -11,8 +11,8 @@ function respond(status, body) {
 
 describe('checkCohortCode', () => {
   it('asks the server with the tidied code', async () => {
-    const fetchFn = respond(200, { ok: true, code: 'ABC234', label: 'NLCI Nov 2026' });
-    expect(await checkCohortCode('cit-aptitude', ' abc-234 ', fetchFn)).toEqual({ status: 'valid', code: 'ABC234', label: 'NLCI Nov 2026' });
+    const fetchFn = respond(200, { ok: true, code: 'ABC234', label: 'Nov 2026 workshop' });
+    expect(await checkCohortCode('cit-aptitude', ' abc-234 ', fetchFn)).toEqual({ status: 'valid', code: 'ABC234', label: 'Nov 2026 workshop' });
     expect(fetchFn.mock.calls[0][0]).toBe('api/cohort?quiz=cit-aptitude&code=ABC234');
   });
 

@@ -4,7 +4,7 @@ import { buildResultsCsv, csvField, formatDuration, skillColumns } from '../app/
 
 const submissions = [
   {
-    id: 'a', quizId: 'cit-aptitude', name: 'Ravi, "the quick"', cohortLabel: 'NLCI Nov 2026', cohortCode: 'ABC234', submittedAt: '2026-11-25T10:05:00.000Z', score: 30, total: 40, timeTakenSeconds: 2165,
+    id: 'a', quizId: 'cit-aptitude', name: 'Ravi, "the quick"', cohortLabel: 'Nov 2026 workshop', cohortCode: 'ABC234', submittedAt: '2026-11-25T10:05:00.000Z', score: 30, total: 40, timeTakenSeconds: 2165,
     skills: [{ id: 'logic', label: 'Logic', points: 4, outOf: 5 }, { id: 'detail', label: 'Detail, fine', points: 5, outOf: 5 }],
   },
   {
@@ -45,7 +45,7 @@ describe('results CSV', () => {
     expect(csv.startsWith('\uFEFF')).toBe(true);
     const lines = csv.slice(1).split('\r\n');
     expect(lines[0]).toBe('Name,Submitted,Cohort,Cohort code,Score,Out of,Logic (/5),"Detail, fine (/5)",Time taken (min:sec),Quiz,Submission id');
-    expect(lines[1]).toMatch(/^"Ravi, ""the quick""",2026-11-2\d \d\d:\d\d,NLCI Nov 2026,ABC234,30,40,4,5,36:05,cit-aptitude,a$/);
+    expect(lines[1]).toMatch(/^"Ravi, ""the quick""",2026-11-2\d \d\d:\d\d,Nov 2026 workshop,ABC234,30,40,4,5,36:05,cit-aptitude,a$/);
     expect(lines[2]).toMatch(/^"प्रिया\nशर्मा",[^,]*,,ZZZ999,12,40,1,,1:01,cit-aptitude,b$/);
     expect(lines[3]).toMatch(/^"'=HYPERLINK\(""http:\/\/x""\)",/);
     expect(csv.endsWith('\r\n')).toBe(true);

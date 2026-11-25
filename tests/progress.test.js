@@ -40,7 +40,7 @@ const state = {
   timeSpent: { c: 4000 },
   optionOrder: { c: ['x', 'y'] },
   cohortCode: 'ABC234',
-  cohortLabel: 'NLCI Nov 2026',
+  cohortLabel: 'Nov 2026 workshop',
 };
 
 describe('quizFingerprint', () => {
