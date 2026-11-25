@@ -61,7 +61,74 @@
         .fac-inactive .fac-badge { background: #f1f3f5; color: #6c757d; }
         .fac-muted { color: #6c757d; }
         .stats-summary { margin: 4px 0 10px; }
-        .stats-controls { margin: 6px 0 10px; }
+        .stats-controls { margin: 6px 0 10px; display: flex; flex-wrap: wrap; gap: 8px 18px; }
+        /* Dashboard tab (app/dashboardView.js) */
+        .dash { position: relative; transition: opacity .2s; }
+        .dash.dash-loading { opacity: .5; }
+        .dash-empty { margin: 8px 0; }
+        .dash-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 4px 0 16px; }
+        .dash-tile { border: 1px solid #e9ecef; border-radius: 12px; padding: 12px 14px; min-width: 0; }
+        .dash-tile-label { color: #6c757d; font-size: .85em; margin: 0 0 4px; }
+        .dash-tile-value { color: #2c3e50; font-size: 1.7em; font-weight: 600; margin: 0; line-height: 1.2; }
+        .dash-tile-sub { color: #6c757d; font-size: .82em; margin: 2px 0 0; }
+        .dash-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+        .dash-wide { grid-column: 1 / -1; }
+        .dash-card { border: 1px solid #e9ecef; border-radius: 12px; padding: 14px 16px; min-width: 0; }
+        .dash-card-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
+        .dash-card h3 { margin: 0; font-size: 1.02em; color: #2c3e50; }
+        .dash-sub { color: #6c757d; font-size: .85em; margin: 4px 0 12px; }
+        .dash-note { color: #6c757d; font-size: .82em; margin: 10px 0 0; }
+        .dash-svg { width: 100%; min-width: 0; }
+        .dash-svg-chart { display: block; overflow: visible; }
+        .dash-svg-chart:focus { outline: none; }
+        .dash-svg-chart:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; border-radius: 4px; }
+        .dash-tick { fill: #6c757d; font-size: 11px; font-variant-numeric: tabular-nums; }
+        .dash-marker-label { fill: #343a40; font-size: 11px; font-weight: 600; }
+        .dash-col { transition: opacity .1s; }
+        .dash-col.dash-active { opacity: .7; }
+        .dash-table-view .fac-table-wrap { max-height: 320px; overflow: auto; }
+        .fac .dash-table tbody tr, .fac .dash-table tbody tr:hover { cursor: default; background: none; }
+        .dash-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+        .dash-bar-row { display: grid; grid-template-columns: minmax(0, 10em) minmax(0, 1fr) 3em; gap: 2px 10px; align-items: center; }
+        .dash-bar-label { font-size: .9em; color: #343a40; overflow-wrap: anywhere; min-width: 0; }
+        .dash-bar-name { display: block; }
+        .dash-bar-sub { display: block; color: #6c757d; font-size: .85em; }
+        .dash-bar-value { text-align: right; font-size: .9em; color: #343a40; font-variant-numeric: tabular-nums; }
+        .dash-track { position: relative; height: 24px; border-radius: 4px; }
+        .dash-track::before { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 12px; border-radius: 4px; background: #e8f0fb; }
+        .dash-track:focus { outline: none; }
+        .dash-track:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; }
+        .dash-bar { position: absolute; left: 0; top: 6px; height: 12px; background: #2a78d6; border-radius: 0 4px 4px 0; transition: opacity .1s; }
+        .dash-track:hover .dash-bar, .dash-track:focus-visible .dash-bar { opacity: .8; }
+        .dash-dot-track::before { background: linear-gradient(to right, #e9ecef 1px, transparent 1px) 0 0 / 25% 100% repeat-x, #fff; top: 0; height: 24px; border-left: 1px solid #ced4da; border-radius: 0; }
+        .dash-bar.dash-bar-context { top: 9px; height: 6px; background: #c3c2b7; }
+        .dash-dot { position: absolute; top: 7px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; }
+        .dash-track:hover .dash-dot, .dash-track:focus-visible .dash-dot { box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,.25); }
+        .dash-scale-row { margin-top: -2px; }
+        .dash-scale { position: relative; height: 14px; }
+        .dash-scale-tick { position: absolute; top: 0; transform: translateX(-50%); font-size: 11px; color: #6c757d; font-variant-numeric: tabular-nums; }
+        .dash-scale-0 { transform: none; }
+        .dash-scale-100 { transform: translateX(-100%); }
+        .dash-legend { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .85em; color: #343a40; }
+        .dash-legend li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+        .dash-legend-n { color: #6c757d; }
+        .dash-key { flex: none; display: inline-block; }
+        .dash-key-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dash-key-bar { width: 14px; height: 6px; border-radius: 0 3px 3px 0; background: #c3c2b7; }
+        .dash-tooltip { position: absolute; z-index: 5; pointer-events: none; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,.12); padding: 6px 10px; font-size: .85em; max-width: 240px; }
+        .dash-tip-row { display: flex; align-items: baseline; gap: 6px; }
+        .dash-tip-row strong { color: #212529; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .dash-tip-row span { color: #495057; overflow-wrap: anywhere; }
+        .dash-tip-key { flex: none; align-self: center; width: 12px; height: 3px; border-radius: 2px; }
+        .dash-health { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+        .fac button.dash-health-item { display: grid; justify-items: start; align-content: start; gap: 4px; text-align: left; background: #fff; color: #343a40; border: 1px solid #dee2e6; border-radius: 12px; padding: 10px 12px; min-width: 0; }
+        .fac button.dash-health-item:hover { background: #f4f8ff; border-color: #bcd0f7; }
+        .dash-health-item.dash-health-off { display: grid; justify-items: start; align-content: start; gap: 4px; color: #6c757d; background: #f8f9fa; border: 1px dashed #dee2e6; border-radius: 12px; padding: 10px 12px; min-width: 0; font-size: .95em; }
+        .dash-health-count { font-size: 1.6em; font-weight: 600; color: #2c3e50; line-height: 1.1; }
+        .dash-health-rule { font-size: .8em; color: #6c757d; }
+        .fac .dash-latest-table th, .fac .dash-latest-table td { padding: 8px 8px; }
+        .fac .dash-latest-table td.fac-name, .fac .dash-latest-table td.dash-latest-cohort { white-space: normal; min-width: 5em; overflow-wrap: anywhere; }
+        @media (max-width: 760px) { .dash-grid { grid-template-columns: minmax(0, 1fr); } }
         .stats-table td.stats-prompt { white-space: normal; min-width: 14em; max-width: 28em; }
         .stats-correct { min-width: 9em; }
         .stats-bar { display: inline-block; vertical-align: middle; width: 70px; height: 9px; border-radius: 999px; background: #e9ecef; overflow: hidden; margin-right: 8px; }
@@ -94,6 +161,12 @@
             .fac-toolbar-actions button { flex: 1; }
             .stats-table td.stats-prompt { min-width: 8em; font-size: .9em; }
             .fac-tabs button { flex: 1; padding: 8px 6px; }
+            .dash-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            .dash-card { padding: 12px; }
+            .dash-bar-row { grid-template-columns: minmax(0, 1fr) 3em; }
+            .dash-bar-label { grid-column: 1 / -1; }
+            .dash-scale-row .dash-bar-label { display: none; }
+            .dash-health { grid-template-columns: minmax(0, 1fr); }
         }
     </style>
     <script type="module" src="app/resultsPage.js"></script>
@@ -137,12 +210,19 @@
             </div>
 
             <div class="fac-tabs" role="tablist">
-                <button type="button" role="tab" id="tab-results-btn" aria-controls="tab-results" aria-selected="true">Results</button>
+                <button type="button" role="tab" id="tab-dashboard-btn" aria-controls="tab-dashboard" aria-selected="true">Dashboard</button>
+                <button type="button" role="tab" id="tab-results-btn" aria-controls="tab-results" aria-selected="false">Results</button>
                 <button type="button" role="tab" id="tab-stats-btn" aria-controls="tab-stats" aria-selected="false">Question statistics</button>
                 <button type="button" role="tab" id="tab-cohorts-btn" aria-controls="tab-cohorts" aria-selected="false">Cohorts</button>
             </div>
 
-            <section id="tab-results" role="tabpanel" aria-labelledby="tab-results-btn">
+            <section id="tab-dashboard" role="tabpanel" aria-labelledby="tab-dashboard-btn">
+                <p id="dashboard-status" class="fac-status" role="status"></p>
+                <div id="dashboard-view"></div>
+                <p class="fac-note">For the quiz, cohort and dates chosen above. Hover over or tab to a bar for its numbers, or use "Show as table". Average score is the mean of each person's score as a % of the total; skills are the points scored as a % of the points available.</p>
+            </section>
+
+            <section id="tab-results" role="tabpanel" aria-labelledby="tab-results-btn" hidden>
                 <div class="fac-row">
                     <p id="results-status" class="fac-status" role="status"></p>
                     <button type="button" id="export-csv-btn">Export CSV</button>

@@ -24,6 +24,19 @@ export function statFlags(item, thresholds = STATS_THRESHOLDS) {
   return flags;
 }
 
+// Whether a question has a flag ('very-easy', 'very-hard' or 'no-separation'),
+// itself or in any of its statements.
+export function hasStatFlag(item, flagId, thresholds = STATS_THRESHOLDS) {
+  const has = (entry) => statFlags(entry, thresholds).some((flag) => flag.id === flagId);
+  return has(item) || (item.statements || []).some(has);
+}
+
+export const STAT_FLAG_NAMES = Object.freeze({
+  'very-easy': 'Very easy',
+  'very-hard': 'Very hard',
+  'no-separation': "Doesn't separate",
+});
+
 // The first line of a prompt, cut to `max` characters.
 export function shortPrompt(prompt, max = 90) {
   const line = String(prompt ?? '').split('\n').find((part) => part.trim() !== '') ?? '';

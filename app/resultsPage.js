@@ -1,5 +1,6 @@
 // The facilitators' results page (results.html): sign in with the facilitator
 // password, pick a quiz, cohort and dates, then
+//   Dashboard: headline numbers and charts for those filters (app/dashboardView.js);
 //   Results: every submission, one person's answers, CSV export, delete;
 //   Question statistics: per question, from GET /api/stats, with a CSV export;
 //   Cohorts: make cohort codes with a link to share, deactivate / reactivate them.
@@ -12,10 +13,12 @@ import { renderQuestionCard } from './answerKey.js';
 import { buildResultsCsv, cohortText, formatDateTime, formatDuration, skillColumns } from './resultsCsv.js';
 import { buildStatsCsv } from './statsFormat.js';
 import { renderStatsView } from './statsView.js';
+import { renderDashboard } from './dashboardView.js';
 import { flushOutbox } from './submissions.js';
 import { formatDateYMD } from './results.js';
 
 const PASSWORD_KEY = 'quizzer:facilitator-password';
+const TABS = ['dashboard', 'results', 'stats', 'cohorts'];
 
 const state = {
   password: '',
@@ -23,13 +26,17 @@ const state = {
   quizId: '',
   cohortFilter: '', // '' = all, 'none', or a cohort code
   cohorts: [],
-  tab: 'results',
+  tab: 'dashboard',
   submissions: [],
   selectedId: null,
   reviewFilter: 'all',
   stats: null,
   statsSort: 'quiz',
   statsSelected: null,
+  statsFlag: '', // '' or a flag id: only the questions with that flag
+  dashboardRequest: 0,
+  dashboardStats: null, // the dashboard's own copy, so it never overwrites the Question statistics tab's
+  statsRequest: 0,
   details: new Map(), // submission id -> Promise<submission with answers>
   quizzes: new Map(), // quizId -> Promise<{ meta, questions } | { error }>
 };
@@ -137,6 +144,7 @@ function signOut() {
   state.submissions = [];
   state.selectedId = null;
   state.stats = null;
+  state.dashboardStats = null;
   state.details.clear();
   showLogin('');
 }
@@ -251,24 +259,91 @@ function filterParams() {
 async function changeQuiz() {
   state.selectedId = null;
   state.statsSelected = null;
+  state.statsFlag = '';
   state.cohortFilter = '';
   await loadCohorts();
   await refreshTab();
 }
 
 async function refreshTab() {
-  if (state.tab === 'stats') await refreshStats();
+  if (state.tab === 'dashboard') await refreshDashboard();
+  else if (state.tab === 'stats') await refreshStats();
   else if (state.tab === 'cohorts') renderCohorts();
   else await refresh();
 }
 
 function showTab(tab) {
   state.tab = tab;
-  for (const name of ['results', 'stats', 'cohorts']) {
+  for (const name of TABS) {
     $(`tab-${name}`).hidden = name !== tab;
     $(`tab-${name}-btn`).setAttribute('aria-selected', String(name === tab));
   }
-  refreshTab();
+  return refreshTab();
+}
+
+// --- Dashboard ---
+
+async function refreshDashboard() {
+  const root = $('dashboard-view');
+  const status = $('dashboard-status');
+  if (!state.quizId) {
+    root.replaceChildren();
+    status.textContent = 'No results have been sent yet.';
+    return;
+  }
+  const request = ++state.dashboardRequest;
+  status.textContent = 'Loading…';
+  root.classList.add('dash-loading'); // the previous render stays, faded, until the new one is ready
+  const params = filterParams();
+  try {
+    const [list, statsResult, quiz] = await Promise.all([
+      api('GET', 'api/results', params),
+      api('GET', 'api/stats', params).then((body) => ({ body }), (error) => ({ error })),
+      quizFor(state.quizId),
+    ]);
+    if (request !== state.dashboardRequest) return; // the filters changed meanwhile
+    if (statsResult.error && handleAuthError(statsResult.error)) return;
+    state.dashboardStats = statsResult.body ?? null;
+    renderDashboard(root, {
+      submissions: list.submissions,
+      stats: state.dashboardStats,
+      statsError: statsResult.error ? statsResult.error.message : '',
+      quizSkills: quiz.meta ? quiz.meta.skills : [],
+      from: $('from-date').value,
+      to: $('to-date').value,
+      cohortFilter: state.cohortFilter,
+      // Creation order (the list is newest first), so a cohort keeps its colour whatever is in view.
+      cohortOrder: [...state.cohorts].reverse().map((cohort) => `id:${cohort.id}`),
+      truncated: list.truncated,
+      limit: list.limit,
+      now: new Date(),
+      onOpenSubmission: openSubmission,
+      onOpenStats: openStatsWithFlag,
+    });
+    status.textContent = '';
+  } catch (error) {
+    if (request !== state.dashboardRequest) return;
+    if (handleAuthError(error)) return;
+    root.replaceChildren();
+    status.textContent = error.message;
+  } finally {
+    if (request === state.dashboardRequest) root.classList.remove('dash-loading');
+  }
+}
+
+// From the dashboard's latest submissions: that person's answers on the Results tab.
+async function openSubmission(id) {
+  state.selectedId = id;
+  await showTab('results');
+  if (state.selectedId === id) $('review-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// From the dashboard's question health: the statistics with only that flag.
+function openStatsWithFlag(flag) {
+  state.statsFlag = flag;
+  state.statsSort = flag === 'very-hard' ? 'correct' : 'quiz';
+  state.statsSelected = null;
+  showTab('stats');
 }
 
 // --- Results ---
@@ -519,12 +594,15 @@ async function refreshStats() {
     return;
   }
   status.textContent = 'Computing the statistics…';
+  const request = ++state.statsRequest;
   try {
     const [body, quiz] = await Promise.all([api('GET', 'api/stats', filterParams()), quizFor(state.quizId)]);
+    if (request !== state.statsRequest) return; // the filters changed meanwhile
     state.stats = body;
     status.textContent = body.submissions === 0 ? 'No submissions for these filters (on the current version of the quiz).' : '';
     renderStats(quiz.meta ? quiz : null);
   } catch (error) {
+    if (request !== state.statsRequest) return;
     if (handleAuthError(error)) return;
     state.stats = null;
     root.replaceChildren();
@@ -539,6 +617,11 @@ function renderStats(quiz) {
     quiz,
     sort: state.statsSort,
     selectedId: state.statsSelected,
+    flagFilter: state.statsFlag,
+    onFlagFilter: (flag) => {
+      state.statsFlag = flag;
+      renderStats(quiz);
+    },
     onSort: (sort) => {
       state.statsSort = sort;
       renderStats(quiz);
@@ -678,7 +761,7 @@ function init() {
   $('export-csv-btn').addEventListener('click', exportCsv);
   $('export-stats-btn').addEventListener('click', exportStatsCsv);
   $('cohort-form').addEventListener('submit', createCohort);
-  for (const tab of ['results', 'stats', 'cohorts']) {
+  for (const tab of TABS) {
     $(`tab-${tab}-btn`).addEventListener('click', () => showTab(tab));
   }
   $('quiz-select').addEventListener('change', (event) => {

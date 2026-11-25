@@ -3,7 +3,7 @@
 // question, its details next to the question shown as an answer-key card.
 // Everything is put on the page as text (textContent).
 import { renderQuestionCard } from './answerKey.js';
-import { STATS_THRESHOLDS, shortPrompt, statFlags } from './statsFormat.js';
+import { STATS_THRESHOLDS, STAT_FLAG_NAMES, hasStatFlag, shortPrompt, statFlags } from './statsFormat.js';
 import { formatDuration } from './resultsCsv.js';
 
 function el(tag, className, text) {
@@ -191,7 +191,8 @@ function renderDetails(item, question, text, stats) {
 
 // Renders the whole view into `root`.
 // options: { stats, quiz: { meta, questions } | null, sort, selectedId, onSelect(id), onSort(sort) }
-export function renderStatsView(root, { stats, quiz, sort = 'quiz', selectedId = null, onSelect = () => {}, onSort = () => {} }) {
+// flagFilter: '' (all) or a flag id ('very-easy', 'very-hard', 'no-separation'); onFlagFilter(flag).
+export function renderStatsView(root, { stats, quiz, sort = 'quiz', selectedId = null, flagFilter = '', onSelect = () => {}, onSort = () => {}, onFlagFilter = () => {} }) {
   root.replaceChildren(renderSummary(stats));
 
   const controls = el('div', 'stats-controls');
@@ -206,9 +207,27 @@ export function renderStatsView(root, { stats, quiz, sort = 'quiz', selectedId =
   select.addEventListener('change', () => onSort(select.value));
   label.appendChild(select);
   controls.appendChild(label);
+
+  const showLabel = el('label', '', 'Show ');
+  const show = el('select');
+  show.id = 'stats-flag-filter';
+  for (const [value, text] of [['', 'All questions'], ...Object.entries(STAT_FLAG_NAMES).map(([id, name]) => [id, `${name} only`])]) {
+    const option = el('option', '', text);
+    option.value = value;
+    show.appendChild(option);
+  }
+  show.value = STAT_FLAG_NAMES[flagFilter] ? flagFilter : '';
+  show.addEventListener('change', () => onFlagFilter(show.value));
+  showLabel.appendChild(show);
+  controls.appendChild(showLabel);
   root.appendChild(controls);
 
-  root.appendChild(renderTable(stats, { sort, selectedId, onSelect }));
+  const shown = STAT_FLAG_NAMES[flagFilter] ? { ...stats, questions: stats.questions.filter((entry) => hasStatFlag(entry, flagFilter)) } : stats;
+  if (shown.questions.length === 0 && stats.questions.length > 0) {
+    root.appendChild(el('p', 'fac-status', `No questions are flagged "${STAT_FLAG_NAMES[flagFilter]}" for these filters.`));
+  } else {
+    root.appendChild(renderTable(shown, { sort, selectedId, onSelect }));
+  }
 
   const item = stats.questions.find((entry) => String(entry.id) === String(selectedId));
   if (item) {
