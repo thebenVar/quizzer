@@ -149,7 +149,8 @@ A quiz with `"mode": "test"` in `meta.json` is an assessment rather than a game:
 
 - No feedback while answering: each answer just shows "Answer saved." and the test moves on. There are no right/wrong counts, streaks, sounds, flashes, gifts or bonus question, and no choice of feedback mode.
 - At the end: the score, time taken and, if the quiz lists `skills`, a score per skill.
-- Combine with `"showAnswerReview": false` to keep the questions private, and list the test under `"unlisted"` in `registry.json` so it is reached only by its link.
+- Combine with `"showAnswerReview": false` so the answers are not shown at the end, and list the test under `"unlisted"` in `registry.json` if it should be reached only by its link.
+- This does not make a test secret: `questions.json`, answers included, is loaded by the browser and can be opened by anyone who knows where to look. Keeping answers private needs grading on a server.
 
 `quizzes/cit-aptitude/` is an example: an aptitude test for consultants in training, with 40 questions over eight skills.
 
