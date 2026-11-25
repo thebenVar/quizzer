@@ -1,6 +1,7 @@
 {
   "title": "Gethsemane Bible Quiz",
   "description": "Questions on the book of Ephesians.",
+  "cohortCodes": "required",
   "branding": {
     "logoSrc": "logo.png",
     "logoAlt": "Gethsemane Logo"

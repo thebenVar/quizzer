@@ -27,6 +27,8 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   cohortChecking: 'Checking the code…',
   cohortInvalid: 'This code is not valid for this quiz. Check it with your facilitator.',
   cohortUnchecked: "The code could not be checked now; it will be checked when your results are sent.",
+  cohortCheckUnavailable: 'The code could not be checked. Check your internet connection and try again.',
+  cohortGateNotice: 'This quiz needs a code from your facilitator.',
   cohortLabel: 'Cohort: {label}',
 
   // While answering
@@ -154,6 +156,8 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   answerKeyMatchingHeading: 'Correct matches',
   answerKeyAlsoAccepted: 'Also accepted: {answers}',
   answerKeyPrint: 'Print',
+  answerKeyCodeNeeded: 'The answer key needs the code your facilitator gave you.',
+  answerKeyShowButton: 'Show answer key',
 });
 
 const DEFAULT_RESULT_BANDS = Object.freeze([
@@ -286,7 +290,7 @@ export function validateMeta(meta) {
   // A cohort code on the start screen, made by facilitators on results.html.
   const cohortCodes = meta.cohortCodes ?? 'off';
   assert(COHORT_CODE_MODES.includes(cohortCodes), `meta.cohortCodes must be one of ${COHORT_CODE_MODES.map((m) => `"${m}"`).join(', ')}`);
-  assert(cohortCodes === 'off' || collectResults, 'meta.cohortCodes needs "collectResults": true (the code is sent with the results)');
+  // Without collectResults a code only unlocks the quiz (and its answer key); nothing is sent.
 
   return {
     mode,

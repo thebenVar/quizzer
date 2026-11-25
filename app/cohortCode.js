@@ -54,8 +54,20 @@ export async function checkCohortCode(quizId, typed, fetchFn = globalThis.fetch,
 }
 
 // Whether Start may go ahead after a check, for the quiz's "cohortCodes" setting.
-export function cohortAllowsStart(mode, result) {
+// A code that could not be checked is accepted when the results are collected
+// (the server checks it again when they arrive). When nothing is collected the
+// code only unlocks the quiz, so "required" then needs a confirmed code: there
+// is no later check. (A test already running is resumed without a new check.)
+export function cohortAllowsStart(mode, result, { collectResults = true } = {}) {
   if (result.status === 'invalid') return false;
   if (mode === 'required' && result.status === 'none') return false;
+  if (mode === 'required' && !collectResults && result.status === 'unchecked') return false;
   return true;
+}
+
+// The uiText key explaining why Start did not go ahead (see cohortAllowsStart).
+export function cohortRefusalText(result) {
+  if (result.status === 'none') return 'cohortCodeRequiredHint';
+  if (result.status === 'unchecked') return 'cohortCheckUnavailable';
+  return 'cohortInvalid';
 }

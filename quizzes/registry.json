@@ -1,6 +1,6 @@
 {
-  "title": "Bible Quizzes",
+  "title": "Quizzes",
   "description": "Choose a quiz to begin.",
-  "quizzes": ["gethsemane", "sample", "cit-aptitude"],
-  "unlisted": ["question-types-demo"]
+  "quizzes": ["sample", "cit-aptitude"],
+  "unlisted": ["question-types-demo", "gethsemane"]
 }

@@ -184,7 +184,7 @@ async function initPage() {
 // ?quiz=<id>-ans: every question with its answer, why, and how to approach it.
 async function showAnswerKey(loader, quizId) {
     try {
-        const [quiz, { renderAnswerKey }] = await Promise.all([
+        const [quiz, { renderAnswerKey, answerKeyNeedsCode, renderCodeGate }] = await Promise.all([
             loader.loadQuiz(quizId),
             import('./app/answerKey.js'),
         ]);
@@ -211,8 +211,20 @@ async function showAnswerKey(loader, quizId) {
 
         quizContainer.classList.add('answer-key-mode');
         const root = document.getElementById('answer-key');
-        renderAnswerKey(root, quiz);
         root.hidden = false;
+        // A quiz that needs a code keeps its answer key behind the same code.
+        if (answerKeyNeedsCode(meta)) {
+            const codeFromLink = quizLib.tidyCohortInput(new URLSearchParams(window.location.search).get('code') || '').slice(0, 12);
+            const gate = renderCodeGate(root, {
+                text: meta.uiText,
+                initialCode: codeFromLink,
+                check: (code) => quizLib.checkCohortCode(meta.id, code),
+                onUnlock: () => renderAnswerKey(root, quiz),
+            });
+            if (codeFromLink) gate.requestSubmit();
+        } else {
+            renderAnswerKey(root, quiz);
+        }
     } catch (error) {
         showQuizLoadError(error);
     }
@@ -248,7 +260,9 @@ function updateStartButton() {
     const needsCode = currentQuizMeta.cohortCodes === 'required';
     const hasCode = quizLib.tidyCohortInput(document.getElementById('cohort-code').value) !== '';
     if (!isTestMode() && !currentQuizMeta.collectResults) {
-        startQuizButton.disabled = false;
+        // The name is optional here, but a quiz that needs a code still needs one.
+        startQuizButton.disabled = needsCode && !hasCode;
+        nameHintElement.hidden = true;
         return;
     }
     const hasName = quizLib.hasVisibleText(nameInputElement.value);
@@ -281,8 +295,9 @@ async function confirmCohortCode() {
         result = { status: 'unchecked', code: quizLib.tidyCohortInput(input.value) };
     }
     updateStartButton();
-    if (!quizLib.cohortAllowsStart(mode, result)) {
-        showCohortStatus(uiText(result.status === 'none' ? 'cohortCodeRequiredHint' : 'cohortInvalid'), true);
+    const options = { collectResults: currentQuizMeta.collectResults };
+    if (!quizLib.cohortAllowsStart(mode, result, options)) {
+        showCohortStatus(uiText(quizLib.cohortRefusalText(result)), true);
         input.focus();
         return false;
     }
@@ -293,7 +308,8 @@ async function confirmCohortCode() {
         showCohortStatus(uiText('cohortLabel', { label: result.label }));
     } else if (result.status === 'unchecked') {
         cohortCode = result.code;
-        showCohortStatus(uiText('cohortUnchecked'));
+        // Only a quiz that sends its results checks the code again later.
+        showCohortStatus(currentQuizMeta.collectResults ? uiText('cohortUnchecked') : '');
     } else {
         showCohortStatus('');
     }
@@ -518,6 +534,9 @@ function applyQuizMetaToPage(meta) {
         const cohortInput = document.getElementById('cohort-code');
         cohortInput.placeholder = text.cohortCodePlaceholder;
         document.getElementById('cohort-code-hint').textContent = meta.cohortCodes === 'required' ? text.cohortCodeRequiredHint : text.cohortCodeHint;
+        const gateNotice = document.getElementById('cohort-gate-notice');
+        gateNotice.textContent = text.cohortGateNotice;
+        gateNotice.hidden = meta.cohortCodes !== 'required';
         const codeFromLink = new URLSearchParams(window.location.search).get('code');
         if (codeFromLink) cohortInput.value = quizLib.tidyCohortInput(codeFromLink).slice(0, 12);
     }

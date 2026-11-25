@@ -1,9 +1,9 @@
 // The cohort code on the start screen: checking it, and when Start may go ahead.
 import { describe, expect, it, vi } from 'vitest';
 
-import { checkCohortCode, cohortAllowsStart, normalizeCohortCode, tidyCohortInput } from '../app/cohortCode.js';
+import { checkCohortCode, cohortAllowsStart, cohortRefusalText, normalizeCohortCode, tidyCohortInput } from '../app/cohortCode.js';
 import { buildSubmission } from '../app/submissions.js';
-import { validateMeta } from '../app/validate.js';
+import { DEFAULT_UI_TEXT, validateMeta } from '../app/validate.js';
 
 function respond(status, body) {
   return vi.fn(async () => ({ ok: status >= 200 && status < 300, status, json: async () => { if (body === undefined) throw new SyntaxError('not JSON'); return body; } }));
@@ -76,8 +76,51 @@ describe('meta.json "cohortCodes"', () => {
     for (const mode of ['off', 'optional', 'required']) expect(validateMeta({ ...base, cohortCodes: mode }).cohortCodes).toBe(mode);
   });
 
-  it('rejects other values, and cohort codes without collectResults', () => {
+  it('rejects other values', () => {
     expect(() => validateMeta({ ...base, cohortCodes: 'yes' })).toThrow(/cohortCodes must be one of/);
-    expect(() => validateMeta({ id: 'q', title: 'Q', cohortCodes: 'optional' })).toThrow(/collectResults/);
+  });
+
+  it('allows a code that only unlocks a quiz, without collecting results', () => {
+    const meta = validateMeta({ id: 'q', title: 'Q', cohortCodes: 'required' });
+    expect(meta).toMatchObject({ cohortCodes: 'required', collectResults: false });
+  });
+});
+
+describe('a quiz that needs a code but sends no results', () => {
+  const gateOnly = { collectResults: false };
+
+  it('starts only with a code the server confirmed', () => {
+    expect(cohortAllowsStart('required', { status: 'valid', code: 'ABC234', label: 'A' }, gateOnly)).toBe(true);
+    expect(cohortAllowsStart('required', { status: 'none' }, gateOnly)).toBe(false);
+    expect(cohortAllowsStart('required', { status: 'invalid' }, gateOnly)).toBe(false);
+  });
+
+  it('does not open when the server cannot be reached (nothing would check the code later)', async () => {
+    const offline = vi.fn(async () => { throw new TypeError('Failed to fetch'); });
+    const result = await checkCohortCode('gethsemane', 'ABC234', offline);
+    expect(result.status).toBe('unchecked');
+    expect(cohortAllowsStart('required', result, gateOnly)).toBe(false);
+    expect(cohortRefusalText(result)).toBe('cohortCheckUnavailable');
+    // A quiz that sends results still starts; the server checks the code when they arrive.
+    expect(cohortAllowsStart('required', result, { collectResults: true })).toBe(true);
+    // An optional code does not gate anything.
+    expect(cohortAllowsStart('optional', result, gateOnly)).toBe(true);
+  });
+
+  it('explains each refusal with a uiText key that exists', () => {
+    for (const status of ['none', 'invalid', 'unchecked']) {
+      expect(DEFAULT_UI_TEXT).toHaveProperty(cohortRefusalText({ status }));
+    }
+    expect(DEFAULT_UI_TEXT.cohortGateNotice).toBeTruthy();
+  });
+
+  it('is how quizzes/gethsemane is set up: unlisted, code required, nothing collected', async () => {
+    const fs = await import('node:fs');
+    const registry = JSON.parse(fs.readFileSync(new URL('../quizzes/registry.json', import.meta.url), 'utf8'));
+    expect(registry.title).toBe('Quizzes');
+    expect(registry.quizzes).not.toContain('gethsemane');
+    expect(registry.unlisted).toContain('gethsemane');
+    const meta = validateMeta({ ...JSON.parse(fs.readFileSync(new URL('../quizzes/gethsemane/meta.json', import.meta.url), 'utf8')), id: 'gethsemane' });
+    expect(meta).toMatchObject({ cohortCodes: 'required', collectResults: false });
   });
 });

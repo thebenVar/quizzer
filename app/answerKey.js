@@ -271,3 +271,57 @@ export function renderAnswerKey(root, { meta, questions }) {
     root.appendChild(section);
   }
 }
+
+// A quiz with "cohortCodes": "required" keeps its answer key behind the same
+// code as the quiz. `check(code)` resolves to a checkCohortCode result
+// (app/cohortCode.js); only a confirmed code unlocks (an unreachable server does not).
+export function answerKeyNeedsCode(meta) {
+  return meta.cohortCodes === 'required';
+}
+
+export function renderCodeGate(root, { text, initialCode = '', check, onUnlock }) {
+  root.replaceChildren();
+  const form = el('form', 'ak-gate');
+  form.noValidate = true;
+  form.appendChild(el('p', 'ak-gate-text', text.answerKeyCodeNeeded));
+  const label = el('label', 'ak-gate-label', text.cohortCodeLabel);
+  label.htmlFor = 'ak-gate-code';
+  const input = el('input', 'ak-gate-input');
+  input.type = 'text';
+  input.id = 'ak-gate-code';
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.maxLength = 12;
+  input.placeholder = text.cohortCodePlaceholder;
+  input.setAttribute('autocapitalize', 'characters');
+  input.value = initialCode;
+  const button = el('button', 'ak-gate-button', text.answerKeyShowButton);
+  button.type = 'submit';
+  const status = el('p', 'ak-gate-status');
+  status.setAttribute('role', 'status');
+  form.append(label, input, button, status);
+  root.appendChild(form);
+
+  const messages = { none: text.cohortCodeRequiredHint, invalid: text.cohortInvalid, unchecked: text.cohortCheckUnavailable };
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    button.disabled = true;
+    status.className = 'ak-gate-status';
+    status.textContent = text.cohortChecking;
+    let result;
+    try {
+      result = await check(input.value);
+    } catch {
+      result = { status: 'unchecked' };
+    }
+    button.disabled = false;
+    if (result.status === 'valid') {
+      onUnlock(result);
+      return;
+    }
+    status.className = 'ak-gate-status ak-gate-error';
+    status.textContent = messages[result.status] ?? text.cohortInvalid;
+    input.focus();
+  });
+  return form;
+}

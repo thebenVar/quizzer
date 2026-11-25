@@ -4,7 +4,7 @@ A reusable quiz app for the browser. The app (`index.html`, `script.js`, `style.
 
 Included quizzes:
 
-- `gethsemane` — Gethsemane Bible Quiz on Ephesians
+- `gethsemane` — Gethsemane Bible Quiz on Ephesians; unlisted, and opens only with a code from a facilitator (see [A quiz that needs a code](#a-quiz-that-needs-a-code))
 - `sample` — a short six-question quiz, also a good starting point to copy
 - `question-types-demo` — unlisted; two questions of each newer type (statements, spot, text), to try them
 
@@ -44,10 +44,10 @@ The home page and its list of quizzes:
 
 ```json
 {
-  "title": "Bible Quizzes",
+  "title": "Quizzes",
   "description": "Choose a quiz to begin.",
-  "quizzes": ["gethsemane", "sample"],
-  "unlisted": ["my-draft"]
+  "quizzes": ["sample", "cit-aptitude"],
+  "unlisted": ["my-draft", "gethsemane"]
 }
 ```
 
@@ -195,7 +195,7 @@ Only `title` is required; everything else has a default.
 - `mode` — `"quiz"` (default) or `"test"`. See [Test mode](#test-mode-assessments) below.
 - `skills` — optional list of `{ "id", "label", "description" }`. When present, every question names its `skill`, and the results screen shows a score per skill in this order. The optional `description` introduces the skill on the answer key page.
 - `collectResults` — default `false`. Set `true` to send each participant's name and answers to the facilitators when they finish (see [Results sent to facilitators](#results-sent-to-facilitators)). Such a quiz needs a name before it starts, in quiz mode too.
-- `cohortCodes` — `"off"` (default), `"optional"` or `"required"`: a cohort code field on the start screen (see [Cohort codes](#cohort-codes)). Needs `collectResults`.
+- `cohortCodes` — `"off"` (default), `"optional"` or `"required"`: a cohort code field on the start screen (see [Cohort codes](#cohort-codes)). With `collectResults` the code is sent with the results; without it, `"required"` simply locks the quiz (and its answer key) behind a code.
 - `showAnswerReview` — default `true`. Set `false` to hide the review of answers at the end, and to leave the answers out of the downloaded results file (for example, to keep a test's questions from circulating).
 - `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language. This includes the test-mode buttons and summary (`testNextButtonLabel`, `finishHeading`, `submitTestLabel`, …), the resume panel (`resumeHeading`, `resumeDetails`, …), the keyboard tip (`keyboardHint`), the review (`reviewFilterWrong`, `reviewFilterAll`, …), the per-skill time (`skillScoreWithTime`), the newer question types (`statementTrue`, `statementFalse`, `statementCannotTell`, `statementsFeedback`, `spotSourceLabel`, `textAnswerPlaceholder`, …) and the results file (`downloadResultsLabel`, `resultsFile…`).
 - `branding.logoSrc` is relative to the quiz folder (a full `https://` URL also works). Without it, no logo is shown.
@@ -256,13 +256,24 @@ A quiz can ask for a cohort code, so a facilitator can tell groups apart and fil
 - `"optional"`: the start screen shows a **Cohort code** field ("If your facilitator gave you a code"); anyone may leave it empty. `cit-aptitude` uses this, so it stays open to anyone.
 - `"required"`: Start needs a code.
 
-It needs `"collectResults": true`, since the code is sent with the results. The texts are `uiText` keys (`cohortCodeLabel`, `cohortCodePlaceholder`, `cohortCodeHint`, `cohortCodeRequiredHint`, `cohortChecking`, `cohortInvalid`, `cohortUnchecked`, `cohortLabel`).
+With `"collectResults": true` the code is sent with the results; without it the code only unlocks the quiz (see [A quiz that needs a code](#a-quiz-that-needs-a-code)). The texts are `uiText` keys (`cohortCodeLabel`, `cohortCodePlaceholder`, `cohortCodeHint`, `cohortCodeRequiredHint`, `cohortGateNotice`, `cohortChecking`, `cohortInvalid`, `cohortUnchecked`, `cohortCheckUnavailable`, `cohortLabel`, and on the answer key page `answerKeyCodeNeeded`, `answerKeyShowButton`).
 
 - **Making codes.** On the results page, **Cohorts** tab: type a name (for example "Nov 2026 workshop") and **Create code**. The server makes a unique 6-character code from letters and digits that cannot be confused (no 0/O, 1/I/L). Each code has a ready-to-share link, `…/?quiz=<id>&code=<code>`, with a **Copy** button; the link fills the code in. The list shows how many results each cohort has. **Deactivate** stops a code from being accepted on the start screen (results already sent keep their cohort); **Reactivate** turns it back on.
 - **On the start screen** the code is checked when the participant presses Start (`GET /api/cohort?quiz=<id>&code=<code>`; case, spaces and hyphens do not matter). A valid code shows "Cohort: Nov 2026 workshop" and the test starts; a code that is not valid for this quiz (unknown, inactive or for another quiz: the same answer for all three, so nothing leaks) shows a message and the test does not start. If the server cannot be reached (offline, or a static server without `/api`), the test starts anyway and keeps the code. The code is kept in saved progress, so it survives a resume (while the resume offer is shown, the code field is hidden: the saved code is the one used).
 - **When the results arrive**, the server checks the code again: if it is active for that quiz, the results are stored with the cohort; otherwise they are stored with the code as typed and no cohort (shown as "ABC234 (not valid)"). A code never makes the server refuse results. The participant's results screen shows "Cohort: …" only when the server stored the results with a cohort.
 - **Filtering.** The **Cohort** picker (all cohorts, no cohort, or one cohort) filters the results table, the statistics and both CSV exports. The results CSV has **Cohort** and **Cohort code** columns.
 - **Facilitator API** (same password as the results): `GET /api/cohorts?quiz=<id>`, `POST /api/cohorts` with `{ "quizId", "label" }`, `PATCH /api/cohorts?id=<id>` with `{ "active": false }`.
+
+### A quiz that needs a code
+
+A quiz can use a cohort code only as a key, without sending anything: `"cohortCodes": "required"` and no `collectResults` (or `false`). `gethsemane` is set up this way and is listed under `"unlisted"` in `registry.json`, so it is not on the home page.
+
+- **Opening it.** `?quiz=gethsemane` shows the start screen with "This quiz needs a code from your facilitator." (`cohortGateNotice`) and the code field; Start stays disabled until a code is typed. `?quiz=gethsemane&code=ABC234` fills the code in. Start asks the server; only a code the server confirms (active for this quiz) opens the quiz. An invalid code gets a message.
+- **Offline.** If the server cannot be reached, the quiz does not open ("The code could not be checked. Check your internet connection and try again.", `cohortCheckUnavailable`). Unlike a quiz that sends results, there is no later check that could catch a wrong code, so an unconfirmed code would mean no gate at all. A quiz or test already running is never interrupted: the check happens only on Start, and a test in progress resumes without a new check.
+- **Nothing is sent or stored.** No "sent to the facilitators" notice, no submission, no status line on the results screen; the name is optional as in any quiz. The quiz still works as before otherwise (feedback, review, download, and resume for a test).
+- **Answer key.** `?quiz=gethsemane-ans` asks for a code first (see [Answer key](#answer-key)).
+- **Facilitators** make and manage its codes on the results page's **Cohorts** tab (the quiz is in the quiz picker because it uses cohort codes). The Dashboard, Results and Question statistics tabs say that this quiz does not send results.
+- **Not secret.** This keeps the quiz away from casual visitors; it does not protect the questions. `quizzes/gethsemane/questions.json`, answers included, can still be opened directly on the site by anyone who knows the address, and it is in the public repository. Keeping questions secret needs them off the public site (P3).
 
 ### Question statistics
 
@@ -320,7 +331,7 @@ In both modes, keys **1–9** or **A–Z** choose that option of a multiple-choi
 
 Add `-ans` to any quiz's name to see its answer key: `?quiz=cit-aptitude-ans`. The page lists every question with all its options, the correct one marked, and the question's `explanation` ("Why") and `approach` ("How to approach"). When the quiz lists `skills`, questions are grouped by skill with jump links. It has a Print button and prints cleanly.
 
-The page is not linked from anywhere and asks search engines not to index it, but it is not secret: anyone who adds `-ans` sees it. Because of this, no quiz folder may end in `-ans`.
+The page is not linked from anywhere and asks search engines not to index it, but it is not secret: anyone who adds `-ans` sees it. Because of this, no quiz folder may end in `-ans`. For a quiz with `"cohortCodes": "required"`, the page first asks for a code and shows the answers only once the server confirms it (`?quiz=<id>-ans&code=<code>` fills it in and checks it straight away).
 
 ## Project layout
 

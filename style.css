@@ -1570,3 +1570,50 @@ a.quiz-card:focus-visible {
     color: #0a58ca;
     font-weight: 600;
 }
+
+/* ------------------------------------------------------------------ */
+/* Quizzes that need a code ("cohortCodes": "required")                 */
+/* ------------------------------------------------------------------ */
+#cohort-gate-notice {
+    margin: 0 auto 12px;
+    max-width: 30em;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background-color: #e7f0fe;
+    color: #0a58ca;
+    font-weight: 600;
+}
+.ak-gate {
+    max-width: 360px;
+    margin: 10px auto 0;
+    padding: 18px;
+    display: grid;
+    gap: 10px;
+    border: 1px solid #bcd0f7;
+    border-radius: 12px;
+    background-color: #e7f0fe;
+    text-align: center;
+}
+.ak-gate-text { margin: 0; color: #2c3e50; font-weight: 600; }
+.ak-gate-label { font-weight: 500; color: #495057; }
+.ak-gate-input {
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    text-align: center;
+}
+.ak-gate-button {
+    padding: 10px 20px;
+    font-size: 1em;
+    color: #fff;
+    background-color: #0d6efd;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.ak-gate-button:disabled { opacity: 0.6; cursor: default; }
+.ak-gate-status { margin: 0; min-height: 1.2em; color: #495057; }
+.ak-gate-error { color: #842029; font-weight: 600; }

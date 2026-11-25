@@ -178,8 +178,21 @@ function quizFor(quizId) {
   return state.quizzes.get(quizId);
 }
 
-// Quizzes with results, plus the registered quizzes that collect results
-// (so cohort codes can be made before anyone has taken the quiz).
+// A quiz facilitators manage here: it sends results, or it uses cohort codes
+// (a code may only unlock a quiz, without sending anything).
+export function isFacilitatorQuiz(meta) {
+  return Boolean(meta) && (meta.collectResults === true || (meta.cohortCodes ?? 'off') !== 'off');
+}
+
+// What the Dashboard, Results and Question statistics tabs say for a quiz that
+// sends no results (its codes only unlock it), or null when it sends results.
+export function notCollectedMessage(meta) {
+  if (!meta || meta.collectResults) return null;
+  return `"${meta.title}" does not send results to facilitators: its cohort codes only unlock the quiz, so there are no results, statistics or charts. Make and manage its codes on the Cohorts tab.`;
+}
+
+// Quizzes with results, plus the registered quizzes that collect results or use
+// cohort codes (so codes can be made before anyone has taken the quiz).
 async function quizChoices(withResults) {
   const ids = new Set(withResults);
   try {
@@ -187,7 +200,7 @@ async function quizChoices(withResults) {
     const registered = [...registry.quizzes, ...registry.unlisted];
     const quizzes = await Promise.all(registered.map((quizId) => quizFor(quizId)));
     registered.forEach((quizId, index) => {
-      if (quizzes[index].meta && quizzes[index].meta.collectResults) ids.add(quizId);
+      if (isFacilitatorQuiz(quizzes[index].meta)) ids.add(quizId);
     });
   } catch {
     // Without the registry, the quizzes with results are enough.
@@ -199,7 +212,7 @@ function fillQuizPicker() {
   const select = $('quiz-select');
   select.replaceChildren();
   if (state.quizIds.length === 0) {
-    select.appendChild(el('option', '', 'No quizzes collect results'));
+    select.appendChild(el('option', '', 'No quizzes collect results or use cohort codes'));
     select.disabled = true;
     state.quizId = '';
     return;
@@ -265,7 +278,27 @@ async function changeQuiz() {
   await refreshTab();
 }
 
+// Empties the result tabs and says why, for a quiz that sends no results.
+function showNotCollected(message) {
+  $('dashboard-view').replaceChildren();
+  $('stats-view').replaceChildren();
+  $('results-table').tHead.replaceChildren();
+  $('results-table').tBodies[0].replaceChildren();
+  $('review-panel').hidden = true;
+  state.submissions = [];
+  state.stats = null;
+  for (const id of ['dashboard-status', 'results-status', 'stats-status']) $(id).textContent = message;
+}
+
 async function refreshTab() {
+  if (state.tab !== 'cohorts' && state.quizId) {
+    const quiz = await quizFor(state.quizId);
+    const message = notCollectedMessage(quiz.meta);
+    if (message) {
+      showNotCollected(message);
+      return;
+    }
+  }
   if (state.tab === 'dashboard') await refreshDashboard();
   else if (state.tab === 'stats') await refreshStats();
   else if (state.tab === 'cohorts') renderCohorts();
