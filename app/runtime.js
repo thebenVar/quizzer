@@ -1,3 +1,5 @@
+import { getQuestionPoints } from './utils.js';
+
 export function checkMCQAnswer(question, selectedOption, showImmediateCorrection = true) {
   const isCorrect = selectedOption === question.answer;
   const pointsAwarded = isCorrect && !question.isBonus ? (question.points || 0) : 0;
@@ -11,7 +13,7 @@ export function checkMCQAnswer(question, selectedOption, showImmediateCorrection
   }
 
   const reviewItem = (!isCorrect && !question.isBonus) ? {
-    questionText: question.prompt || question.question,
+    questionText: question.prompt,
     userAnswer: selectedOption,
     correctAnswer: question.answer,
     justification: question.explanation || "No specific justification provided."
@@ -36,7 +38,7 @@ export function checkMatchingAnswer(question, userAnswers, showImmediateCorrecti
   });
 
   const isAllCorrect = correctMatches === question.pairs.length;
-  const pointsAwarded = isAllCorrect && !question.isBonus ? (question.points || question.pairs.length) : 0;
+  const pointsAwarded = isAllCorrect && !question.isBonus ? getQuestionPoints(question) : 0;
 
   let feedback = '';
   if (question.isBonus) {
@@ -55,7 +57,7 @@ export function checkMatchingAnswer(question, userAnswers, showImmediateCorrecti
   }
 
   const reviewItem = !isAllCorrect ? {
-    questionText: (question.prompt || question.question) + (question.isBonus ? " (Bonus)" : ""),
+    questionText: question.prompt + (question.isBonus ? " (Bonus)" : ""),
     userAnswer: userMatches,
     correctAnswer: correctPairs,
     justification: question.explanation || "Match all pairs correctly.",

@@ -20,7 +20,7 @@ const DEFAULT_RESULT_BANDS = Object.freeze([
 
 const DEFAULT_ACHIEVEMENT_LABELS = Object.freeze({
   perfectScore: 'Perfect Score! ✨',
-  highScore: 'Bible Whiz! 👍',
+  highScore: 'High Score! 👍',
   noAchievements: 'No special achievements or gifts this time.',
 });
 
@@ -49,34 +49,6 @@ function normalizeOptionalObject(value, path) {
 
 function normalizeStringField(value, fallback = '') {
   return typeof value === 'string' ? value : fallback;
-}
-
-function normalizeLegacyType(type) {
-  return isNonEmptyString(type) ? type.trim().toLowerCase() : type;
-}
-
-export function normalizeLegacyQuestion(question) {
-  assert(isPlainObject(question), 'legacy question must be an object');
-
-  return {
-    id: question.id,
-    type: normalizeLegacyType(question.type),
-    prompt: isNonEmptyString(question.prompt) ? question.prompt.trim() : normalizeStringField(question.question).trim(),
-    options: Array.isArray(question.options) ? [...question.options] : undefined,
-    answer: question.answer,
-    pairs: Array.isArray(question.pairs) ? [...question.pairs] : undefined,
-    points: question.points ?? 0,
-    explanation: isNonEmptyString(question.explanation)
-      ? question.explanation.trim()
-      : normalizeStringField(question.justification).trim(),
-    isBonus: question.isBonus === undefined ? false : question.isBonus,
-  };
-}
-
-export function normalizeLegacyQuestions(questions) {
-  assert(Array.isArray(questions), 'legacy questions must be an array');
-
-  return questions.map((question) => normalizeLegacyQuestion(question));
 }
 
 function validateResultBands(resultBands) {
@@ -186,10 +158,12 @@ function validateMcqQuestion(question, index) {
   });
 
   assert(isNonEmptyString(question.answer), `questions[${index}].answer is required`);
+  const answer = question.answer.trim();
+  assert(options.includes(answer), `questions[${index}].answer "${answer}" must exactly match one of its options`);
 
   return {
     options,
-    answer: question.answer.trim(),
+    answer,
   };
 }
 
@@ -237,5 +211,17 @@ export function validateQuestions(questions) {
   assert(Array.isArray(questions), 'questions must be an array');
   assert(questions.length > 0, 'questions must contain at least one question');
 
-  return questions.map((question, index) => validateQuestion(question, index));
+  const validated = questions.map((question, index) => validateQuestion(question, index));
+
+  const seenIds = new Set();
+  validated.forEach((question, index) => {
+    assert(!seenIds.has(question.id), `questions[${index}].id ${JSON.stringify(question.id)} is used by more than one question`);
+    seenIds.add(question.id);
+  });
+
+  const bonusCount = validated.filter((question) => question.isBonus).length;
+  assert(bonusCount <= 1, `only one question can have "isBonus": true (found ${bonusCount})`);
+  assert(bonusCount < validated.length, 'questions must contain at least one non-bonus question');
+
+  return validated;
 }

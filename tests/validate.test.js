@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalizeLegacyQuestions, validateMeta, validateQuestions } from '../app/validate.js';
+import { validateMeta, validateQuestions } from '../app/validate.js';
 
 const baseMeta = {
   id: 'sample',
@@ -28,29 +28,6 @@ const validMatchingQuestion = {
   isBonus: true,
 };
 
-const legacyMcqQuestion = {
-  id: 301,
-  question: 'Who was the first king of Israel?',
-  type: 'MCQ',
-  options: ['David', 'Solomon', 'Samuel', 'Saul'],
-  answer: 'Saul',
-  points: 1,
-  justification: 'Saul was anointed by Samuel as the first king of Israel.',
-};
-
-const legacyMatchingQuestion = {
-  id: 306,
-  question: 'Match the biblical figure to their primary role or description:',
-  type: 'Matching',
-  isBonus: true,
-  pairs: [
-    ['Abraham', 'Father of a multitude'],
-    ['Moses', 'Led Israelites out of Egypt'],
-  ],
-  points: 0,
-  justification: 'These are well-known roles for these key biblical figures.',
-};
-
 describe('validateMeta', () => {
   it('requires id and title', () => {
     expect(() => validateMeta({ title: 'Missing id' })).toThrow(/meta\.id is required/i);
@@ -70,7 +47,7 @@ describe('validateMeta', () => {
     expect(validated.gamification.streakRewards).toEqual({});
     expect(validated.gamification.achievementLabels).toEqual({
       perfectScore: 'Perfect Score! ✨',
-      highScore: 'Bible Whiz! 👍',
+      highScore: 'High Score! 👍',
       noAchievements: 'No special achievements or gifts this time.',
     });
   });
@@ -109,6 +86,11 @@ describe('validateQuestions', () => {
     });
   });
 
+  it('accepts question types in any letter case', () => {
+    const [validated] = validateQuestions([{ ...validMcqQuestion, type: 'MCQ' }]);
+    expect(validated.type).toBe('mcq');
+  });
+
   it('rejects a question without a prompt', () => {
     expect(() => validateQuestions([{ ...validMcqQuestion, prompt: '' }])).toThrow(/questions\[0\]\.prompt is required/i);
   });
@@ -125,6 +107,10 @@ describe('validateQuestions', () => {
     expect(() => validateQuestions([{ ...validMcqQuestion, answer: '' }])).toThrow(/questions\[0\]\.answer is required/i);
   });
 
+  it('rejects mcq questions whose answer is not one of the options', () => {
+    expect(() => validateQuestions([{ ...validMcqQuestion, answer: 'Four' }])).toThrow(/must exactly match one of its options/i);
+  });
+
   it('rejects malformed matching payloads', () => {
     expect(() =>
       validateQuestions([
@@ -135,41 +121,18 @@ describe('validateQuestions', () => {
       ])
     ).toThrow(/questions\[0\]\.pairs must be an array of two-item string pairs/i);
   });
-});
 
-describe('normalizeLegacyQuestions', () => {
-  it('maps legacy question fields to the normalized schema', () => {
-    const normalized = normalizeLegacyQuestions([legacyMcqQuestion, legacyMatchingQuestion]);
-
-    expect(normalized).toEqual([
-      {
-        id: 301,
-        type: 'mcq',
-        prompt: 'Who was the first king of Israel?',
-        options: ['David', 'Solomon', 'Samuel', 'Saul'],
-        answer: 'Saul',
-        points: 1,
-        explanation: 'Saul was anointed by Samuel as the first king of Israel.',
-        isBonus: false,
-      },
-      {
-        id: 306,
-        type: 'matching',
-        prompt: 'Match the biblical figure to their primary role or description:',
-        pairs: [
-          ['Abraham', 'Father of a multitude'],
-          ['Moses', 'Led Israelites out of Egypt'],
-        ],
-        points: 0,
-        explanation: 'These are well-known roles for these key biblical figures.',
-        isBonus: true,
-      },
-    ]);
+  it('rejects duplicate question ids', () => {
+    expect(() => validateQuestions([validMcqQuestion, { ...validMcqQuestion }])).toThrow(/questions\[1\]\.id 1 is used by more than one question/i);
   });
 
-  it('produces questions that pass the normalized validator', () => {
-    const normalized = normalizeLegacyQuestions([legacyMcqQuestion, legacyMatchingQuestion]);
+  it('rejects more than one bonus question', () => {
+    expect(() =>
+      validateQuestions([validMcqQuestion, validMatchingQuestion, { ...validMatchingQuestion, id: 3 }])
+    ).toThrow(/only one question can have "isBonus": true/i);
+  });
 
-    expect(() => validateQuestions(normalized)).not.toThrow();
+  it('rejects a quiz with only a bonus question', () => {
+    expect(() => validateQuestions([validMatchingQuestion])).toThrow(/at least one non-bonus question/i);
   });
 });

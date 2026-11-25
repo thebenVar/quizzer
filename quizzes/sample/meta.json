@@ -1,0 +1,16 @@
+{
+  "title": "Sample Bible Quiz",
+  "description": "A short example quiz. Copy this folder to start a new quiz.",
+  "gamification": {
+    "streakRewards": {
+      "2": "fas fa-candy-cane",
+      "4": "fas fa-pencil-alt",
+      "6": "fas fa-book"
+    },
+    "bonusRewardClass": "fas fa-candy-cane"
+  },
+  "timing": {
+    "timeLimitSeconds": 3600,
+    "autoAdvanceDelayMs": 2000
+  }
+}

@@ -22,7 +22,7 @@ let userAnswers = {};
 let incorrectlyAnsweredQuestions = []; // Now stores { questionText, userAnswer, correctAnswer, justification, isMatching? }
 let totalPossibleScore = 0;
 let overallTimerInterval;
-let timeLeft = 60 * 60; // Updated to 60 minutes
+let timeLeft = 0;
 let autoProceedTimeout;
 let quizStartTime;
 let quizEndTime;
@@ -30,6 +30,7 @@ let totalRegularQuestions = 0;
 let userName = "Quiz Taker"; // Default name
 let currentQuizData = []; // This will hold the main quiz data after setup
 let currentQuizMeta = null;
+let quizQuestions = []; // All questions of the loaded quiz, before shuffling
 let currentStreakRewards = {};
 let currentBonusGiftClass = null;
 let quizLib = null; // Functions from app/utils.js and app/runtime.js, loaded when the quiz starts
@@ -132,57 +133,78 @@ async function playSound(synth, note, duration) {
     }
 }
 
-function buildLegacyQuizMeta() {
-    const headingText = document.querySelector('#quiz-container h1')?.textContent?.trim();
-    const title = headingText || document.title || 'Quizzer';
-    const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'legacy-quiz';
+// Loads the quiz chosen by ?quiz=<id> (or the default in quizzes/registry.json)
+// and fills the page with its title, logo and labels.
+async function initQuiz() {
+    try {
+        const [loader, utils, runtime] = await Promise.all([
+            import('./app/loader.js'),
+            import('./app/utils.js'),
+            import('./app/runtime.js'),
+        ]);
+        quizLib = { ...utils, ...runtime };
 
-    return {
-        id,
-        title,
-        pageTitle: document.title || title,
-    };
+        const quizId = await loader.resolveQuizId({ search: window.location.search });
+        const quiz = await loader.loadQuiz(quizId);
+
+        currentQuizMeta = quiz.meta;
+        quizQuestions = quiz.questions;
+        currentStreakRewards = currentQuizMeta.gamification.streakRewards;
+        currentBonusGiftClass = currentQuizMeta.gamification.bonusRewardClass;
+
+        applyQuizMetaToPage(currentQuizMeta);
+        startQuizButton.disabled = false;
+    } catch (error) {
+        showQuizLoadError(error);
+    }
 }
 
-async function loadCurrentQuizDefinition() {
-    const { loadLegacyQuizDefinition } = await import('./app/loader.js');
-    const source = {};
+function applyQuizMetaToPage(meta) {
+    const text = meta.uiText;
+    document.title = meta.pageTitle;
+    document.getElementById('quiz-title').textContent = meta.title;
 
-    if (typeof mainQuizDataArray !== 'undefined') {
-        source.mainQuizDataArray = mainQuizDataArray;
-    }
-    if (typeof quizData !== 'undefined') {
-        source.quizData = quizData;
-    }
-    if (typeof streakThresholds !== 'undefined') {
-        source.streakThresholds = streakThresholds;
-    }
-    if (typeof bonusGiftClass !== 'undefined') {
-        source.bonusGiftClass = bonusGiftClass;
+    const descriptionElement = document.getElementById('quiz-description');
+    descriptionElement.textContent = meta.description;
+    descriptionElement.hidden = meta.description.trim().length === 0;
+
+    const logoElement = document.getElementById('logo');
+    if (meta.branding.logoSrc) {
+        logoElement.onerror = () => {
+            logoElement.hidden = true;
+            console.error(`Logo image not found at ${meta.branding.logoSrc}`);
+        };
+        logoElement.src = meta.branding.logoSrc;
+        logoElement.alt = meta.branding.logoAlt;
+        logoElement.hidden = false;
     }
 
-    return loadLegacyQuizDefinition({
-        meta: buildLegacyQuizMeta(),
-        source,
-    });
+    document.getElementById('name-label').textContent = text.nameLabel;
+    nameInputElement.placeholder = text.namePlaceholder;
+    document.getElementById('correction-mode-label').textContent = text.correctionModeLabel;
+    document.getElementById('immediate-correction-label').textContent = text.immediateCorrectionLabel;
+    document.getElementById('delayed-correction-label').textContent = text.delayedCorrectionLabel;
+    startQuizButton.textContent = text.startButtonLabel;
+    document.getElementById('result-heading').textContent = text.resultHeading;
+    reviewToggleButton.textContent = text.reviewToggleClosed;
+    document.getElementById('share-score-label').textContent = text.shareButtonLabel;
 }
 
-function handleQuizLoadFailure(error) {
-    console.error('Error loading quiz definition:', error);
-    currentQuizMeta = null;
-    currentStreakRewards = {};
-    currentBonusGiftClass = null;
-    quizLib = null;
-    alert('Quiz data not found. Please ensure quizData.js is loaded correctly.');
-    initialSetupElement.style.display = 'block';
-    quizContentElement.style.display = 'none';
+function showQuizLoadError(error) {
+    console.error('Error loading quiz:', error);
+    document.title = 'Quiz not available';
+    document.getElementById('quiz-title').textContent = 'Quiz not available';
+    initialSetupElement.style.display = 'none';
+    const errorElement = document.getElementById('quiz-load-error');
+    errorElement.textContent = error.message;
+    errorElement.hidden = false;
 }
 
 function getAchievementLabel(labelKey) {
     return currentQuizMeta.gamification.achievementLabels[labelKey];
 }
 
-async function startQuizFlow() {
+function startQuizFlow() {
      console.log("Starting quiz flow...");
      userName = nameInputElement.value.trim() || "Quiz Taker";
      initialSetupElement.style.display = 'none'; // Hide the entire initial setup div
@@ -191,28 +213,11 @@ async function startQuizFlow() {
       showImmediateCorrection = selectedCorrectionMode ? selectedCorrectionMode.value === 'immediate' : true;
      console.log("Immediate Correction Mode:", showImmediateCorrection);
 
-     let quizDataToUse;
-     try {
-         const quizDefinition = await loadCurrentQuizDefinition();
-         const utils = await import('./app/utils.js');
-         const runtime = await import('./app/runtime.js');
-         quizLib = { ...utils, ...runtime };
-
-         currentQuizMeta = quizDefinition.meta;
-         currentStreakRewards = currentQuizMeta.gamification.streakRewards || {};
-         currentBonusGiftClass = currentQuizMeta.gamification.bonusRewardClass;
-
-         quizDataToUse = quizDefinition.questions;
-     } catch (error) {
-         handleQuizLoadFailure(error);
-         return;
-     }
-
      quizContentElement.style.display = 'block'; // Show quiz content now
 
 
-     let regularQuizQuestions = quizDataToUse.filter(q => !q.isBonus);
-     let bonusQuestion = quizDataToUse.find(q => q.isBonus);
+     let regularQuizQuestions = quizQuestions.filter(q => !q.isBonus);
+     let bonusQuestion = quizQuestions.find(q => q.isBonus);
 
      quizLib.shuffleArray(regularQuizQuestions);
 
@@ -238,7 +243,7 @@ async function startQuizFlow() {
 
 function startOverallTimer() {
      clearInterval(overallTimerInterval);
-     timeLeft = 60 * 60; // Updated to 60 minutes
+     timeLeft = currentQuizMeta.timing.timeLimitSeconds;
      updateTimerDisplay();
      overallTimerInterval = setInterval(() => {
          timeLeft--;
@@ -306,7 +311,7 @@ function scheduleOrWaitForNext() {
         nextQuestionButtonElement.style.display = 'inline-block';
         submitButton.style.display = 'none';
     } else {
-        autoProceedTimeout = setTimeout(proceedToNextQuestion, 2000);
+        autoProceedTimeout = setTimeout(proceedToNextQuestion, currentQuizMeta.timing.autoAdvanceDelayMs);
     }
 }
 
@@ -689,10 +694,10 @@ function populateReviewSection() {
 function toggleReview() {
      if (reviewContent.style.display === 'none' || reviewContent.style.display === '') {
          reviewContent.style.display = 'block';
-         reviewToggleButton.textContent = 'Hide Review';
+         reviewToggleButton.textContent = currentQuizMeta.uiText.reviewToggleOpen;
      } else {
          reviewContent.style.display = 'none';
-         reviewToggleButton.textContent = 'Review Incorrect Answers';
+         reviewToggleButton.textContent = currentQuizMeta.uiText.reviewToggleClosed;
      }
  }
 
@@ -746,7 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
               defineSynths();
          }
 
-            await startQuizFlow();
+            startQuizFlow();
      });
 
 
@@ -765,5 +770,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     reviewToggleButton.addEventListener('click', toggleReview);
     shareScoreButton.addEventListener('click', shareScoreAsImage);
+
+    initQuiz();
 
 });

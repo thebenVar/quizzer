@@ -1,0 +1,70 @@
+[
+  {
+    "id": 301,
+    "type": "mcq",
+    "prompt": "Who was the first king of Israel?",
+    "options": ["David", "Solomon", "Samuel", "Saul"],
+    "answer": "Saul",
+    "points": 1,
+    "explanation": "Saul was anointed by Samuel as the first king of Israel (1 Samuel 10:1)."
+  },
+  {
+    "id": 302,
+    "type": "mcq",
+    "prompt": "How many disciples did Jesus have in His core group?",
+    "options": ["7", "10", "3", "12"],
+    "answer": "12",
+    "points": 1,
+    "explanation": "Jesus called twelve disciples to be His closest followers (Matthew 10:1-4)."
+  },
+  {
+    "id": 303,
+    "type": "mcq",
+    "prompt": "What was the name of the mountain where Moses received the Ten Commandments?",
+    "options": ["Mount Carmel", "Mount Zion", "Mount Nebo", "Mount Sinai"],
+    "answer": "Mount Sinai",
+    "points": 1,
+    "explanation": "God gave Moses the Ten Commandments on Mount Sinai (Exodus 19-20)."
+  },
+  {
+    "id": 304,
+    "type": "mcq",
+    "prompt": "Which of these books is considered a Gospel in the New Testament?",
+    "options": ["Acts", "Romans", "Revelation", "John"],
+    "answer": "John",
+    "points": 1,
+    "explanation": "The four Gospels are Matthew, Mark, Luke, and John."
+  },
+  {
+    "id": 305,
+    "type": "mcq",
+    "prompt": "Who was swallowed by a great fish after disobeying God?",
+    "options": ["Elijah", "Daniel", "Peter", "Jonah"],
+    "answer": "Jonah",
+    "points": 1,
+    "explanation": "The story of Jonah being swallowed by a great fish is found in the Book of Jonah (Jonah 1:17)."
+  },
+  {
+    "id": 307,
+    "type": "mcq",
+    "prompt": "Which of the following are considered patriarchs in the Old Testament?",
+    "options": ["Abraham", "Isaac", "Jacob", "All the above"],
+    "answer": "All the above",
+    "points": 1,
+    "explanation": "Abraham, his son Isaac, and Isaac's son Jacob are foundational patriarchs of the Israelite nation."
+  },
+  {
+    "id": 306,
+    "type": "matching",
+    "prompt": "Match the biblical figure to their primary role or description:",
+    "pairs": [
+      ["Abraham", "Father of a multitude"],
+      ["Moses", "Led Israelites out of Egypt"],
+      ["David", "Shepherd King, wrote Psalms"],
+      ["Paul", "Apostle to the Gentiles"]
+    ],
+    "points": 0,
+    "explanation": "These are well-known roles/descriptions for these key biblical figures.",
+    "isBonus": true
+  }
+]

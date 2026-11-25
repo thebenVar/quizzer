@@ -43,6 +43,15 @@ describe('calculateRegularQuestionStats', () => {
       totalRegularQuestions: 2,
     });
   });
+
+  it('counts a matching question without points as one point per pair', () => {
+    const stats = calculateRegularQuestionStats([
+      { id: 1, type: 'mcq', points: 1 },
+      { id: 2, type: 'matching', points: 0, pairs: [['a', 'A'], ['b', 'B'], ['c', 'C']] },
+    ]);
+
+    expect(stats.totalPossibleScore).toBe(4);
+  });
 });
 
 describe('getResultMessage', () => {

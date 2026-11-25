@@ -1,0 +1,22 @@
+{
+  "title": "Gethsemane Bible Quiz",
+  "branding": {
+    "logoSrc": "logo.png",
+    "logoAlt": "Gethsemane Logo"
+  },
+  "gamification": {
+    "streakRewards": {
+      "5": "fas fa-candy-cane",
+      "20": "fas fa-pencil-alt",
+      "30": "fas fa-book"
+    },
+    "bonusRewardClass": "fas fa-candy-cane",
+    "achievementLabels": {
+      "highScore": "Bible Whiz! 👍"
+    }
+  },
+  "timing": {
+    "timeLimitSeconds": 3600,
+    "autoAdvanceDelayMs": 2000
+  }
+}

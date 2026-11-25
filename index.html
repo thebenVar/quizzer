@@ -3,40 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gethsemane Bible Quiz</title>
+    <title>Quiz</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-    <script src="quizData.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body>
+    <!-- This page is the same for every quiz. The quiz's title, logo, labels and
+         questions come from quizzes/<quiz-id>/meta.json and questions.json. -->
 
     <div id="quiz-container">
         <div id="feedback-flash" class="feedback-flash"></div>
 
-        <img id="logo"
-             src="logo.png" alt="Gethsemane Logo" onerror="this.style.display='none'; console.error('Logo image not found at logo.png')"
-             >
-        <h1>Gethsemane Bible Quiz</h1>
+        <img id="logo" alt="" hidden>
+        <h1 id="quiz-title">Loading quiz…</h1>
+        <p id="quiz-description" hidden></p>
+        <p id="quiz-load-error" class="feedback-incorrect" hidden></p>
 
         <div id="initial-setup">
             <div id="name-input-area">
-                 <label for="user-name">Enter Your Name:</label>
-                 <input type="text" id="user-name" name="user-name" placeholder="Your Name">
+                 <label for="user-name" id="name-label"></label>
+                 <input type="text" id="user-name" name="user-name">
             </div>
 
             <div id="correction-mode-selector">
-                <p>Feedback on incorrect answers:</p>
+                <p id="correction-mode-label"></p>
                 <label>
-                    <input type="radio" name="correction" value="immediate" checked> Show correction immediately
+                    <input type="radio" name="correction" value="immediate" checked> <span id="immediate-correction-label"></span>
                 </label>
                 <label>
-                    <input type="radio" name="correction" value="end"> Show only in final review
+                    <input type="radio" name="correction" value="end"> <span id="delayed-correction-label"></span>
                 </label>
             </div>
-            <button id="start-quiz-btn">Start Quiz</button>
+            <button id="start-quiz-btn" disabled>Start Quiz</button>
         </div>
 
 
@@ -52,7 +53,7 @@
                         <span id="streak-counter">🔥 Streak: 0</span>
                         <div id="live-gifts"></div>
                     </div>
-                    <span id="overall-timer">Time Left: 40:00</span>
+                    <span id="overall-timer"></span>
                 </div>
             </div>
 
@@ -72,7 +73,7 @@
             </div>
         </div> <div id="result-area" style="display: none;">
             <div id="score-card">
-                <h2>Quiz Complete!</h2>
+                <h2 id="result-heading"></h2>
                 <p id="result-message">Well done, <span id="result-name">User</span>!</p>
                 <p>Your final score is: <span id="final-score">0</span> / <span id="total-possible-score">0</span></p>
                 <div id="result-summary">
@@ -88,13 +89,13 @@
                     </ul>
                 </div>
             </div> <div id="review-section" style="display: none;">
-                <button id="review-toggle-btn">Review Incorrect Answers</button>
+                <button id="review-toggle-btn"></button>
                 <div id="review-content">
                     </div>
             </div>
 
              <div class="result-buttons">
-                 <button id="share-score-btn"><i class="fas fa-share-alt"></i> Share Score</button>
+                 <button id="share-score-btn"><i class="fas fa-share-alt"></i> <span id="share-score-label"></span></button>
                  </div>
         </div> </div> </body>
 </html>

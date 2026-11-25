@@ -1,8 +1,7 @@
 {
   "name": "quizzer",
   "version": "1.0.0",
-  "description": "A quiz app (with demo examples from the book of ephesians)",
-  "main": "quizData.js",
+  "description": "A reusable quiz app: each quiz is a folder of JSON content under quizzes/",
   "scripts": {
     "test": "vitest run"
   },
@@ -13,7 +12,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/thebenVar/quizzer/issues"
   },

@@ -15,11 +15,20 @@ export function formatMinutesSeconds(totalSeconds) {
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
 
+// Points a question is worth when answered correctly. A matching question
+// without its own points is worth one point per pair.
+export function getQuestionPoints(question) {
+  if (question.points) {
+    return question.points;
+  }
+  return question.type === 'matching' ? question.pairs.length : 0;
+}
+
 export function calculateRegularQuestionStats(questions) {
   const regularQuestions = questions.filter((question) => !question.isBonus);
 
   return {
-    totalPossibleScore: regularQuestions.reduce((sum, question) => sum + (question.points || 0), 0),
+    totalPossibleScore: regularQuestions.reduce((sum, question) => sum + getQuestionPoints(question), 0),
     totalRegularQuestions: regularQuestions.length,
   };
 }
