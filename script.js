@@ -32,13 +32,7 @@ let currentQuizData = []; // This will hold the main quiz data after setup
 let currentQuizMeta = null;
 let currentStreakRewards = {};
 let currentBonusGiftClass = null;
-let currentResultMessageResolver = null;
-let currentShareFileNameResolver = null;
-let currentStreakGiftClassResolver = null;
-let currentTimerFormatter = null;
-let currentStatsCalculator = null;
-let currentShuffler = null;
-let currentAnswerChecker = null;
+let quizLib = null; // Functions from app/utils.js and app/runtime.js, loaded when the quiz starts
 let showImmediateCorrection = true;
 
 // --- Sound Effects (Tone.js Synths) ---
@@ -138,25 +132,6 @@ async function playSound(synth, note, duration) {
     }
 }
 
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
-function getQuestionPrompt(question) {
-    return question.prompt || question.question || '';
-}
-
-function getQuestionExplanation(question) {
-    return question.explanation || question.justification || '';
-}
-
-function getQuestionType(question) {
-    return typeof question.type === 'string' ? question.type.toLowerCase() : '';
-}
-
 function buildLegacyQuizMeta() {
     const headingText = document.querySelector('#quiz-container h1')?.textContent?.trim();
     const title = headingText || document.title || 'Quizzer';
@@ -197,34 +172,14 @@ function handleQuizLoadFailure(error) {
     currentQuizMeta = null;
     currentStreakRewards = {};
     currentBonusGiftClass = null;
-    currentResultMessageResolver = null;
-    currentShareFileNameResolver = null;
+    quizLib = null;
     alert('Quiz data not found. Please ensure quizData.js is loaded correctly.');
     initialSetupElement.style.display = 'block';
     quizContentElement.style.display = 'none';
 }
 
-function getFallbackResultMessage() {
-    const percentage = totalPossibleScore > 0 ? (score / totalPossibleScore) * 100 : 0;
-
-    if (percentage === 100 && totalRegularQuestions > 0) {
-        return `Excellent work, ${userName}! Perfect score!`;
-    }
-    if (percentage >= 70) {
-        return `Great job, ${userName}!`;
-    }
-    if (percentage >= 50) {
-        return `Good effort, ${userName}!`;
-    }
-
-    return `Keep practicing, ${userName}!`;
-}
-
-function getAchievementLabel(labelKey, fallbackText) {
-    const configuredLabel = currentQuizMeta?.gamification?.achievementLabels?.[labelKey];
-    return typeof configuredLabel === 'string' && configuredLabel.trim().length > 0
-        ? configuredLabel
-        : fallbackText;
+function getAchievementLabel(labelKey) {
+    return currentQuizMeta.gamification.achievementLabels[labelKey];
 }
 
 async function startQuizFlow() {
@@ -239,27 +194,13 @@ async function startQuizFlow() {
      let quizDataToUse;
      try {
          const quizDefinition = await loadCurrentQuizDefinition();
-         const {
-             getResultMessage,
-             getShareFileName,
-             getNewStreakGiftClass,
-             formatMinutesSeconds,
-             calculateRegularQuestionStats,
-             shuffleArray: libShuffleArray
-         } = await import('./app/utils.js');
-         const { checkMCQAnswer, checkMatchingAnswer } = await import('./app/runtime.js');
+         const utils = await import('./app/utils.js');
+         const runtime = await import('./app/runtime.js');
+         quizLib = { ...utils, ...runtime };
 
          currentQuizMeta = quizDefinition.meta;
          currentStreakRewards = currentQuizMeta.gamification.streakRewards || {};
          currentBonusGiftClass = currentQuizMeta.gamification.bonusRewardClass;
-
-         currentResultMessageResolver = getResultMessage;
-         currentShareFileNameResolver = getShareFileName;
-         currentStreakGiftClassResolver = getNewStreakGiftClass;
-         currentTimerFormatter = formatMinutesSeconds;
-         currentStatsCalculator = calculateRegularQuestionStats;
-         currentShuffler = libShuffleArray;
-         currentAnswerChecker = { mcq: checkMCQAnswer, matching: checkMatchingAnswer };
 
          quizDataToUse = quizDefinition.questions;
      } catch (error) {
@@ -273,11 +214,7 @@ async function startQuizFlow() {
      let regularQuizQuestions = quizDataToUse.filter(q => !q.isBonus);
      let bonusQuestion = quizDataToUse.find(q => q.isBonus);
 
-     if (currentShuffler) {
-         currentShuffler(regularQuizQuestions);
-     } else {
-         shuffleArray(regularQuizQuestions);
-     }
+     quizLib.shuffleArray(regularQuizQuestions);
 
      currentQuizData = [...regularQuizQuestions];
      if (bonusQuestion) {
@@ -318,21 +255,13 @@ function startOverallTimer() {
  }
 
 function updateTimerDisplay() {
-     const timeText = currentTimerFormatter ? currentTimerFormatter(timeLeft) : '0:00';
-     overallTimerElement.textContent = `Time Left: ${timeText}`;
+     overallTimerElement.textContent = `Time Left: ${quizLib.formatMinutesSeconds(timeLeft)}`;
  }
 
 function calculateTotalPossibleScore() {
-    if (currentStatsCalculator) {
-        const stats = currentStatsCalculator(currentQuizData);
-        totalPossibleScore = stats.totalPossibleScore;
-        totalRegularQuestions = stats.totalRegularQuestions;
-    } else {
-        totalPossibleScore = currentQuizData
-            .filter(q => !q.isBonus)
-            .reduce((sum, question) => sum + (question.points || 0), 0);
-        totalRegularQuestions = currentQuizData.filter(q => !q.isBonus).length;
-    }
+    const stats = quizLib.calculateRegularQuestionStats(currentQuizData);
+    totalPossibleScore = stats.totalPossibleScore;
+    totalRegularQuestions = stats.totalRegularQuestions;
  }
 
 function updateLiveCountsAndStreak() {
@@ -422,7 +351,7 @@ function loadQuestion() {
     displayLiveGifts();
 
 
-    questionTextElement.textContent = getQuestionPrompt(currentQuestion);
+    questionTextElement.textContent = currentQuestion.prompt;
     const existingLabel = questionTextElement.querySelector('.bonus-question-label');
     if (existingLabel) existingLabel.remove();
 
@@ -434,7 +363,7 @@ function loadQuestion() {
     }
 
 
-    switch (getQuestionType(currentQuestion)) {
+    switch (currentQuestion.type) {
         case "mcq": loadMCQOptions(currentQuestion); break;
         case "matching": loadMatchingOptions(currentQuestion); submitButton.style.display = 'inline-block'; break;
         default: optionsAreaElement.innerHTML = '<p>Unsupported question type.</p>'; scheduleOrWaitForNext(); break;
@@ -454,11 +383,7 @@ function loadMCQOptions(question) {
          }
      });
 
-     if (currentShuffler) {
-         currentShuffler(regularOptions);
-     } else {
-         shuffleArray(regularOptions);
-     }
+     quizLib.shuffleArray(regularOptions);
      const finalOptions = [...regularOptions, ...specialOptions];
 
      finalOptions.forEach(optionText => {
@@ -474,73 +399,29 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
     document.querySelectorAll('.mcq-option').forEach(btn => btn.disabled = true);
     buttonElement.classList.add('selected');
 
-    if (currentAnswerChecker && currentAnswerChecker.mcq) {
-        const result = currentAnswerChecker.mcq(question, selectedOption, showImmediateCorrection);
-        if (result.isCorrect) {
-            score += result.pointsAwarded;
-            if (!question.isBonus) {
-                correctCount++;
-            }
-            currentStreak++;
-            feedbackAreaElement.textContent = result.feedback;
-            feedbackAreaElement.className = 'feedback-correct';
-            playSound(correctSound, "C5", "8n");
-            triggerFeedbackFlash(true, question.isBonus);
-            checkStreakForGift();
-        } else {
-            if (!question.isBonus) {
-                incorrectCount++;
-            }
-            currentStreak = 0;
-            feedbackAreaElement.innerHTML = result.feedback;
-            feedbackAreaElement.className = 'feedback-incorrect';
-            playSound(incorrectSound, "C3", "8n");
-            triggerFeedbackFlash(false, question.isBonus);
-            if (result.reviewItem) {
-                incorrectlyAnsweredQuestions.push(result.reviewItem);
-            }
+    const result = quizLib.checkMCQAnswer(question, selectedOption, showImmediateCorrection);
+    if (result.isCorrect) {
+        score += result.pointsAwarded;
+        if (!question.isBonus) {
+            correctCount++;
         }
+        currentStreak++;
+        feedbackAreaElement.textContent = result.feedback;
+        feedbackAreaElement.className = 'feedback-correct';
+        playSound(correctSound, "C5", "8n");
+        triggerFeedbackFlash(true, question.isBonus);
+        checkStreakForGift();
     } else {
-        // Legacy fallback
-        let isCorrect = false;
-        if (selectedOption === question.answer) {
-            isCorrect = true;
-            if (!question.isBonus) {
-                score += question.points;
-                correctCount++;
-            }
-            currentStreak++;
-            feedbackAreaElement.textContent = "Correct!";
-            feedbackAreaElement.className = 'feedback-correct';
-            playSound(correctSound, "C5", "8n");
-            triggerFeedbackFlash(true, question.isBonus);
-            checkStreakForGift();
-        } else {
-            isCorrect = false;
-            if (!question.isBonus) {
-                incorrectCount++;
-            }
-            currentStreak = 0;
-            let feedbackText = `Incorrect!`;
-            if (showImmediateCorrection && !question.isBonus) {
-                feedbackText += ` The correct answer was: ${question.answer}.`;
-                const explanation = getQuestionExplanation(question);
-                if (explanation) {
-                    feedbackText += `<br><span class="feedback-justification">Why? ${explanation}</span>`;
-                }
-            }
-            feedbackAreaElement.innerHTML = feedbackText;
-            feedbackAreaElement.className = 'feedback-incorrect';
-            playSound(incorrectSound, "C3", "8n");
-            triggerFeedbackFlash(false, question.isBonus);
-            if (!question.isBonus) {
-                incorrectlyAnsweredQuestions.push({
-                    questionText: getQuestionPrompt(question),
-                    userAnswer: selectedOption,
-                    correctAnswer: question.answer,
-                    justification: getQuestionExplanation(question) || "No specific justification provided."
-                });
-            }
+        if (!question.isBonus) {
+            incorrectCount++;
+        }
+        currentStreak = 0;
+        feedbackAreaElement.innerHTML = result.feedback;
+        feedbackAreaElement.className = 'feedback-incorrect';
+        playSound(incorrectSound, "C3", "8n");
+        triggerFeedbackFlash(false, question.isBonus);
+        if (result.reviewItem) {
+            incorrectlyAnsweredQuestions.push(result.reviewItem);
         }
     }
 
@@ -552,11 +433,9 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
 }
 
  function checkStreakForGift() {
-     const giftClass = currentStreakGiftClassResolver
-        ? currentStreakGiftClassResolver({ currentStreak, streakRewards: currentStreakRewards, earnedGifts })
-        : currentStreakRewards[currentStreak];
+     const giftClass = quizLib.getNewStreakGiftClass({ currentStreak, streakRewards: currentStreakRewards, earnedGifts });
 
-     if (giftClass && !earnedGifts.some(gift => gift.class === giftClass && gift.source === 'streak')) {
+     if (giftClass) {
          earnedGifts.push({ class: giftClass, source: 'streak' });
          console.log(`Streak Gift earned: ${giftClass} for streak ${currentStreak}`);
          displayLiveGifts();
@@ -570,11 +449,7 @@ function loadMatchingOptions(question) {
      container.classList.add('matching-container');
      const leftItems = question.pairs.map(pair => pair[0]);
      const rightItems = question.pairs.map(pair => pair[1]);
-     if (currentShuffler) {
-         currentShuffler(rightItems);
-     } else {
-         shuffleArray(rightItems);
-     }
+     quizLib.shuffleArray(rightItems);
 
      leftItems.forEach((leftItem) => {
          const leftElement = document.createElement('div');
@@ -606,139 +481,48 @@ function loadMatchingOptions(question) {
      submitButton.disabled = true;
      const currentQuestion = currentQuizData[currentQuestionIndex];
 
-     if (currentAnswerChecker && currentAnswerChecker.matching) {
-         const result = currentAnswerChecker.matching(currentQuestion, userAnswers, showImmediateCorrection);
-         if (currentQuestion.isBonus) {
-             if (result.isCorrect) {
-                 feedbackAreaElement.textContent = result.feedback;
-                 feedbackAreaElement.className = 'feedback-bonus';
-                 if (currentBonusGiftClass && !earnedGifts.some(gift => gift.class === currentBonusGiftClass && gift.source === 'bonus')) {
-                     earnedGifts.push({ class: currentBonusGiftClass, source: 'bonus' });
-                 }
-                 displayLiveGifts();
-                 playSound(giftSound, "G5", "8n");
-                 triggerFeedbackFlash(true, true);
-             } else {
-                 feedbackAreaElement.innerHTML = result.feedback;
-                 feedbackAreaElement.className = 'feedback-incorrect';
-                 playSound(incorrectSound, "C3", "8n");
-                 triggerFeedbackFlash(false);
-                 if (result.reviewItem) {
-                     incorrectlyAnsweredQuestions.push(result.reviewItem);
-                 }
+     const result = quizLib.checkMatchingAnswer(currentQuestion, userAnswers, showImmediateCorrection);
+     if (currentQuestion.isBonus) {
+         if (result.isCorrect) {
+             feedbackAreaElement.textContent = result.feedback;
+             feedbackAreaElement.className = 'feedback-bonus';
+             if (currentBonusGiftClass && !earnedGifts.some(gift => gift.class === currentBonusGiftClass && gift.source === 'bonus')) {
+                 earnedGifts.push({ class: currentBonusGiftClass, source: 'bonus' });
              }
+             displayLiveGifts();
+             playSound(giftSound, "G5", "8n");
+             triggerFeedbackFlash(true, true);
          } else {
-             score += result.pointsAwarded;
-             if (result.isCorrect) {
-                 correctCount++;
-                 currentStreak++;
-                 feedbackAreaElement.textContent = result.feedback;
-                 feedbackAreaElement.className = 'feedback-correct';
-                 playSound(correctSound, "C5", "8n");
-                 triggerFeedbackFlash(true);
-                 checkStreakForGift();
-             } else {
-                 incorrectCount++;
-                 currentStreak = 0;
-                 feedbackAreaElement.innerHTML = result.feedback;
-                 feedbackAreaElement.className = 'feedback-submitted';
-                 playSound(incorrectSound, "C3", "8n");
-                 triggerFeedbackFlash(false);
-                 if (result.reviewItem) {
-                     incorrectlyAnsweredQuestions.push(result.reviewItem);
-                 }
+             feedbackAreaElement.innerHTML = result.feedback;
+             feedbackAreaElement.className = 'feedback-incorrect';
+             playSound(incorrectSound, "C3", "8n");
+             triggerFeedbackFlash(false);
+             if (result.reviewItem) {
+                 incorrectlyAnsweredQuestions.push(result.reviewItem);
              }
-             updateLiveCountsAndStreak();
          }
      } else {
-         // Legacy fallback
-         let correctMatches = 0;
-         let userMatches = {};
-         let correctPairs = {};
-         let isAllCorrect = false;
-
-         currentQuestion.pairs.forEach(pair => {
-             const leftItem = pair[0];
-             const correctAnswer = pair[1];
-             const userAnswer = userAnswers[leftItem];
-             userMatches[leftItem] = userAnswer || "Not Answered";
-             correctPairs[leftItem] = correctAnswer;
-
-             if (userAnswer && userAnswer === correctAnswer) {
-                 correctMatches++;
-             }
-         });
-
-         isAllCorrect = correctMatches === currentQuestion.pairs.length;
-
-         if (currentQuestion.isBonus) {
-             if (isAllCorrect) {
-                 feedbackAreaElement.textContent = `Bonus Correct! Candy Earned! 🍬`;
-                 feedbackAreaElement.className = 'feedback-bonus';
-                 if (currentBonusGiftClass && !earnedGifts.some(gift => gift.class === currentBonusGiftClass && gift.source === 'bonus')) {
-                     earnedGifts.push({ class: currentBonusGiftClass, source: 'bonus' });
-                 }
-                 displayLiveGifts();
-                 playSound(giftSound, "G5", "8n");
-                 triggerFeedbackFlash(true, true);
-             } else {
-                 let feedbackText = `Bonus Incorrect (${correctMatches}/${currentQuestion.pairs.length})`;
-                 if (showImmediateCorrection) {
-                     feedbackText += ` Review correct matches at the end.`;
-                     const explanation = getQuestionExplanation(currentQuestion);
-                     if (explanation) {
-                         feedbackText += `<br><span class="feedback-justification">Hint: ${explanation}</span>`;
-                     }
-                 }
-                 feedbackAreaElement.innerHTML = feedbackText;
-                 feedbackAreaElement.className = 'feedback-incorrect';
-                 playSound(incorrectSound, "C3", "8n");
-                 triggerFeedbackFlash(false);
-                 incorrectlyAnsweredQuestions.push({
-                     questionText: getQuestionPrompt(currentQuestion) + " (Bonus)",
-                     userAnswer: userMatches,
-                     correctAnswer: correctPairs,
-                     justification: getQuestionExplanation(currentQuestion) || "Match all pairs correctly.",
-                     isMatching: true
-                 });
-             }
+         score += result.pointsAwarded;
+         if (result.isCorrect) {
+             correctCount++;
+             currentStreak++;
+             feedbackAreaElement.textContent = result.feedback;
+             feedbackAreaElement.className = 'feedback-correct';
+             playSound(correctSound, "C5", "8n");
+             triggerFeedbackFlash(true);
+             checkStreakForGift();
          } else {
-             const pointsAwarded = isAllCorrect ? (currentQuestion.points || currentQuestion.pairs.length) : 0;
-             score += pointsAwarded;
-
-             if (isAllCorrect) {
-                 correctCount++;
-                 currentStreak++;
-                 feedbackAreaElement.textContent = `Answer Submitted! (${correctMatches}/${currentQuestion.pairs.length} correct)`;
-                 feedbackAreaElement.className = 'feedback-correct';
-                 playSound(correctSound, "C5", "8n");
-                 triggerFeedbackFlash(true);
-                 checkStreakForGift();
-             } else {
-                 incorrectCount++;
-                 currentStreak = 0;
-                 let feedbackText = `Answer Submitted! (${correctMatches}/${currentQuestion.pairs.length} correct)`;
-                 if (showImmediateCorrection) {
-                     feedbackText += ` Some matches were incorrect. Review at the end.`;
-                     const explanation = getQuestionExplanation(currentQuestion);
-                     if (explanation) {
-                         feedbackText += `<br><span class="feedback-justification">Why? ${explanation}</span>`;
-                     }
-                 }
-                 feedbackAreaElement.innerHTML = feedbackText;
-                 feedbackAreaElement.className = 'feedback-submitted';
-                 playSound(incorrectSound, "C3", "8n");
-                 triggerFeedbackFlash(false);
-                 incorrectlyAnsweredQuestions.push({
-                     questionText: getQuestionPrompt(currentQuestion),
-                     userAnswer: userMatches,
-                     correctAnswer: correctPairs,
-                     justification: getQuestionExplanation(currentQuestion) || "Match all pairs correctly.",
-                     isMatching: true
-                 });
+             incorrectCount++;
+             currentStreak = 0;
+             feedbackAreaElement.innerHTML = result.feedback;
+             feedbackAreaElement.className = 'feedback-submitted';
+             playSound(incorrectSound, "C3", "8n");
+             triggerFeedbackFlash(false);
+             if (result.reviewItem) {
+                 incorrectlyAnsweredQuestions.push(result.reviewItem);
              }
-             updateLiveCountsAndStreak();
          }
+         updateLiveCountsAndStreak();
      }
 
      optionsAreaElement.querySelectorAll('.match-select').forEach(sel => sel.disabled = true);
@@ -764,15 +548,12 @@ function showResults() {
     const secondsTaken = durationSeconds % 60;
     timeTakenElement.textContent = `${minutesTaken}:${secondsTaken < 10 ? '0' : ''}${secondsTaken}`;
 
-    const messageText = currentResultMessageResolver && currentQuizMeta?.scoring?.resultBands
-        ? currentResultMessageResolver({
-            score,
-            totalPossibleScore,
-            userName,
-            resultBands: currentQuizMeta.scoring.resultBands,
-        })
-        : getFallbackResultMessage();
-    resultMessageElement.textContent = messageText;
+    resultMessageElement.textContent = quizLib.getResultMessage({
+        score,
+        totalPossibleScore,
+        userName,
+        resultBands: currentQuizMeta.scoring.resultBands,
+    });
 
     populateAchievements();
     achievementsListElement.parentElement.style.display = 'block';
@@ -827,21 +608,21 @@ function populateAchievements() {
      if (correctCount === regularQuestionsFromSession.length && regularQuestionsFromSession.length > 0) {
          const li = document.createElement('li');
          li.classList.add('achievement-text');
-         li.textContent = getAchievementLabel('perfectScore', 'Perfect Score! ✨');
+         li.textContent = getAchievementLabel('perfectScore');
          li.style.backgroundColor = "#fff3cd"; li.style.color = "#664d03";
          achievementsListElement.appendChild(li);
          achievementsDisplayed = true;
      } else if (maxRegularScore > 0 && score / maxRegularScore >= 0.7) {
          const li = document.createElement('li');
          li.classList.add('achievement-text');
-         li.textContent = getAchievementLabel('highScore', 'Bible Whiz! 👍');
+         li.textContent = getAchievementLabel('highScore');
          li.style.backgroundColor = "#cfe2ff"; li.style.color = "#0a58ca";
          achievementsListElement.appendChild(li);
          achievementsDisplayed = true;
      }
 
      if (!achievementsDisplayed) {
-          achievementsListElement.innerHTML = `<li>${getAchievementLabel('noAchievements', 'No special achievements or gifts this time.')}</li>`;
+          achievementsListElement.innerHTML = `<li>${getAchievementLabel('noAchievements')}</li>`;
      }
 }
 
@@ -934,9 +715,7 @@ async function shareScoreAsImage() {
         const imageDataUrl = canvas.toDataURL('image/png');
         const downloadLink = document.createElement('a');
         downloadLink.href = imageDataUrl;
-        downloadLink.download = currentShareFileNameResolver
-            ? currentShareFileNameResolver(currentQuizMeta?.scoring)
-            : 'quiz-score.png';
+        downloadLink.download = quizLib.getShareFileName(currentQuizMeta.scoring);
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
@@ -973,7 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
      submitButton.addEventListener('click', () => {
         const currentQuestion = currentQuizData[currentQuestionIndex];
-          if (getQuestionType(currentQuestion) === "matching") {
+          if (currentQuestion.type === "matching") {
             handleMatchingSubmit();
         }
      });
