@@ -17,29 +17,21 @@ Statuses: **Done** · **In progress** · **Next** (agreed, scheduled) · **Backl
 | F07 | Consultant Aptitude Test | 40 questions over 8 skills, blind-checked by a reviewer; listed on the home page | aaf321b, e2a1580 |
 | F08 | Answer key page | `?quiz=<id>-ans`: every question, correct answer, "Why", "How to approach"; printable; not linked | d1171b7 |
 | F09 | Answer sheet document | Shareable doc version of the aptitude test's answers and approaches: [Consultant Aptitude Test – Answer Sheet](https://claude.ai/artifact/ExVwVf32w1p3YJQkjyoRRM) | — |
+| F10 | Review my answers | After the quiz: own answer vs correct, "Why", "How to approach"; Wrong only / All; letters follow the order the participant saw | 244f917 |
+| F11 | Download and share results | A self-contained results file (name, date, score, skills, full review) that opens offline and prints to PDF; Share uses the phone's share sheet | 244f917 |
+| F12 | Name required in test mode | So a saved results file always carries the participant's name | 244f917 |
+| F13 | Save progress and resume | A refresh or closed tab no longer loses a test; the clock keeps running; warning before leaving mid-test | 244f917 |
+| F14 | Select, then Next / Back | No more final-on-first-tap; a Finish screen lists unanswered and partly answered questions before "Submit test" | 244f917 |
+| F15 | Keyboard shortcuts | 1–4 / A–D to choose, Enter for Next, ← → in test mode | 244f917 |
+| F16 | Time per skill | Results show e.g. "Deduction 4/5 · 9:10" — careful vs. hasty | 244f917 |
+| F17 | Question type: passage + True / False / Can't tell | `"statements"`: one passage, several statements, one point each | 5057a6f |
+| F18 | Question type: tap the error | `"spot"`: tap the word in a draft that differs from the source; handles Indian scripts and Hebrew vowel marks | 5057a6f |
+| F19 | Question type: typed answer | `"text"`: no options to guess from; loose matching (case, spaces, numbers), `accept` list; works with transliteration keyboards | 5057a6f |
+| F20 | New aptitude questions with these types | 8 new items (11 points) replace 11 single-point questions; still 40 points, 5 per skill; blind-checked | 5057a6f |
 
 ## In progress
 
-Agreed 2026-11-25. Test-flow work, built first because the new question types depend on it.
-
-| # | Feature | Notes |
-|---|---|---|
-| F10 | Review my answers | After the quiz: own answer vs correct, "Why", "How to approach"; Wrong only / All toggle. Turns `showAnswerReview` on for the aptitude test |
-| F11 | Download and share results | A self-contained results file (name, date, score, skills, full review) that opens offline and prints to PDF; Share uses the phone's share sheet |
-| F12 | Name required in test mode | So a saved results file always carries the participant's name |
-| F13 | Save progress and resume | A refresh or closed tab no longer loses a test; the clock keeps running; warning before leaving mid-test |
-| F14 | Select, then Next / Back | No more final-on-first-tap; a Finish screen lists unanswered questions before "Submit test" |
-| F15 | Keyboard shortcuts | 1–4 / A–D to choose, Enter for Next, ← → in test mode |
-| F16 | Time per skill | Results show e.g. "Deduction 4/5 · 9:10" — careful vs. hasty |
-
-## Next
-
-| # | Feature | Notes |
-|---|---|---|
-| F17 | Question type: passage + True / False / Can't tell | One passage, several statements; the classic critical-thinking format; strengthens "text vs. assumption" |
-| F18 | Question type: tap the error | Tap the word in a draft that differs from the source; the consultant's checking job |
-| F19 | Question type: typed answer | No options to guess from; for series and counting |
-| F20 | About 10 new aptitude questions | Using F17–F19, replacing the weakest of the current 40 |
+Nothing at the moment.
 
 ## Backlog
 
@@ -56,6 +48,12 @@ Agreed 2026-11-25. Test-flow work, built first because the new question types de
 | F29 | Translate the aptitude test | 2026-11-25 | `uiText`, result messages and questions can all be translated per quiz |
 | F30 | Clean URLs | 2026-05-24 | `/quiz/<id>` instead of `?quiz=<id>`, via a `vercel.json` rewrite |
 | F31 | Work offline | 2026-05-24 | Tone.js, html2canvas and Font Awesome come from CDNs; bundle them locally |
+| F32 | Quizzes in Indian languages | 2026-11-25 | The verifier found Indic text broke "tap the error" (fixed). A full quiz in Hindi or another Indian language should be tried end to end: fonts, typed answers, results file |
+| F33 | Tap the error with several errors | 2026-11-25 | Today one wrong word per question; allow several, or a phrase |
+| F34 | Screen reader and touch testing | 2026-11-25 | Verifiers could only emulate a phone and could not test with a screen reader; try on real devices |
+| F35 | Devanagari and other digits in typed answers | 2026-11-25 | "४२" does not yet match "42" |
+| F36 | Update the answer sheet document | 2026-11-25 | The doc (F09) still describes the 11 questions replaced in F20; the `-ans` page is current |
+| F37 | Skill links count points | 2026-11-25 | On the answer key page the skill links show the number of questions (e.g. 3), though each skill is worth 5 points |
 
 ## Parked
 
