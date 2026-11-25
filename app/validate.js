@@ -1,3 +1,5 @@
+import { findSpotWordIndexes, normalizeTextAnswer } from './utils.js';
+
 // Every piece of text the quiz shows. A quiz can override any of these in
 // meta.json "uiText". Words in {braces} are filled in by the app.
 export const DEFAULT_UI_TEXT = Object.freeze({
@@ -32,6 +34,19 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   keyboardHint: 'Tip: press 1–{max} to choose, Enter for next',
   keyboardHintMatching: 'Tip: press Enter for next',
   keyboardHintQuiz: 'Tip: press 1–{max} to choose',
+  keyboardHintTabChoose: 'Tip: press Tab to move between choices and Enter to choose',
+  keyboardHintTabChooseNext: 'Tip: press Tab to move between choices and Enter to choose; Enter again for next',
+  keyboardHintTextSubmit: 'Tip: press Enter to submit',
+
+  // Question types: statements (True / False / Can't tell), spot the error, typed answer
+  statementTrue: 'True',
+  statementFalse: 'False',
+  statementCannotTell: "Can't tell",
+  statementsFeedback: '{correct} of {total} statements correct.',
+  statementCorrectReveal: 'Correct: {answer}',
+  spotSourceLabel: 'Source',
+  textAnswerLabel: 'Your answer',
+  textAnswerPlaceholder: 'Type your answer',
 
   // Test mode: moving between questions and submitting
   testNextButtonLabel: 'Next',
@@ -106,6 +121,8 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   reviewFilterWrong: 'Wrong only',
   reviewFilterAll: 'All questions',
   reviewYourAnswerTag: 'Your answer',
+  reviewYourAnswerValue: 'Your answer: {answer}',
+  reviewCorrectAnswerValue: 'Correct: {answer}',
   reviewNotAnsweredCard: 'Not answered',
   reviewYourMatchesHeading: 'Your matches',
 
@@ -117,6 +134,7 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   answerKeyWhy: 'Why',
   answerKeyApproach: 'How to approach',
   answerKeyMatchingHeading: 'Correct matches',
+  answerKeyAlsoAccepted: 'Also accepted: {answers}',
   answerKeyPrint: 'Print',
 });
 
@@ -312,6 +330,84 @@ function validateMcqQuestion(question, index) {
   };
 }
 
+// "statements": a passage and statements to judge True / False / Can't tell.
+export const STATEMENT_ANSWERS = Object.freeze(['true', 'false', 'cannot-tell']);
+
+function questionName(question) {
+  return question.id === undefined ? '' : ` (question id ${JSON.stringify(question.id)})`;
+}
+
+function validateStatementsQuestion(question, index) {
+  const path = `questions[${index}]`;
+  const name = questionName(question);
+  assert(
+    question.points === undefined,
+    `${path}.points is not used by "statements" questions${name}: each statement is worth one point; remove "points"`
+  );
+  assert(question.passage === undefined || typeof question.passage === 'string', `${path}.passage must be text${name}`);
+  assert(
+    Array.isArray(question.statements) && question.statements.length >= 2,
+    `${path}.statements must be a list of at least two statements${name}`
+  );
+
+  const statements = question.statements.map((statement, statementIndex) => {
+    const statementPath = `${path}.statements[${statementIndex}]`;
+    assert(isPlainObject(statement), `${statementPath} must be an object with "text" and "answer"${name}`);
+    assert(isNonEmptyString(statement.text), `${statementPath}.text is required${name}`);
+    assert(
+      STATEMENT_ANSWERS.includes(statement.answer),
+      `${statementPath}.answer must be one of ${STATEMENT_ANSWERS.map((answer) => `"${answer}"`).join(', ')}${name}`
+    );
+    assert(statement.explanation === undefined || typeof statement.explanation === 'string', `${statementPath}.explanation must be text${name}`);
+    return {
+      text: statement.text.trim(),
+      answer: statement.answer,
+      explanation: normalizeStringField(statement.explanation).trim(),
+    };
+  });
+
+  return {
+    passage: normalizeStringField(question.passage).trim(),
+    statements,
+    points: statements.length,
+  };
+}
+
+// "spot": tap the word in `text` that is wrong; `answer` must be exactly one word of it.
+function validateSpotQuestion(question, index) {
+  const path = `questions[${index}]`;
+  const name = questionName(question);
+  assert(isNonEmptyString(question.text), `${path}.text is required for a "spot" question${name}`);
+  assert(question.source === undefined || typeof question.source === 'string', `${path}.source must be text${name}`);
+  assert(isNonEmptyString(question.answer), `${path}.answer is required${name}`);
+  const text = question.text.normalize('NFC').trim();
+  const answer = question.answer.normalize('NFC').trim();
+  const matches = findSpotWordIndexes(text, answer).length;
+  assert(
+    matches === 1,
+    matches === 0
+      ? `${path}.answer "${answer}" is not a word of its text${name} (write the word without punctuation, exactly as in the text)`
+      : `${path}.answer "${answer}" appears ${matches} times in its text${name}; it must match exactly one word`
+  );
+  return { text, answer, source: normalizeStringField(question.source).trim() };
+}
+
+// "text": a typed answer, compared loosely (see textAnswerMatches in utils.js).
+function validateTextQuestion(question, index) {
+  const path = `questions[${index}]`;
+  const name = questionName(question);
+  assert(question.answer !== undefined && question.answer !== null, `${path}.answer is required${name}`);
+  assert(typeof question.answer === 'string', `${path}.answer must be text (put it in quotes, e.g. "42")${name}`);
+  assert(normalizeTextAnswer(question.answer) !== '', `${path}.answer is empty once spaces and a final full stop are removed${name}`);
+  assert(question.accept === undefined || Array.isArray(question.accept), `${path}.accept must be a list of other accepted answers${name}`);
+  const accept = (question.accept ?? []).map((alternative, alternativeIndex) => {
+    assert(typeof alternative === 'string', `${path}.accept[${alternativeIndex}] must be text${name}`);
+    assert(normalizeTextAnswer(alternative) !== '', `${path}.accept[${alternativeIndex}] is empty once spaces and a final full stop are removed${name}`);
+    return alternative.normalize('NFC').trim();
+  });
+  return { answer: question.answer.normalize('NFC').trim(), accept };
+}
+
 function validateQuestion(question, index) {
   const path = `questions[${index}]`;
   assert(isPlainObject(question), `${path} must be an object`);
@@ -323,7 +419,9 @@ function validateQuestion(question, index) {
   const isBonus = question.isBonus === undefined ? false : question.isBonus;
   assert(typeof isBonus === 'boolean', `${path}.isBonus must be a boolean`);
 
-  const points = question.points ?? 0;
+  // Without "points", a question is worth 1, except matching (0 = one point per pair).
+  // "statements" questions are always worth one point per statement.
+  const points = question.points ?? (type === 'matching' ? 0 : 1);
   assert(Number.isFinite(points), `${path}.points must be a number`);
 
   const normalizedBase = {
@@ -353,7 +451,19 @@ function validateQuestion(question, index) {
     };
   }
 
-  throw new Error(`${path}.type uses unsupported question type "${question.type}"`);
+  if (type === 'statements') {
+    return { ...normalizedBase, ...validateStatementsQuestion(question, index) };
+  }
+
+  if (type === 'spot') {
+    return { ...normalizedBase, ...validateSpotQuestion(question, index) };
+  }
+
+  if (type === 'text') {
+    return { ...normalizedBase, ...validateTextQuestion(question, index) };
+  }
+
+  throw new Error(`${path}.type uses unsupported question type "${question.type}" (use mcq, matching, statements, spot or text)`);
 }
 
 export function validateQuestions(questions) {

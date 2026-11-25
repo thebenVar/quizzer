@@ -10,10 +10,11 @@ export function progressKey(quizId) {
   return `${KEY_PREFIX}${quizId}`;
 }
 
-// A short hash of the quiz's question ids. When the quiz's questions change,
-// the fingerprint changes and old saved progress is discarded.
+// A short hash of the quiz's (validated) questions, content included. When any
+// question changes (an id, a word of a "spot" text, an option…), the fingerprint
+// changes and old saved progress is discarded, since saved answers may no longer fit.
 export function quizFingerprint(questions) {
-  const source = questions.map((question) => `${typeof question.id}:${question.id}`).join('\u0000');
+  const source = JSON.stringify(questions);
   let hash = 5381;
   for (let index = 0; index < source.length; index += 1) {
     hash = ((hash * 33) ^ source.charCodeAt(index)) >>> 0;

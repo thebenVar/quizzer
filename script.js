@@ -520,11 +520,127 @@ function showKeyboardHint(question) {
         // In a quiz a right answer moves on by itself, so the tip only mentions choosing.
         keyboardHintElement.textContent = uiText(isTestMode() ? 'keyboardHint' : 'keyboardHintQuiz', { max: Math.min(question.options.length, 9) });
         keyboardHintElement.hidden = false;
+    } else if (question.type === 'statements' || question.type === 'spot') {
+        keyboardHintElement.textContent = uiText(isTestMode() ? 'keyboardHintTabChooseNext' : 'keyboardHintTabChoose');
+        keyboardHintElement.hidden = false;
+    } else if (question.type === 'text' && !isTestMode()) {
+        keyboardHintElement.textContent = uiText('keyboardHintTextSubmit');
+        keyboardHintElement.hidden = false;
     } else if (isTestMode()) {
         keyboardHintElement.textContent = uiText('keyboardHintMatching');
         keyboardHintElement.hidden = false;
     } else {
         keyboardHintElement.hidden = true;
+    }
+}
+
+// --- Rendering the newer question types (shared by quiz and test mode) ---
+
+// "statements": the passage, then each statement with True / False / Can't tell buttons.
+// `onChange(statementIndex, value)` is called on each choice.
+function loadStatementsOptions(question, initial, onChange) {
+    if (question.passage) {
+        const passage = document.createElement('blockquote');
+        passage.className = 'question-passage';
+        passage.textContent = question.passage;
+        optionsAreaElement.appendChild(passage);
+    }
+    const list = document.createElement('ol');
+    list.className = 'statements-list';
+    question.statements.forEach((statement, index) => {
+        const row = document.createElement('li');
+        row.className = 'statement-row';
+        const statementText = document.createElement('p');
+        statementText.className = 'statement-text';
+        statementText.textContent = statement.text;
+        const group = document.createElement('div');
+        group.className = 'statement-choices';
+        group.setAttribute('role', 'group');
+        group.setAttribute('aria-label', statement.text);
+        ['true', 'false', 'cannot-tell'].forEach(value => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'choice-btn statement-choice';
+            button.dataset.value = value;
+            button.textContent = quizLib.statementAnswerLabel(value, currentQuizMeta.uiText);
+            const isSelected = initial[index] === value;
+            button.classList.toggle('selected', isSelected);
+            button.setAttribute('aria-pressed', String(isSelected));
+            button.onclick = () => {
+                group.querySelectorAll('.statement-choice').forEach(other => {
+                    other.classList.toggle('selected', other === button);
+                    other.setAttribute('aria-pressed', String(other === button));
+                });
+                onChange(index, value);
+            };
+            group.appendChild(button);
+        });
+        row.append(statementText, group);
+        list.appendChild(row);
+    });
+    optionsAreaElement.appendChild(list);
+}
+
+// "spot": the optional source, then the text with each word a button.
+// `onSelect(wordIndex, button)` is called when a word is chosen.
+function loadSpotOptions(question, selectedIndex, onSelect) {
+    if (question.source) {
+        const source = document.createElement('div');
+        source.className = 'question-source';
+        const label = document.createElement('p');
+        label.className = 'question-source-label';
+        label.textContent = uiText('spotSourceLabel');
+        const sourceText = document.createElement('p');
+        sourceText.className = 'question-source-text';
+        sourceText.textContent = question.source;
+        source.append(label, sourceText);
+        optionsAreaElement.appendChild(source);
+    }
+    const line = document.createElement('p');
+    line.className = 'spot-text';
+    quizLib.tokenizeSpotText(question.text).forEach((token, index) => {
+        if (index > 0) line.append(' ');
+        if (token.before) line.append(token.before);
+        if (token.word) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'choice-btn spot-word';
+            button.textContent = token.word;
+            button.dataset.index = String(index);
+            const isSelected = selectedIndex === index;
+            button.classList.toggle('selected', isSelected);
+            button.setAttribute('aria-pressed', String(isSelected));
+            button.onclick = () => onSelect(index, button);
+            line.appendChild(button);
+        }
+        if (token.after) line.append(token.after);
+    });
+    optionsAreaElement.appendChild(line);
+}
+
+function markSelected(selector, chosen) {
+    optionsAreaElement.querySelectorAll(selector).forEach(element => {
+        element.classList.toggle('selected', element === chosen);
+        element.setAttribute('aria-pressed', String(element === chosen));
+    });
+}
+
+// "text": one input. `onInput(value)` is called as the participant types.
+function loadTextOptions(question, initialValue, onInput) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'text-answer';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('autocapitalize', 'off');
+    input.setAttribute('aria-label', uiText('textAnswerLabel'));
+    input.placeholder = uiText('textAnswerPlaceholder');
+    input.value = initialValue || '';
+    input.addEventListener('input', () => onInput(input.value));
+    optionsAreaElement.appendChild(input);
+    // Ready to type, except on touch screens, where it would pop up the keyboard over the question.
+    if (!window.matchMedia || !window.matchMedia('(hover: none)').matches) {
+        input.focus({ preventScroll: true });
     }
 }
 
@@ -657,11 +773,31 @@ function showTestQuestion(index) {
             const button = document.createElement('button');
             button.type = 'button';
             button.textContent = optionText;
-            button.classList.add('mcq-option');
+            button.classList.add('mcq-option', 'choice-btn');
             button.setAttribute('aria-pressed', String(selection === optionText));
             if (selection === optionText) button.classList.add('selected');
             button.onclick = () => selectTestOption(question, optionText, button);
             optionsAreaElement.appendChild(button);
+        });
+    } else if (question.type === 'statements') {
+        const initial = selection && typeof selection === 'object' ? selection : {};
+        loadStatementsOptions(question, initial, (statementIndex, value) => {
+            const id = String(question.id);
+            selections[id] = { ...(selections[id] || {}), [statementIndex]: value };
+            noteTestAnswerSaved();
+        });
+    } else if (question.type === 'spot') {
+        loadSpotOptions(question, Number.isInteger(selection) ? selection : null, (wordIndex, button) => {
+            selections[String(question.id)] = wordIndex;
+            markSelected('.spot-word', button);
+            noteTestAnswerSaved();
+        });
+    } else if (question.type === 'text') {
+        loadTextOptions(question, typeof selection === 'string' ? selection : '', value => {
+            const id = String(question.id);
+            if (value.trim()) selections[id] = value; else delete selections[id];
+            updateTestProgressBar();
+            saveTestProgress();
         });
     } else {
         const initial = selection && typeof selection === 'object' ? selection : {};
@@ -692,6 +828,10 @@ function selectTestOption(question, optionText, button) {
         btn.classList.toggle('selected', isSelected);
         btn.setAttribute('aria-pressed', String(isSelected));
     });
+    noteTestAnswerSaved();
+}
+
+function noteTestAnswerSaved() {
     feedbackAreaElement.textContent = uiText('answerSaved');
     feedbackAreaElement.className = 'feedback-quiet';
     updateTestProgressBar();
@@ -951,8 +1091,23 @@ function loadQuestion() {
 
     switch (currentQuestion.type) {
         case "mcq": loadMCQOptions(currentQuestion); break;
-        case "matching": loadMatchingOptions(currentQuestion); submitButton.style.display = 'inline-block'; break;
+        case "matching":
+            loadMatchingOptions(currentQuestion, {}, (left, value) => { userAnswers[left] = value; updateQuizSubmitButton(currentQuestion); });
+            submitButton.style.display = 'inline-block';
+            break;
+        case "statements":
+            loadStatementsOptions(currentQuestion, {}, (statementIndex, value) => { userAnswers[statementIndex] = value; updateQuizSubmitButton(currentQuestion); });
+            submitButton.style.display = 'inline-block';
+            break;
+        case "spot":
+            loadSpotOptions(currentQuestion, null, (wordIndex, button) => handleSpotAnswer(currentQuestion, wordIndex, button));
+            break;
+        case "text":
+            loadTextOptions(currentQuestion, '', value => { userAnswers.text = value; updateQuizSubmitButton(currentQuestion); });
+            submitButton.style.display = 'inline-block';
+            break;
     }
+    updateQuizSubmitButton(currentQuestion);
     showKeyboardHint(currentQuestion);
     questionDisplayed = true;
     startQuestionClock();
@@ -962,7 +1117,7 @@ function loadMCQOptions(question) {
      getOptionOrder(question).forEach(optionText => {
         const button = document.createElement('button');
         button.textContent = optionText;
-        button.classList.add('mcq-option');
+        button.classList.add('mcq-option', 'choice-btn');
         button.onclick = () => handleMCQAnswer(optionText, question, button);
         optionsAreaElement.appendChild(button);
     });
@@ -973,10 +1128,21 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
     buttonElement.classList.add('selected');
 
     const result = quizLib.checkMCQAnswer(question, selectedOption, showImmediateCorrection, currentQuizMeta.uiText);
-    answerLog.push({ questionId: question.id, isCorrect: result.isCorrect });
-    selections[String(question.id)] = selectedOption;
+    recordQuizAnswer(question, selectedOption, result);
+    showInstantFeedback(question, result);
+}
+
+// Quiz mode: keeps an answer for the per-skill results, the review and the results file.
+function recordQuizAnswer(question, selection, result) {
+    answerLog.push({ questionId: question.id, isCorrect: result.isCorrect, points: result.pointsAwarded });
+    selections[String(question.id)] = selection;
+}
+
+// Quiz mode: score, streak, sound and feedback after an answer (mcq, spot, text, statements).
+// `pointsAwarded` is added even when not fully correct (partial credit for statements).
+function showInstantFeedback(question, result) {
+    score += result.pointsAwarded;
     if (result.isCorrect) {
-        score += result.pointsAwarded;
         if (!question.isBonus) {
             correctCount++;
         }
@@ -1002,6 +1168,65 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
     }
 
     scheduleOrWaitForNext();
+}
+
+// Quiz mode: Submit is enabled once every match / statement has a choice, or text is typed.
+function updateQuizSubmitButton(question) {
+    if (!['matching', 'statements', 'text'].includes(question.type)) return;
+    const answer = question.type === 'text' ? userAnswers.text : userAnswers;
+    submitButton.disabled = quizLib.answerStatus(question, answer) !== 'complete';
+}
+
+function handleSpotAnswer(question, wordIndex, button) {
+    optionsAreaElement.querySelectorAll('.spot-word').forEach(word => { word.disabled = true; });
+    button.classList.add('selected');
+    const result = quizLib.checkSpotAnswer(question, wordIndex, showImmediateCorrection, currentQuizMeta.uiText);
+    if (!result.isCorrect && showImmediateCorrection && !question.isBonus) {
+        optionsAreaElement.querySelectorAll('.spot-word').forEach(word => {
+            if (word.textContent === question.answer) word.classList.add('spot-correct');
+        });
+        button.classList.add('spot-wrong');
+    }
+    recordQuizAnswer(question, wordIndex, result);
+    showInstantFeedback(question, result);
+}
+
+function handleStatementsSubmit() {
+    const question = currentQuizData[currentQuestionIndex];
+    submitButton.disabled = true;
+    optionsAreaElement.querySelectorAll('.statement-choice').forEach(button => { button.disabled = true; });
+    const result = quizLib.checkStatementsAnswer(question, userAnswers, showImmediateCorrection, currentQuizMeta.uiText);
+    if (showImmediateCorrection && !question.isBonus) {
+        // Each statement marked right or wrong, with the right answer and its explanation.
+        optionsAreaElement.querySelectorAll('.statement-row').forEach((row, index) => {
+            const statement = question.statements[index];
+            row.classList.add(result.results[index] ? 'statement-right' : 'statement-wrong');
+            if (!result.results[index]) {
+                const reveal = document.createElement('p');
+                reveal.className = 'statement-reveal';
+                reveal.textContent = uiText('statementCorrectReveal', { answer: quizLib.statementAnswerLabel(statement.answer, currentQuizMeta.uiText) });
+                if (statement.explanation) reveal.append(' — ', statement.explanation);
+                row.appendChild(reveal);
+            }
+        });
+    }
+    recordQuizAnswer(question, { ...userAnswers }, result);
+    showInstantFeedback(question, result);
+}
+
+function handleTextSubmit() {
+    const question = currentQuizData[currentQuestionIndex];
+    const input = optionsAreaElement.querySelector('.text-answer');
+    if (!input || input.value.trim() === '') {
+        if (input) input.focus();
+        return;
+    }
+    submitButton.disabled = true;
+    input.disabled = true;
+    const result = quizLib.checkTextAnswer(question, input.value, showImmediateCorrection, currentQuizMeta.uiText);
+    input.classList.add(result.isCorrect ? 'text-answer-right' : 'text-answer-wrong');
+    recordQuizAnswer(question, input.value, result);
+    showInstantFeedback(question, result);
 }
 
  function checkStreakForGift() {
@@ -1375,6 +1600,19 @@ async function shareScoreAsImage() {
 // 1–9 / A–Z choose that option; Enter = Next; in test mode ← / → = Back / Next.
 function handleShortcutKey(event) {
     if (!quizLib || !currentQuizMeta || !questionDisplayed) return;
+    // Keys used to compose text (Indic and other input methods) are not shortcuts.
+    if (event.isComposing || event.keyCode === 229) return;
+    // Enter in a typed-answer box submits it (quiz) or goes to the next question (test);
+    // every other key typed there is left alone.
+    if (event.key === 'Enter' && event.target instanceof HTMLElement && event.target.classList.contains('text-answer')) {
+        event.preventDefault();
+        if (isTestMode()) {
+            goToNextTestQuestion();
+        } else if (submitButton.style.display !== 'none' && !submitButton.disabled) {
+            handleTextSubmit();
+        }
+        return;
+    }
     if (quizLib.isTypingTarget(event.target)) return;
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     const question = currentQuizData[currentQuestionIndex];
@@ -1385,8 +1623,9 @@ function handleShortcutKey(event) {
         if (event.target instanceof HTMLButtonElement && !optionsAreaElement.contains(event.target)) return;
         if (isTestMode()) {
             event.preventDefault();
-            // Enter on a focused option that is not yet chosen chooses it; otherwise it is Next.
-            const option = event.target instanceof HTMLElement ? event.target.closest('.mcq-option') : null;
+            // Enter on a focused choice (option, True/False/Can't tell, word) that is not
+            // yet chosen chooses it; otherwise it is Next.
+            const option = event.target instanceof HTMLElement ? event.target.closest('.choice-btn') : null;
             if (option && optionsAreaElement.contains(option) && !option.classList.contains('selected')) {
                 option.click();
             } else {
@@ -1442,7 +1681,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
      submitButton.addEventListener('click', () => {
         const currentQuestion = currentQuizData[currentQuestionIndex];
-          if (currentQuestion.type === "matching") {
+          if (currentQuestion.type === "statements") {
+            handleStatementsSubmit();
+          } else if (currentQuestion.type === "text") {
+            handleTextSubmit();
+          } else if (currentQuestion.type === "matching") {
             handleMatchingSubmit();
         }
      });

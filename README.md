@@ -6,6 +6,7 @@ Included quizzes:
 
 - `gethsemane` — Gethsemane Bible Quiz on Ephesians
 - `sample` — a short six-question quiz, also a good starting point to copy
+- `question-types-demo` — unlisted; two questions of each newer type (statements, spot, text), to try them
 
 ## Running it
 
@@ -56,7 +57,7 @@ The home page and its list of quizzes:
 
 ## `questions.json`
 
-A list of questions. Two types are supported:
+A list of questions. Five types are supported: `mcq` and `matching` (below), and `statements`, `spot` and `text` (see [More question types](#more-question-types)).
 
 ```json
 [
@@ -83,19 +84,75 @@ A list of questions. Two types are supported:
 | Field | Required | Notes |
 |---|---|---|
 | `id` | yes | Unique within the quiz |
-| `type` | yes | `mcq` or `matching` |
+| `type` | yes | `mcq`, `matching`, `statements`, `spot` or `text` |
 | `prompt` | yes | The question text |
 | `options` | mcq | At least two. "All the above" / "None of the above" stay last; other options are shuffled |
 | `answer` | mcq | Must match one of the `options` exactly |
 | `pairs` | matching | `[left, right]` pairs; the right-hand side is shuffled |
-| `points` | no | Default 0. A matching question with 0 points is worth one point per pair |
+| `points` | no | Default 1 (`mcq`, `spot`, `text`). A matching question without `points` (or with 0) is worth one point per pair. Not allowed on `statements` (one point per statement) |
 | `explanation` | no | Shown when the answer is wrong, and in the final review |
 | `isBonus` | no | At most one bonus question; it is always asked last and does not count towards the score. Not allowed in test mode |
 | `approach` | no | A tip on how to think the question through; shown on the answer key page |
 | `skill` | if the quiz lists `skills` | Which skill the question measures (one of the `id`s in `meta.json` `skills`) |
 
+Scores, including the results per skill, are counted in points: a question adds its points to its skill's total, so a `statements` question adds one point per statement.
+
 Regular questions are asked in random order. A line break in a `prompt` (`
 ` in the JSON) is shown as a new line, which helps for quoted verses or lists.
+
+### More question types
+
+`quizzes/question-types-demo/` (unlisted: `?quiz=question-types-demo`) has two of each. All three work in quiz and test mode, are saved and resumed in a test, and appear in the review, the answer key page and the downloaded results file.
+
+**`statements`** — a passage and statements to judge True / False / Can't tell:
+
+```json
+{
+  "id": "s1", "type": "statements", "skill": "reading",
+  "prompt": "Read the verse, then decide for each statement.",
+  "passage": "Luke 2:7: “She gave birth to her firstborn son …”",
+  "statements": [
+    { "text": "An innkeeper turned them away.", "answer": "cannot-tell", "explanation": "No innkeeper is mentioned." },
+    { "text": "There was no room for them in the inn.", "answer": "true" }
+  ],
+  "explanation": "optional, for the whole question", "approach": "optional"
+}
+```
+
+- `passage` (optional) is shown in a quote box; `statements` needs at least two, each with `text` and `answer` (`"true"`, `"false"` or `"cannot-tell"`) and an optional `explanation`.
+- One point per statement judged correctly (partial credit). `points` is not used and is rejected, so the worth is always the number of statements. The question counts as correct (for streaks and the correct/incorrect counts) only when every statement is right.
+- Quiz mode: choose for every statement (Submit stays disabled until then, as for matching), then Submit; with immediate correction each wrong statement shows its right answer and explanation. Test mode: choose and change, then Next; the finish summary marks the question "partly answered" until every statement has a choice.
+
+**`spot`** — tap the wrong word:
+
+```json
+{
+  "id": "e1", "type": "spot", "skill": "detail",
+  "prompt": "Tap the word in the draft that does not match the source.",
+  "source": "And Jesus answered them, “Have faith in God.”",
+  "text": "And Jesus answered them, “Have faith in Good.”",
+  "answer": "Good", "points": 1
+}
+```
+
+- `source` (optional) is shown above as the reference. Every word of `text` can be tapped; punctuation is shown but is not part of a word.
+- `answer` is the word without punctuation and must appear exactly once in `text` (case-sensitive); otherwise `npm test` names the question and says how many times it was found. Words in any script work: vowel signs, virama and Hebrew points stay part of their word (`यीशु ने कहा।` has the words `यीशु`, `ने`, `कहा`), and text and answer are compared in Unicode NFC form.
+- Editing a question (for example its `text`) discards progress saved part-way through a test, so a saved word cannot point at the wrong word.
+- Quiz mode: a tap answers, like a multiple-choice option (with immediate correction, the right word is shown). Test mode: a tap selects (it can be changed), then Next. Keyboard: Tab to a word, Enter to choose it.
+
+**`text`** — a typed answer:
+
+```json
+{
+  "id": "t1", "type": "text", "skill": "reasoning",
+  "prompt": "What comes next? 2, 6, 12, 20, 30, ___",
+  "answer": "42", "accept": ["forty-two"], "points": 1
+}
+```
+
+- The comparison ignores case, extra spaces and one trailing full stop, and treats composed and decomposed Unicode forms alike (NFC), so Indic answers typed with any keyboard match. A plain decimal number also matches the same number written differently (`42.0`, ` 42 `, `+42`); `42..` and exponents (`1e2`) do not. `accept` (optional) lists other accepted answers. `answer` and each `accept` item must be text (`"42"`, not `42`) and must not be empty.
+- Enter while an input method is still composing a word (common for Indic scripts) does not submit.
+- Quiz mode: type and Submit (or press Enter). Test mode: the typed text is saved as you type; Enter goes to the next question.
 
 ## `meta.json`
 
@@ -138,7 +195,7 @@ Only `title` is required; everything else has a default.
 - `mode` — `"quiz"` (default) or `"test"`. See [Test mode](#test-mode-assessments) below.
 - `skills` — optional list of `{ "id", "label", "description" }`. When present, every question names its `skill`, and the results screen shows a score per skill in this order. The optional `description` introduces the skill on the answer key page.
 - `showAnswerReview` — default `true`. Set `false` to hide the review of answers at the end, and to leave the answers out of the downloaded results file (for example, to keep a test's questions from circulating).
-- `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language. This includes the test-mode buttons and summary (`testNextButtonLabel`, `finishHeading`, `submitTestLabel`, …), the resume panel (`resumeHeading`, `resumeDetails`, …), the keyboard tip (`keyboardHint`), the review (`reviewFilterWrong`, `reviewFilterAll`, …), the per-skill time (`skillScoreWithTime`) and the results file (`downloadResultsLabel`, `resultsFile…`).
+- `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language. This includes the test-mode buttons and summary (`testNextButtonLabel`, `finishHeading`, `submitTestLabel`, …), the resume panel (`resumeHeading`, `resumeDetails`, …), the keyboard tip (`keyboardHint`), the review (`reviewFilterWrong`, `reviewFilterAll`, …), the per-skill time (`skillScoreWithTime`), the newer question types (`statementTrue`, `statementFalse`, `statementCannotTell`, `statementsFeedback`, `spotSourceLabel`, `textAnswerPlaceholder`, …) and the results file (`downloadResultsLabel`, `resultsFile…`).
 - `branding.logoSrc` is relative to the quiz folder (a full `https://` URL also works). Without it, no logo is shown.
 - `timing.timeLimitSeconds` is the time for the whole quiz; `autoAdvanceDelayMs` is the pause before the next question.
 - `{name}` in a result message is replaced with the player's name.
@@ -161,7 +218,7 @@ A quiz with `"mode": "test"` in `meta.json` is an assessment rather than a game:
 
 ## Keyboard
 
-In both modes, keys **1–9** or **A–Z** choose that option of a multiple-choice question (in a test this selects it; in a quiz it answers, like a click). **Enter** goes to the next question (in a quiz, when the Next Question button shows). In a test, **←** and **→** are Back and Next. Keys typed into a text field or dropdown are left alone. A small tip under the question says so (hidden on touch screens).
+In both modes, keys **1–9** or **A–Z** choose that option of a multiple-choice question (in a test this selects it; in a quiz it answers, like a click). **Enter** goes to the next question (in a quiz, when the Next Question button shows). In a test, **←** and **→** are Back and Next. For `statements` and `spot` questions, **Tab** moves between the choices or words and **Enter** chooses one (in a test, Enter on an already chosen one goes Next). In a `text` question, **Enter** submits the answer (quiz) or goes Next (test). Other keys typed into a text field or dropdown are left alone. A small tip under the question says so (hidden on touch screens).
 
 ## Review and results file
 

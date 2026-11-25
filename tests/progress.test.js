@@ -47,6 +47,12 @@ describe('quizFingerprint', () => {
     expect(quizFingerprint(questions)).not.toBe(quizFingerprint([{ id: 'a' }, { id: 2 }]));
     expect(quizFingerprint(questions)).not.toBe(quizFingerprint([{ id: 'a' }, { id: '2' }, { id: 'c' }]));
   });
+
+  it('changes when a question’s content changes, so a saved word index cannot point at the wrong word', () => {
+    const spot = { id: 'e1', type: 'spot', text: 'Have faith in Good.', answer: 'Good' };
+    expect(quizFingerprint([spot])).not.toBe(quizFingerprint([{ ...spot, text: 'Have strong faith in Good.' }]));
+    expect(quizFingerprint([spot])).toBe(quizFingerprint([{ ...spot }]));
+  });
 });
 
 describe('saveProgress / loadProgress', () => {

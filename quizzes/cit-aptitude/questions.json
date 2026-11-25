@@ -33,11 +33,10 @@
     "approach": "When the meaning of the words gives no rule (these are just places), look at their form: first and last letters, length, syllables. Check the joins between neighbours, not just each word on its own."
   },
   {
-    "id": "pattern-4",
-    "type": "mcq",
+    "id": "pattern-6",
+    "type": "text",
     "skill": "pattern",
-    "prompt": "In a secret code, ADAM is written as BEBN.\nUsing the same code, how is EVE written?",
-    "options": ["FWF", "DUD", "FVF", "EWE"],
+    "prompt": "In a secret code, ADAM is written as BEBN.\nUsing the same code, how is EVE written? Type your answer.",
     "answer": "FWF",
     "points": 1,
     "explanation": "Each letter is replaced by the next letter of the alphabet: E→F, V→W, E→F.",
@@ -55,15 +54,15 @@
     "approach": "Look for what ALL of Group 1 share and NONE of Group 2 share. Testament, author and topic mix across both groups, so the rule must be about the words themselves. Count the letters."
   },
   {
-    "id": "series-1",
-    "type": "mcq",
+    "id": "series-6",
+    "type": "text",
     "skill": "series",
-    "prompt": "What comes next?\n\n3, 6, 12, 24, ___",
-    "options": ["36", "42", "48", "30"],
-    "answer": "48",
+    "prompt": "What comes next? Type the number.\n\n3, 5, 9, 17, 33, ___",
+    "answer": "65",
     "points": 1,
-    "explanation": "Each number is double the one before it: 24 × 2 = 48.",
-    "approach": "The gaps (3, 6, 12) are not equal, but each gap equals the number it starts from: the sign of doubling. When numbers grow faster and faster, try multiplying."
+    "explanation": "The gaps double each time: +2, +4, +8, +16, so the next gap is +32: 33 + 32 = 65.",
+    "approach": "Write the gaps under the series: 2, 4, 8, 16. They double, so continue the gaps first, then add. A second route to check: each number is double the one before, minus 1 (33 × 2 − 1 = 65).",
+    "accept": ["sixty-five", "sixtyfive"]
   },
   {
     "id": "series-2",
@@ -99,15 +98,14 @@
     "approach": "Write the gaps: 4, 6, 8, 10. They go up by 2 each time, so the next gap is 12. Finding a second route to the same answer (n × (n + 1)) is a good check when a question looks hard."
   },
   {
-    "id": "series-5",
-    "type": "mcq",
+    "id": "series-7",
+    "type": "text",
     "skill": "series",
-    "prompt": "Which reference continues the list?\n\nGenesis 1:1, Exodus 2:2, Leviticus 3:3, Numbers 4:4, ___",
-    "options": ["Deuteronomy 4:5", "Deuteronomy 5:5", "Deuteronomy 5:6", "Deuteronomy 6:6"],
-    "answer": "Deuteronomy 5:5",
+    "prompt": "What comes next? Type the letter.\n\nZ, X, U, Q, L, ___",
+    "answer": "F",
     "points": 1,
-    "explanation": "Chapter and verse both go up by one each time, and are always the same number: 1:1, 2:2, 3:3, 4:4, so 5:5.",
-    "approach": "All four options name the same book, so the book is not being tested; look only at the numbers. Each wrong option breaks the rule: 4:5 keeps the old chapter, 5:6 has two different numbers, 6:6 skips a step."
+    "explanation": "Going backwards through the alphabet, the steps grow by one: −2, −3, −4, −5, then −6. Six letters before L is F.",
+    "approach": "Turn the letters into numbers (A = 1 … Z = 26): 26, 24, 21, 17, 12. The gaps grow by one each time, going down. Then count six back from L: K, J, I, H, G, F."
   },
   {
     "id": "odd-1",
@@ -242,26 +240,25 @@
     "approach": "Draw it: a big circle of Greek readers, the team as a circle inside it, Hebrew readers overlapping part of the team. Test each option against the picture. “All team members read Greek” does not mean “all Greek readers are on the team”."
   },
   {
-    "id": "deduction-3",
-    "type": "mcq",
+    "id": "deduction-6",
+    "type": "statements",
     "skill": "deduction",
-    "prompt": "Rule: Every draft that passes the community check is sent to the consultant.\n\nThe draft of Philippians was sent to the consultant.\nWhat can you conclude for certain?",
-    "options": ["The Philippians draft passed the community check.", "The Philippians draft did not pass the community check.", "Nothing about the community check follows from this.", "The Philippians draft is ready to be printed."],
-    "answer": "Nothing about the community check follows from this.",
-    "points": 1,
-    "explanation": "The rule says what happens to drafts that pass. It does not say that only those drafts are sent, so the Philippians draft may have been sent for another reason.",
-    "approach": "Write the rule as “if passed, then sent”. Knowing “sent” does not let you go back to “passed”. Compare: “if it rains, the road is wet” – a wet road does not prove it rained; someone may have washed it."
-  },
-  {
-    "id": "deduction-4",
-    "type": "mcq",
-    "skill": "deduction",
-    "prompt": "Rule: Every draft that passes the community check is sent to the consultant.\n\nThe draft of Colossians was not sent to the consultant.\nWhat can you conclude for certain?",
-    "options": ["The Colossians draft passed the community check.", "The Colossians draft did not pass the community check.", "Nothing about the community check follows from this.", "The Colossians draft was never translated."],
-    "answer": "The Colossians draft did not pass the community check.",
-    "points": 1,
-    "explanation": "If it had passed, the rule says it would have been sent. It was not sent, so it did not pass.",
-    "approach": "This is the valid way to go backwards: if “passed” always leads to “sent”, then “not sent” means “not passed”. Compare it with the Philippians question: one conclusion follows, the other only seems to."
+    "prompt": "Read the facts, then decide for each statement:\nTrue – it must be true\nFalse – it cannot be true\nCan't tell – it may or may not be true",
+    "passage": "Rule: Every draft that passes the community check is sent to the consultant.\nThe Philippians draft was sent to the consultant.\nThe Colossians draft was not sent to the consultant.",
+    "statements": [
+      {
+        "text": "The Philippians draft passed the community check.",
+        "answer": "cannot-tell",
+        "explanation": "The rule does not say that only drafts that pass are sent, so the Philippians draft may have been sent for another reason."
+      },
+      {
+        "text": "The Colossians draft passed the community check.",
+        "answer": "false",
+        "explanation": "If it had passed, the rule says it would have been sent. It was not sent, so it did not pass."
+      }
+    ],
+    "explanation": "A rule “if passed, then sent” lets you reason from “not sent” back to “not passed”, but not from “sent” back to “passed”.",
+    "approach": "Write the rule as “if passed, then sent”. “Sent” does not prove “passed” (water on the road does not prove it rained; someone may have washed a car), but “not sent” does prove “not passed”."
   },
   {
     "id": "deduction-5",
@@ -286,26 +283,30 @@
     "approach": "Underline the matching words for each option: “laid him in a manger”, “no place for them in the inn”, “wrapped him in swaddling cloths”. The option with nothing to underline is the answer."
   },
   {
-    "id": "text-2",
-    "type": "mcq",
+    "id": "text-6",
+    "type": "statements",
     "skill": "text-vs-assumption",
-    "prompt": "Jonah 1:17: “And the LORD appointed a great fish to swallow up Jonah. And Jonah was in the belly of the fish three days and three nights.”\n\nWhich statement is NOT said in this verse?",
-    "options": ["The LORD appointed the fish.", "Jonah was swallowed by a whale.", "Jonah was in the fish for three days and three nights.", "The fish was great."],
-    "answer": "Jonah was swallowed by a whale.",
-    "points": 1,
-    "explanation": "The verse says “a great fish”. It does not say what kind; “whale” is an assumption.",
-    "approach": "Watch for an option more specific than the text. “A great fish” is general; “a whale” is specific. Translating “fish” as “whale” would add a claim the text does not make."
-  },
-  {
-    "id": "text-3",
-    "type": "mcq",
-    "skill": "text-vs-assumption",
-    "prompt": "Matthew 2:11: “And going into the house, they saw the child with Mary his mother, and they fell down and worshiped him. Then, opening their treasures, they offered him gifts, gold and frankincense and myrrh.”\n\nWhich statement is NOT said in this verse?",
-    "options": ["They went into a house.", "There were three wise men.", "They offered gold, frankincense and myrrh.", "They worshiped the child."],
-    "answer": "There were three wise men.",
-    "points": 1,
-    "explanation": "Three kinds of gifts are named, but the verse does not say how many visitors there were.",
-    "approach": "Separate what is counted from what is not: three gifts are listed, the number of people is not. Note too that “they went into a house” is in the text, although many pictures show a stable."
+    "prompt": "Read the verse, then decide for each statement:\nTrue – the verse says it\nFalse – the verse says the opposite\nCan't tell – the verse does not say",
+    "passage": "Matthew 2:11: “And going into the house, they saw the child with Mary his mother, and they fell down and worshiped him. Then, opening their treasures, they offered him gifts, gold and frankincense and myrrh.”",
+    "statements": [
+      {
+        "text": "They went into a house.",
+        "answer": "true",
+        "explanation": "“Going into the house” is in the verse."
+      },
+      {
+        "text": "There were three of them.",
+        "answer": "cannot-tell",
+        "explanation": "Three kinds of gifts are named, but the verse does not say how many people came."
+      },
+      {
+        "text": "They found the child without his mother.",
+        "answer": "false",
+        "explanation": "The verse says they saw the child “with Mary his mother”."
+      }
+    ],
+    "explanation": "Separate what the verse says, what it contradicts, and what it simply does not tell us.",
+    "approach": "For each statement find the matching words in the verse. Words that agree: True. Words that say the opposite: False. No words at all: Can't tell – even when tradition says otherwise."
   },
   {
     "id": "text-4",
@@ -319,26 +320,16 @@
     "approach": "This one asks the reverse: what can fairly be concluded. A good inference follows from the words themselves (mother-in-law → a wife); a poor one adds a new event or detail. “Best” means the strongest option, even if not 100% certain."
   },
   {
-    "id": "text-5",
-    "type": "mcq",
-    "skill": "text-vs-assumption",
-    "prompt": "Genesis 3:6: “So when the woman saw that the tree was good for food, and that it was a delight to the eyes, and that the tree was to be desired to make one wise, she took of its fruit and ate, and she also gave some to her husband who was with her, and he ate.”\n\nWhich statement is NOT said in this verse?",
-    "options": ["Her husband was with her.", "The fruit was an apple.", "She gave some of the fruit to her husband.", "The tree was a delight to the eyes."],
-    "answer": "The fruit was an apple.",
-    "points": 1,
-    "explanation": "The verse says “its fruit” without naming a kind. The apple comes from later tradition and art.",
-    "approach": "As with the whale, an option naming something more specific than the text (“apple” for “fruit”) is suspect. Then confirm the other three are in the verse."
-  },
-  {
-    "id": "detail-1",
-    "type": "mcq",
+    "id": "detail-6",
+    "type": "spot",
     "skill": "detail",
-    "prompt": "Source (Mark 6:44): “And those who ate the loaves were five thousand men.”\nDraft back-translation: “And those who ate the bread were four thousand men.”\n\nWhich difference changes the meaning?",
-    "options": ["“loaves” became “bread”", "“five” became “four”", "“men” became “people”", "There is no difference in meaning"],
-    "answer": "“five” became “four”",
+    "prompt": "Genesis 1:1. Tap the word in the draft that does not match the source.",
+    "source": "In the beginning, God created the heavens and the earth.",
+    "text": "In the beginning, God created the heaven and the earth.",
+    "answer": "heaven",
     "points": 1,
-    "explanation": "“Loaves” and “bread” say the same thing here. The number changed from five to four thousand. (“Men” did not change.)",
-    "approach": "Compare word by word and list every difference first, then ask which ones change the meaning. Also check that each option’s claimed change really happened: “men” → “people” never took place."
+    "explanation": "The source says “heavens” (plural); the draft has “heaven”. One missing letter changes the number.",
+    "approach": "Compare word by word, including the endings: plurals, tenses and single letters are easy to miss when the sentence is familiar."
   },
   {
     "id": "detail-2",
@@ -352,26 +343,27 @@
     "approach": "Both changes are a single letter, and the mind reads “Good” as “God” in a familiar phrase. Go word by word with a finger or the cursor, counting as you go, then check once more from the end backwards."
   },
   {
-    "id": "detail-3",
-    "type": "mcq",
+    "id": "detail-7",
+    "type": "text",
     "skill": "detail",
-    "prompt": "How many times does the letter “e” appear in this sentence?\n\nBlessed are the meek",
-    "options": ["5", "6", "7", "8"],
+    "prompt": "How many times does the letter “e” appear in these words? Type the number.\n\nBlessed are the meek",
     "answer": "6",
+    "accept": ["six"],
     "points": 1,
     "explanation": "Blessed (2), are (1), the (1), meek (2): 6 in all.",
-    "approach": "Count word by word and write a number for each word, then add. Counting the whole sentence at once makes it easy to miss the double “e” in “meek” or the one at the end of “are”."
+    "approach": "Count word by word and write a number for each word, then add. Counting all the words at once makes it easy to miss the double “e” in “meek” or the one at the end of “are”."
   },
   {
-    "id": "detail-4",
-    "type": "mcq",
+    "id": "detail-8",
+    "type": "spot",
     "skill": "detail",
-    "prompt": "A list of references was copied into a draft. Which line does not match?\n\nLine 1: Source Psalm 119:105 – Draft Psalm 119:105\nLine 2: Source Psalm 121:1 – Draft Psalm 121:1\nLine 3: Source Psalm 139:14 – Draft Psalm 193:14\nLine 4: Source Psalm 145:3 – Draft Psalm 145:3",
-    "options": ["Line 1", "Line 2", "Line 3", "Line 4"],
-    "answer": "Line 3",
+    "prompt": "Exodus 20:13. Tap the word in the draft that does not match the source.",
+    "source": "You shall not murder.",
+    "text": "You shall not murmur.",
+    "answer": "murmur",
     "points": 1,
-    "explanation": "Psalm 139 was copied as Psalm 193 – two digits swapped.",
-    "approach": "Compare digit by digit, not number by number. 139 and 193 use the same digits, so a quick glance sees them as equal. Swapped digits are one of the most common copying errors."
+    "explanation": "“Murder” became “murmur”: the words look alike, but the command now forbids grumbling (complaining) instead of killing.",
+    "approach": "Words that share most of their letters slip past a quick read. Look at each word letter by letter, especially in short, familiar verses."
   },
   {
     "id": "detail-5",

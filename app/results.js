@@ -1,6 +1,6 @@
 // Results at the end: grading stored answers, time per skill, the review of a
 // participant's answers, and the downloadable results file.
-import { checkMCQAnswer, checkMatchingAnswer } from './runtime.js';
+import { checkAnswer } from './runtime.js';
 import { calculateRegularQuestionStats, calculateSkillBreakdown, fillText, formatMinutesSeconds } from './utils.js';
 import { DEFAULT_UI_TEXT } from './validate.js';
 import { renderQuestionCard } from './answerKey.js';
@@ -10,13 +10,23 @@ export function selectionFor(selections, question) {
   return selections ? selections[String(question.id)] : undefined;
 }
 
-// 'none', 'partial' (a matching question with some pairs chosen) or 'complete'.
+// 'none', 'partial' (a matching or statements question with only some parts
+// answered) or 'complete'.
 export function answerStatus(question, selection) {
-  if (question.type === 'matching') {
+  if (question.type === 'matching' || question.type === 'statements') {
     if (!selection || typeof selection !== 'object') return 'none';
-    const chosen = question.pairs.filter(([left]) => typeof selection[left] === 'string' && selection[left] !== '').length;
+    const keys = question.type === 'matching'
+      ? question.pairs.map(([left]) => left)
+      : question.statements.map((statement, index) => String(index));
+    const chosen = keys.filter((key) => typeof selection[key] === 'string' && selection[key] !== '').length;
     if (chosen === 0) return 'none';
-    return chosen === question.pairs.length ? 'complete' : 'partial';
+    return chosen === keys.length ? 'complete' : 'partial';
+  }
+  if (question.type === 'spot') {
+    return Number.isInteger(selection) && selection >= 0 ? 'complete' : 'none';
+  }
+  if (question.type === 'text') {
+    return typeof selection === 'string' && selection.trim() !== '' ? 'complete' : 'none';
   }
   return typeof selection === 'string' && selection !== '' ? 'complete' : 'none';
 }
@@ -41,12 +51,10 @@ export function gradeSelections(questions, selections, text = DEFAULT_UI_TEXT, o
     let isCorrect = false;
     let pointsAwarded = 0;
     if (hasAnswer) {
-      const result = question.type === 'matching'
-        ? checkMatchingAnswer(question, selection, false, text)
-        : checkMCQAnswer(question, selection, false, text);
+      const result = checkAnswer(question, selection, false, text);
       isCorrect = result.isCorrect;
       pointsAwarded = result.pointsAwarded;
-      answerLog.push({ questionId: question.id, isCorrect });
+      answerLog.push({ questionId: question.id, isCorrect, points: pointsAwarded });
     }
 
     if (!question.isBonus) {
@@ -173,12 +181,25 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .ak-match-yours{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) 1em}
 .ak-match-wrong{background:#fdecee;color:#842029}
 .ak-match-left{font-weight:600}.ak-match-arrow{color:#198754}.ak-cross{color:#dc3545;font-weight:700}
+.ak-statements-wrap,.ak-spot,.ak-text-answer{margin-left:46px;margin-top:14px}
+.ak-passage{margin:0 0 12px;padding:10px 14px;border-left:3px solid #0d6efd;border-radius:10px;background:#eef4ff;color:#2c3e50;line-height:1.6;white-space:pre-line}
+.ak-statements{margin:0;padding-left:1.4em;display:grid;gap:8px}
+.ak-statement{padding:8px 12px;border-radius:10px;background:#f8f9fa;break-inside:avoid}.ak-statement-right{background:#e9f7ef}.ak-statement-wrong{background:#fdecee}
+.ak-statement-text{margin:0 0 6px;line-height:1.5}.ak-statement-why{margin:6px 0 0;font-size:.9em;color:#495057;font-style:italic}
+.ak-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ak-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.85em;font-weight:600;overflow-wrap:anywhere}
+.ak-chip-right,.ak-chip-correct{background:#d1e7dd;color:#0f5132}.ak-chip-wrong{background:#f8d7da;color:#842029}
+.ak-source{margin-bottom:10px;padding:10px 14px;border-radius:10px;background:#f8f9fa;border-left:3px solid #198754}
+.ak-source-label{margin:0 0 3px;font-size:.72em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#495057}.ak-source-text{margin:0;line-height:1.6}
+.ak-spot-text{margin:0;line-height:1.9;overflow-wrap:anywhere}.ak-spot-correct,.ak-spot-wrong{padding:1px 3px;border-radius:5px}
+.ak-spot-correct{background:#d1e7dd;color:#0f5132;font-weight:700}.ak-spot-wrong{background:#f8d7da;color:#842029;font-weight:700;text-decoration:line-through}
+.ak-accept{margin:8px 0 0;font-size:.9em;color:#495057}
 .ak-note{margin-top:12px;padding:10px 14px;border-radius:10px;border-left:3px solid}
 .ak-note-why{background:#f8f9fa;border-left-color:#198754}.ak-note-approach{background:#eef4ff;border-left-color:#0d6efd}
 .ak-note-label{margin:0 0 3px;font-size:.72em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#495057}
 .ak-note-approach .ak-note-label{color:#0a58ca}
 .ak-note-body{margin:0;line-height:1.6;color:#343a40;font-size:.95em}
-@media (max-width:560px){body{padding:10px}.page{padding:22px 16px 28px}.ak-card{padding:16px}.ak-options,.ak-matches,.ak-note,.ak-not-answered{margin-left:0}.ak-option-tag{flex-basis:100%;margin-left:34px;padding:0}.facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:8px}.ak-match,.ak-match-yours{grid-template-columns:1fr;gap:2px}.ak-match-arrow{display:none}.ak-match-yours{position:relative;padding-right:32px}.ak-match-yours .ak-cross{position:absolute;top:8px;right:12px}}
+@media (max-width:560px){body{padding:10px}.page{padding:22px 16px 28px}.ak-card{padding:16px}.ak-options,.ak-matches,.ak-note,.ak-not-answered,.ak-statements-wrap,.ak-spot,.ak-text-answer{margin-left:0}.ak-option-tag{flex-basis:100%;margin-left:34px;padding:0}.facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:8px}.ak-match,.ak-match-yours{grid-template-columns:1fr;gap:2px}.ak-match-arrow{display:none}.ak-match-yours{position:relative;padding-right:32px}.ak-match-yours .ak-cross{position:absolute;top:8px;right:12px}}
 @media print{body{background:#fff;padding:0}.page{box-shadow:none;max-width:none;padding:0}h2{break-after:avoid}}
 `;
 

@@ -155,10 +155,10 @@ describe('calculateSkillBreakdown', () => {
     { id: 'unused', label: 'Unused' },
   ];
   const questions = [
-    { id: 1, skill: 'logic' },
-    { id: 2, skill: 'logic' },
-    { id: 3, skill: 'detail' },
-    { id: 4, skill: 'detail' },
+    { id: 1, type: 'mcq', points: 1, skill: 'logic' },
+    { id: 2, type: 'mcq', points: 1, skill: 'logic' },
+    { id: 3, type: 'mcq', points: 1, skill: 'detail' },
+    { id: 4, type: 'mcq', points: 1, skill: 'detail' },
   ];
 
   it('scores each skill in the listed order, counting unanswered questions in the total', () => {
@@ -172,6 +172,15 @@ describe('calculateSkillBreakdown', () => {
       { id: 'logic', label: 'Logic', correct: 1, total: 2 },
       { id: 'detail', label: 'Detail', correct: 1, total: 2 },
     ]);
+  });
+
+  it('counts points, with partial credit for a statements question', () => {
+    const statements = { id: 's', type: 'statements', skill: 'logic', statements: [{}, {}, {}] };
+    const rows = calculateSkillBreakdown(skills, [...questions, statements], [
+      { questionId: 1, isCorrect: true },
+      { questionId: 's', isCorrect: false, points: 2 },
+    ]);
+    expect(rows[0]).toEqual({ id: 'logic', label: 'Logic', correct: 3, total: 5 });
   });
 
   it('is empty when the quiz has no skills', () => {

@@ -1,7 +1,8 @@
 // The answer key page, opened with ?quiz=<id>-ans. It is not linked from anywhere.
 // Shows every question with its correct answer, why it is correct, and how to
 // approach it; grouped by skill when the quiz lists skills.
-import { fillText } from './utils.js';
+import { fillText, tokenizeSpotText } from './utils.js';
+import { statementAnswerLabel } from './runtime.js';
 
 // Questions in the order the page shows them: by skill (in meta.json order) when
 // the quiz has skills, otherwise as listed; a bonus question always last.
@@ -45,9 +46,100 @@ function renderMatchList(pairs, className, marks) {
   return list;
 }
 
+// A small rounded label: the participant's answer (right or wrong) or the correct answer.
+function chip(kind, mark, label) {
+  const element = el('span', `ak-chip ak-chip-${kind}`);
+  element.append(el('span', mark === '✓' ? 'ak-check' : 'ak-cross', mark), ` ${label}`);
+  return element;
+}
+
+// "Your answer: …" (green ✓ when right, red ✗ when wrong) and "Correct: …".
+// `correctTemplate` is the uiText for the correct-answer chip, with {answer}.
+function renderAnswerChips(text, response, givenLabel, isRight, correctLabel, correctTemplate = text.reviewCorrectAnswerValue) {
+  const row = el('div', 'ak-chips');
+  if (response && response.hasAnswer) {
+    row.appendChild(chip(isRight ? 'right' : 'wrong', isRight ? '✓' : '✗', fillText(text.reviewYourAnswerValue, { answer: givenLabel })));
+  }
+  if (!response || !response.hasAnswer || !isRight) {
+    row.appendChild(chip('correct', '✓', fillText(correctTemplate, { answer: correctLabel })));
+  }
+  return row;
+}
+
+function renderStatements(question, text, response) {
+  const wrap = el('div', 'ak-statements-wrap');
+  if (question.passage) {
+    wrap.appendChild(el('blockquote', 'ak-passage', question.passage));
+  }
+  const list = el('ol', 'ak-statements');
+  const choices = response && response.answer && typeof response.answer === 'object' ? response.answer : {};
+  question.statements.forEach((statement, index) => {
+    const item = el('li', 'ak-statement');
+    const given = choices[index];
+    const isRight = given === statement.answer;
+    if (response) item.classList.add(isRight ? 'ak-statement-right' : 'ak-statement-wrong');
+    item.appendChild(el('p', 'ak-statement-text', statement.text));
+    const statementResponse = response ? { hasAnswer: typeof given === 'string' && given !== '' } : null;
+    const row = renderAnswerChips(text, statementResponse, statementAnswerLabel(given, text), isRight, statementAnswerLabel(statement.answer, text), text.statementCorrectReveal);
+    if (response && !statementResponse.hasAnswer) {
+      row.prepend(chip('wrong', '✗', text.reviewNotAnsweredCard));
+    }
+    item.appendChild(row);
+    if (statement.explanation) {
+      item.appendChild(el('p', 'ak-statement-why', statement.explanation));
+    }
+    list.appendChild(item);
+  });
+  wrap.appendChild(list);
+  return wrap;
+}
+
+function renderSpot(question, text, response) {
+  const wrap = el('div', 'ak-spot');
+  if (question.source) {
+    const source = el('div', 'ak-source');
+    source.append(el('p', 'ak-source-label', text.spotSourceLabel), el('p', 'ak-source-text', question.source));
+    wrap.appendChild(source);
+  }
+  const tokens = tokenizeSpotText(question.text);
+  const chosen = response && response.hasAnswer ? response.answer : null;
+  const line = el('p', 'ak-spot-text');
+  tokens.forEach((token, index) => {
+    if (index > 0) line.append(' ');
+    if (token.before) line.append(token.before);
+    if (token.word) {
+      const word = el('span', 'ak-spot-word', token.word);
+      const isCorrect = token.word === question.answer;
+      if (isCorrect) word.classList.add('ak-spot-correct');
+      if (index === chosen) word.classList.add(isCorrect ? 'ak-spot-chosen' : 'ak-spot-wrong');
+      line.appendChild(word);
+    }
+    if (token.after) line.append(token.after);
+  });
+  wrap.appendChild(line);
+  const givenWord = chosen !== null && tokens[chosen] ? tokens[chosen].word : '';
+  wrap.appendChild(renderAnswerChips(text, response, givenWord, Boolean(response && response.isCorrect), question.answer));
+  return wrap;
+}
+
+function renderTextAnswer(question, text, response) {
+  const wrap = el('div', 'ak-text-answer');
+  const given = response && response.hasAnswer ? String(response.answer).trim() : '';
+  wrap.appendChild(renderAnswerChips(text, response, given, Boolean(response && response.isCorrect), question.answer));
+  if (question.accept.length > 0) {
+    wrap.appendChild(el('p', 'ak-accept', fillText(text.answerKeyAlsoAccepted, { answers: question.accept.join(', ') })));
+  }
+  return wrap;
+}
+
 // `response` (optional) is a participant's answer, for the review at the end:
-// { answer: option text | { left: right }, hasAnswer, isCorrect, optionOrder? }.
+// { answer, hasAnswer, isCorrect, optionOrder? }, where `answer` is the option text
+// (mcq), { left: right } (matching), { statementIndex: choice } (statements), the
+// index of the tapped word (spot) or the typed text (text).
 function renderOptions(question, text, response) {
+  if (question.type === 'statements') return renderStatements(question, text, response);
+  if (question.type === 'spot') return renderSpot(question, text, response);
+  if (question.type === 'text') return renderTextAnswer(question, text, response);
   if (question.type === 'matching') {
     const wrap = el('div', 'ak-matches');
     if (response && response.hasAnswer) {

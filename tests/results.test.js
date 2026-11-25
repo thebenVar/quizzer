@@ -58,9 +58,9 @@ describe('gradeSelections', () => {
 
   it('logs answered questions for the per-skill results', () => {
     expect(graded.answerLog).toEqual([
-      { questionId: 1, isCorrect: true },
-      { questionId: 'q2', isCorrect: false },
-      { questionId: 'm', isCorrect: false },
+      { questionId: 1, isCorrect: true, points: 1 },
+      { questionId: 'q2', isCorrect: false, points: 0 },
+      { questionId: 'm', isCorrect: false, points: 0 },
     ]);
   });
 
@@ -92,19 +92,19 @@ describe('gradeSelections', () => {
 describe('calculateSkillResults', () => {
   const { answerLog } = gradeSelections(questions, selections);
 
-  it('adds the time spent on each skill', () => {
+  it('counts points (a matching question is worth its pairs) and adds the time spent on each skill', () => {
     const rows = calculateSkillResults(meta.skills, questions, answerLog, { 1: 30_000, m: 15_400, q2: 5_000 });
     expect(rows).toEqual([
-      { id: 'logic', label: 'Logic & reason', correct: 1, total: 2, seconds: 45 },
+      { id: 'logic', label: 'Logic & reason', correct: 1, total: 3, seconds: 45 },
       { id: 'detail', label: 'Detail', correct: 0, total: 2, seconds: 5 },
     ]);
-    expect(skillScoreText(rows[0], meta.uiText)).toBe('1 / 2 · 0:45');
+    expect(skillScoreText(rows[0], meta.uiText)).toBe('1 / 3 · 0:45');
   });
 
   it('leaves the time out when none was tracked', () => {
     const rows = calculateSkillResults(meta.skills, questions, answerLog, {});
     expect(rows[0].seconds).toBeNull();
-    expect(skillScoreText(rows[0], meta.uiText)).toBe('1 / 2');
+    expect(skillScoreText(rows[0], meta.uiText)).toBe('1 / 3');
   });
 });
 
@@ -196,7 +196,7 @@ describe('results file', () => {
     const labels = [...doc.querySelectorAll('.facts dt')].map((dt) => dt.textContent);
     expect(labels).toEqual(['Name', 'Date', 'Time taken', 'Score']);
     const rows = [...doc.querySelectorAll('tbody tr')].map((tr) => [...tr.children].map((td) => td.textContent));
-    expect(rows).toEqual([['Logic & reason', '1 / 2', '1:01'], ['Detail', '0 / 2', '0:00']]);
+    expect(rows).toEqual([['Logic & reason', '1 / 3', '1:01'], ['Detail', '0 / 2', '0:00']]);
     expect(doc.querySelectorAll('.ak-card')).toHaveLength(4);
   });
 

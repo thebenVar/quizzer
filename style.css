@@ -545,6 +545,167 @@ a.quiz-card:focus-visible {
 .review-user-answer { color: #dc3545; }
 
 /* ------------------------------------------------------------------ */
+/* Question types: statements, spot the error, typed answer             */
+/* ------------------------------------------------------------------ */
+.question-passage {
+    margin: 0;
+    padding: 12px 16px;
+    border-left: 4px solid #0d6efd;
+    border-radius: 8px;
+    background-color: #eef4ff;
+    color: #2c3e50;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+.statements-list {
+    list-style: decimal;
+    margin: 0;
+    padding-left: 1.4em;
+    display: grid;
+    gap: 12px;
+}
+.statement-row {
+    padding: 10px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+.statement-text {
+    margin: 0 0 8px;
+    color: #343a40;
+    line-height: 1.5;
+}
+.statement-choices {
+    display: inline-flex;
+    flex-wrap: wrap;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+}
+.statement-choice {
+    border: none;
+    border-right: 1px solid #ced4da;
+    background: none;
+    padding: 8px 14px;
+    font-size: 0.95em;
+    color: #495057;
+    cursor: pointer;
+}
+.statement-choice:last-child {
+    border-right: none;
+}
+.statement-choice:hover:not(:disabled) {
+    background-color: #e9ecef;
+}
+.statement-choice.selected {
+    background-color: #cfe2ff;
+    color: #0a58ca;
+    font-weight: 600;
+}
+.statement-choice:disabled {
+    cursor: default;
+}
+.statement-right {
+    border-color: #a7dcbc;
+    background-color: #e9f7ef;
+}
+.statement-wrong {
+    border-color: #f1aeb5;
+    background-color: #fdecee;
+}
+.statement-reveal {
+    margin: 8px 0 0;
+    font-size: 0.9em;
+    color: #842029;
+}
+
+.question-source {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border-left: 3px solid #198754;
+}
+.question-source-label {
+    margin: 0 0 3px;
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #495057;
+}
+.question-source-text {
+    margin: 0;
+    line-height: 1.6;
+    color: #343a40;
+}
+.spot-text {
+    margin: 0;
+    font-size: 1.1em;
+    line-height: 2.3;
+    color: #343a40;
+    overflow-wrap: anywhere;
+}
+.spot-word {
+    font: inherit;
+    line-height: 1.4;
+    padding: 2px 6px;
+    margin: 0 -2px;
+    border: 1px dashed #ced4da;
+    border-radius: 6px;
+    background-color: #fff;
+    color: inherit;
+    cursor: pointer;
+}
+.spot-word:hover:not(:disabled) {
+    border-color: #0d6efd;
+    background-color: #e7f0fe;
+}
+.spot-word.selected {
+    border-style: solid;
+    border-color: #9ec5fe;
+    background-color: #cfe2ff;
+    color: #0a58ca;
+    font-weight: 600;
+}
+.spot-word:disabled {
+    cursor: default;
+}
+.spot-word.spot-wrong {
+    border-color: #f1aeb5;
+    background-color: #fdecee;
+    color: #842029;
+}
+.spot-word.spot-correct {
+    border-style: solid;
+    border-color: #a7dcbc;
+    background-color: #e9f7ef;
+    color: #14532d;
+    font-weight: 600;
+}
+.text-answer {
+    width: 100%;
+    max-width: 420px;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    font-size: 1.05em;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+}
+.text-answer:focus {
+    outline: 2px solid #9ec5fe;
+    border-color: #0d6efd;
+}
+.text-answer-right {
+    border-color: #198754;
+    background-color: #e9f7ef;
+}
+.text-answer-wrong {
+    border-color: #dc3545;
+    background-color: #fdecee;
+}
+
+/* ------------------------------------------------------------------ */
 /* Start screen: name hint and resuming a saved test                    */
 /* ------------------------------------------------------------------ */
 .setup-hint {
@@ -1023,6 +1184,123 @@ a.quiz-card:focus-visible {
     color: #198754;
 }
 
+/* Answer key and review: statements, spot the error, typed answer */
+.ak-statements-wrap,
+.ak-spot,
+.ak-text-answer {
+    margin-left: 46px;
+    margin-top: 14px;
+}
+.ak-passage {
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border-left: 3px solid #0d6efd;
+    border-radius: 10px;
+    background-color: #eef4ff;
+    color: #2c3e50;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+.ak-statements {
+    margin: 0;
+    padding-left: 1.4em;
+    display: grid;
+    gap: 8px;
+}
+.ak-statement {
+    padding: 8px 12px;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+}
+.ak-statement-right {
+    background-color: #e9f7ef;
+}
+.ak-statement-wrong {
+    background-color: #fdecee;
+}
+.ak-statement-text {
+    margin: 0 0 6px;
+    color: #343a40;
+    line-height: 1.5;
+}
+.ak-statement-why {
+    margin: 6px 0 0;
+    font-size: 0.9em;
+    color: #495057;
+    font-style: italic;
+}
+.ak-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+.ak-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.85em;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.ak-chip-right,
+.ak-chip-correct {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+.ak-chip-wrong {
+    background-color: #f8d7da;
+    color: #842029;
+}
+.ak-source {
+    margin-bottom: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    border-left: 3px solid #198754;
+}
+.ak-source-label {
+    margin: 0 0 3px;
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #495057;
+}
+.ak-source-text {
+    margin: 0;
+    line-height: 1.6;
+}
+.ak-spot-text {
+    margin: 0;
+    line-height: 1.9;
+    color: #343a40;
+    overflow-wrap: anywhere;
+}
+.ak-spot-correct,
+.ak-spot-wrong {
+    padding: 1px 3px;
+    border-radius: 5px;
+}
+.ak-spot-correct {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    font-weight: 700;
+}
+.ak-spot-wrong {
+    background-color: #f8d7da;
+    color: #842029;
+    font-weight: 700;
+    text-decoration: line-through;
+}
+.ak-accept {
+    margin: 8px 0 0;
+    font-size: 0.9em;
+    color: #495057;
+}
+
 /* A participant's answer, in the review at the end */
 .ak-card-right {
     border-left: 4px solid #198754;
@@ -1111,7 +1389,10 @@ a.quiz-card:focus-visible {
     .ak-options,
     .ak-matches,
     .ak-note,
-    .ak-not-answered {
+    .ak-not-answered,
+    .ak-statements-wrap,
+    .ak-spot,
+    .ak-text-answer {
         margin-left: 0;
     }
     .ak-match,

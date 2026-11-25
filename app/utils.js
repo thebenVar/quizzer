@@ -15,9 +15,13 @@ export function formatMinutesSeconds(totalSeconds) {
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
 
-// Points a question is worth when answered correctly. A matching question
-// without its own points is worth one point per pair.
+// Points a question is worth when answered correctly. A "statements" question is
+// worth one point per statement; a matching question without its own points is
+// worth one point per pair.
 export function getQuestionPoints(question) {
+  if (question.type === 'statements') {
+    return question.statements.length;
+  }
   if (question.points) {
     return question.points;
   }
@@ -67,11 +71,22 @@ export function getNewStreakGiftClass({ currentStreak, streakRewards = {}, earne
   return alreadyEarned ? null : giftClass;
 }
 
-// Score per skill, in the order the skills are listed in meta.json.
+// Score per skill, in points, in the order the skills are listed in meta.json.
 // `questions` are the questions asked (unanswered ones still count in the total);
-// `answers` are { questionId, isCorrect } for each answered question.
+// `answers` are { questionId, isCorrect, points? } for each answered question, where
+// `points` is the points awarded (partial credit); without it a correct answer
+// earns the question's full points.
 export function calculateSkillBreakdown(skills, questions, answers) {
-  const correctIds = new Set(answers.filter((answer) => answer.isCorrect).map((answer) => answer.questionId));
+  const earned = new Map();
+  for (const answer of answers) {
+    earned.set(answer.questionId, answer);
+  }
+  const pointsEarned = (question) => {
+    const answer = earned.get(question.id);
+    if (!answer) return 0;
+    if (Number.isFinite(answer.points)) return answer.points;
+    return answer.isCorrect ? getQuestionPoints(question) : 0;
+  };
 
   return skills
     .map((skill) => {
@@ -79,11 +94,73 @@ export function calculateSkillBreakdown(skills, questions, answers) {
       return {
         id: skill.id,
         label: skill.label,
-        correct: skillQuestions.filter((question) => correctIds.has(question.id)).length,
-        total: skillQuestions.length,
+        correct: skillQuestions.reduce((sum, question) => sum + pointsEarned(question), 0),
+        total: skillQuestions.reduce((sum, question) => sum + getQuestionPoints(question), 0),
       };
     })
     .filter((row) => row.total > 0);
+}
+
+// --- "spot" questions: the text split into tappable words ---
+// Each whitespace-separated token keeps its punctuation for display (`before`,
+// `after`), but only `word` (letters, combining marks such as Indic vowel signs,
+// virama and Hebrew points, and digits; inner punctuation kept, as in "don't")
+// is matched against the answer. The text is NFC-normalised first. Tokens with
+// no letters or digits have an empty word and cannot be chosen.
+export function tokenizeSpotText(text) {
+  return String(text)
+    .normalize('NFC')
+    .trim()
+    .split(/\s+/)
+    .filter((token) => token.length > 0)
+    .map((token) => {
+      const match = token.match(/^([^\p{L}\p{M}\p{N}]*)(.*?)([^\p{L}\p{M}\p{N}]*)$/su);
+      return { token, before: match[1], word: match[2], after: match[3] };
+    });
+}
+
+// Index of every token whose word is exactly `word` (both NFC-normalised).
+export function findSpotWordIndexes(text, word) {
+  const target = String(word).normalize('NFC');
+  const indexes = [];
+  tokenizeSpotText(text).forEach((token, index) => {
+    if (token.word !== '' && token.word === target) indexes.push(index);
+  });
+  return indexes;
+}
+
+// --- "text" questions: comparing a typed answer ---
+// NFC-normalised, trimmed, inner spaces collapsed, one trailing full stop
+// removed, case ignored (plain toLowerCase, the same on every device).
+export function normalizeTextAnswer(value) {
+  return String(value ?? '')
+    .normalize('NFC')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\.$/, '')
+    .trim()
+    .toLowerCase();
+}
+
+// A plain decimal number: "42", "-3", "42.0", ".5". No exponents, no trailing ".".
+const NUMBER_PATTERN = /^[+-]?(\d+(\.\d+)?|\.\d+)$/;
+
+function asNumber(normalized) {
+  return NUMBER_PATTERN.test(normalized) ? Number(normalized) : null;
+}
+
+// True when `typed` matches the answer or one of the `accept`ed alternatives;
+// a number also matches the same number written differently ("42.0" = "42").
+export function textAnswerMatches(typed, answer, accept = []) {
+  const given = normalizeTextAnswer(typed);
+  if (given === '') return false;
+  const givenNumber = asNumber(given);
+  return [answer, ...accept].some((candidate) => {
+    const expected = normalizeTextAnswer(candidate);
+    if (given === expected) return true;
+    const expectedNumber = asNumber(expected);
+    return givenNumber !== null && expectedNumber !== null && givenNumber === expectedNumber;
+  });
 }
 
 // Keyboard shortcuts: "1"–"9" and "a"–"z" (by position) pick the Nth option (0-based); other keys give null.

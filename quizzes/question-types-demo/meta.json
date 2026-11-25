@@ -1,0 +1,13 @@
+{
+  "title": "Question Types Demo",
+  "description": "Try each kind of question: true / false / can't tell, spot the error, typed answers and multiple choice.",
+  "skills": [
+    { "id": "reading", "label": "Reading closely" },
+    { "id": "detail", "label": "Attention to detail" },
+    { "id": "reasoning", "label": "Reasoning" }
+  ],
+  "timing": {
+    "timeLimitSeconds": 900,
+    "autoAdvanceDelayMs": 1500
+  }
+}
