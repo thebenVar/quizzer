@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Quiz results – facilitators</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .fac [hidden] { display: none !important; }
+        .fac { background: #fff; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.08); width: 100%; max-width: 1100px; box-sizing: border-box; margin-top: 20px; padding: 25px 30px; color: #343a40; }
+        .fac h1 { text-align: center; margin: 0 0 6px; }
+        .fac-lead { text-align: center; color: #6c757d; margin: 0 0 22px; }
+        .fac label { font-weight: 600; color: #2c3e50; font-size: .9em; }
+        .fac input, .fac select { font: inherit; padding: 8px 10px; border: 1px solid #ced4da; border-radius: 8px; background: #fff; box-sizing: border-box; max-width: 100%; }
+        .fac button { font: inherit; font-size: .95em; padding: 8px 16px; border-radius: 8px; border: 1px solid #0d6efd; background: #0d6efd; color: #fff; cursor: pointer; }
+        .fac button:hover { background: #0b5ed7; }
+        .fac button.fac-secondary { background: #fff; color: #0d6efd; }
+        .fac button.fac-secondary:hover { background: #e7f0fe; }
+        .fac button.fac-danger { background: #fff; color: #dc3545; border-color: #f1aeb5; padding: 4px 10px; font-size: .85em; }
+        .fac button.fac-danger:hover { background: #fdecee; }
+        .fac button:disabled { opacity: .55; cursor: default; }
+        #login-form { max-width: 360px; margin: 0 auto; display: grid; gap: 10px; padding: 20px; border: 1px solid #bcd0f7; border-radius: 12px; background: #e7f0fe; }
+        .fac-error { color: #842029; background: #fdecee; border-radius: 8px; padding: 8px 12px; margin: 0; }
+        .fac-toolbar { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; padding: 14px 16px; border: 1px solid #bcd0f7; border-radius: 12px; background: #e7f0fe; }
+        .fac-field { display: grid; gap: 4px; min-width: 0; }
+        .fac-toolbar-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+        .fac-status { color: #495057; margin: 14px 0 8px; min-height: 1.2em; }
+        .fac-table-wrap { overflow-x: auto; border: 1px solid #e9ecef; border-radius: 12px; }
+        .fac table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .92em; }
+        .fac th, .fac td { text-align: left; padding: 9px 12px; border-bottom: 1px solid #e9ecef; white-space: nowrap; }
+        .fac th { color: #6c757d; font-weight: 600; background: #f8f9fa; position: sticky; top: 0; }
+        .fac td.fac-name { white-space: normal; min-width: 8em; font-weight: 600; color: #2c3e50; }
+        .fac td.num, .fac th.num { text-align: right; }
+        .fac tbody tr { cursor: pointer; }
+        .fac tbody tr:hover { background: #f4f8ff; }
+        .fac tbody tr.fac-selected { background: #e7f0fe; }
+        .fac tbody tr:focus-visible { outline: 2px solid #0d6efd; outline-offset: -2px; }
+        #review-panel { margin-top: 24px; padding-top: 8px; border-top: 2px solid #e7f0fe; }
+        #review-panel h2 { color: #2c3e50; margin: 10px 0 6px; font-size: 1.35em; }
+        .fac-facts { display: flex; flex-wrap: wrap; gap: 6px 18px; color: #495057; margin: 0 0 10px; }
+        .fac-skills { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .fac-skills li { background: #f8f9fa; border-radius: 999px; padding: 3px 10px; font-size: .85em; }
+        .fac-note { color: #6c757d; font-size: .85em; margin-top: 22px; }
+        .fac-warning { color: #664d03; background: #fff3cd; border-radius: 8px; padding: 8px 12px; }
+        .fac-review-filter { display: flex; gap: 8px; margin: 6px 0 4px; }
+        .fac-review-filter button[aria-pressed="true"] { background: #0d6efd; color: #fff; }
+        @media (max-width: 560px) {
+            body { padding: 8px; }
+            .fac { padding: 18px 14px; margin-top: 8px; }
+            .fac-toolbar { padding: 12px; }
+            .fac-field, .fac-field select, .fac-field input { width: 100%; }
+            .fac-toolbar-actions { margin-left: 0; width: 100%; }
+            .fac-toolbar-actions button { flex: 1; }
+        }
+    </style>
+    <script type="module" src="app/resultsPage.js"></script>
+</head>
+<body>
+    <!-- Results sent by participants (quizzes with "collectResults": true).
+         For facilitators only: not linked from anywhere and password-protected
+         (FACILITATOR_PASSWORD on the server). See README, "Results sent to facilitators". -->
+    <main class="fac">
+        <h1>Quiz results</h1>
+        <p class="fac-lead">For facilitators. Results are kept for 12 months; delete older ones here.</p>
+
+        <form id="login-form" hidden>
+            <label for="password-input">Facilitator password</label>
+            <input type="password" id="password-input" autocomplete="current-password" required>
+            <button type="submit" id="login-btn">Sign in</button>
+            <p id="login-error" class="fac-error" role="alert" hidden></p>
+        </form>
+
+        <section id="results-view" hidden>
+            <div class="fac-toolbar">
+                <div class="fac-field">
+                    <label for="quiz-select">Quiz</label>
+                    <select id="quiz-select"></select>
+                </div>
+                <div class="fac-field">
+                    <label for="from-date">From</label>
+                    <input type="date" id="from-date">
+                </div>
+                <div class="fac-field">
+                    <label for="to-date">To</label>
+                    <input type="date" id="to-date">
+                </div>
+                <div class="fac-toolbar-actions">
+                    <button type="button" id="export-csv-btn">Export CSV</button>
+                    <button type="button" id="sign-out-btn" class="fac-secondary">Sign out</button>
+                </div>
+            </div>
+            <p id="results-status" class="fac-status" role="status"></p>
+            <div class="fac-table-wrap">
+                <table id="results-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <section id="review-panel" hidden></section>
+            <p class="fac-note">Click a row to see that person's answers. Participants were told that only the facilitators see their name and answers.</p>
+        </section>
+    </main>
+</body>
+</html>

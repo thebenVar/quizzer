@@ -3,6 +3,7 @@
   "description": "Problem solving and critical thinking, in eight short sections. About 45 minutes.",
   "mode": "test",
   "showAnswerReview": true,
+  "collectResults": true,
   "skills": [
     {
       "id": "pattern",

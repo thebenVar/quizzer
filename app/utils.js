@@ -179,3 +179,21 @@ export function isTypingTarget(target) {
   const tag = typeof target.tagName === 'string' ? target.tagName.toUpperCase() : '';
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }
+
+// --- Text typed by participants (names, typed answers) ---
+// Removes what Postgres cannot store or a name should not carry: control
+// characters (U+0000–U+001F, U+007F; tabs and line breaks become spaces) and
+// unpaired UTF-16 surrogates (replaced with U+FFFD). Joiners such as ZWJ / ZWNJ,
+// used in Indian scripts, are kept.
+export function cleanTypedText(value) {
+  return String(value ?? '')
+    .replace(/[\t\n\r]/g, ' ')
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '�');
+}
+
+// True when the text has at least one visible character: not only spaces,
+// control or invisible format characters (zero-width space, joiners, marks like U+200E).
+export function hasVisibleText(value) {
+  return /[^\p{White_Space}\p{Cc}\p{Cf}\p{Zs}]/u.test(String(value ?? ''));
+}

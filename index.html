@@ -43,7 +43,7 @@
 
             <div id="name-input-area">
                  <label for="user-name" id="name-label"></label>
-                 <input type="text" id="user-name" name="user-name" autocomplete="name">
+                 <input type="text" id="user-name" name="user-name" autocomplete="name" maxlength="80">
                  <p id="name-hint" class="setup-hint" hidden></p>
             </div>
 
@@ -56,6 +56,8 @@
                     <input type="radio" name="correction" value="end"> <span id="delayed-correction-label"></span>
                 </label>
             </div>
+            <!-- Quizzes with "collectResults": true: the participant is told before starting -->
+            <p id="results-collected-notice" class="setup-hint" hidden></p>
             <button id="start-quiz-btn" disabled>Start Quiz</button>
         </div>
 
@@ -129,7 +131,15 @@
                     <h3 id="achievements-heading"></h3>
                     <ul id="achievements-list"></ul>
                 </div>
-            </div> <div id="review-section" style="display: none;">
+            </div>
+
+            <!-- Quizzes with "collectResults": true: whether the results reached the facilitators -->
+            <div id="results-send" hidden>
+                <p id="results-send-status" role="status"></p>
+                <button type="button" id="results-retry-btn" hidden></button>
+            </div>
+
+            <div id="review-section" style="display: none;">
                 <button id="review-toggle-btn"></button>
                 <div id="review-content">
                     <div id="review-filter" role="group">

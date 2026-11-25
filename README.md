@@ -194,6 +194,7 @@ Only `title` is required; everything else has a default.
 
 - `mode` — `"quiz"` (default) or `"test"`. See [Test mode](#test-mode-assessments) below.
 - `skills` — optional list of `{ "id", "label", "description" }`. When present, every question names its `skill`, and the results screen shows a score per skill in this order. The optional `description` introduces the skill on the answer key page.
+- `collectResults` — default `false`. Set `true` to send each participant's name and answers to the facilitators when they finish (see [Results sent to facilitators](#results-sent-to-facilitators)). Such a quiz needs a name before it starts, in quiz mode too.
 - `showAnswerReview` — default `true`. Set `false` to hide the review of answers at the end, and to leave the answers out of the downloaded results file (for example, to keep a test's questions from circulating).
 - `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language. This includes the test-mode buttons and summary (`testNextButtonLabel`, `finishHeading`, `submitTestLabel`, …), the resume panel (`resumeHeading`, `resumeDetails`, …), the keyboard tip (`keyboardHint`), the review (`reviewFilterWrong`, `reviewFilterAll`, …), the per-skill time (`skillScoreWithTime`), the newer question types (`statementTrue`, `statementFalse`, `statementCannotTell`, `statementsFeedback`, `spotSourceLabel`, `textAnswerPlaceholder`, …) and the results file (`downloadResultsLabel`, `resultsFile…`).
 - `branding.logoSrc` is relative to the quiz folder (a full `https://` URL also works). Without it, no logo is shown.
@@ -215,6 +216,49 @@ A quiz with `"mode": "test"` in `meta.json` is an assessment rather than a game:
 - This does not make a test secret: `questions.json`, answers included, is loaded by the browser and can be opened by anyone who knows where to look. Keeping answers private needs grading on a server.
 
 `quizzes/cit-aptitude/` is an example: an aptitude test for consultants in training, with 40 questions over eight skills.
+
+## Results sent to facilitators
+
+A quiz with `"collectResults": true` in `meta.json` sends each participant's results to a small server on Vercel, and facilitators see them on a password-protected page. Today only `cit-aptitude` uses it.
+
+**For participants.** The start screen says: "Your name and answers will be sent to the facilitators. Only they can see them." (`resultsCollectedNotice`). When the test is submitted (Submit test, or when the time runs out; in quiz mode, when the results show), the results screen shows "Sending your results…", then "✓ Your results were sent." If sending fails (no connection, server down), it says so, offers **Try again**, and keeps the results in the browser (localStorage); they are sent automatically the next time any page of the app is opened. The browser keeps at most 20 unsent results (the oldest are dropped), so on a shared computer used offline by many participants, have each one download their results file as well. The review, **Download my results** and **Share** work as before, so the file can still be sent by hand. The texts are `uiText` keys (`resultsSending`, `resultsSent`, `resultsSendFailed`, `resultsSendRejected`, `resultsRetryLabel`).
+
+**How it works.**
+
+- The browser sends `POST /api/submit` with an id it made itself (a UUID, so a retry is stored only once), the quiz id and the fingerprint of the version of the quiz it showed, the name, start time, time taken, the answers, the time per question and the option order shown.
+- `api/submit.js` loads the quiz from the deployed `quizzes/` folder with the same checks as the app, refuses anything malformed (unknown fields or question ids, answers of the wrong shape, a quiz without `collectResults`, bodies over 100 KB) and **grades the answers itself** with the app's grading code (`app/grading.js`). A score sent by the browser is never used.
+- It stores one row in a Postgres table `submissions` (created on first use). Control characters are removed from names and typed answers, and a start time from a clearly wrong clock (in the future, or more than 7 days before submitting) is stored as unknown.
+- If the quiz was edited after the participant took it (results waiting in the outbox while a question changed), the submission is not refused: the answers that still fit the current quiz are graded, the others are left out, and the row is marked so the results page shows a warning.
+- The browser drops a submission from its outbox once the server stores it, or when the server refuses it for good (a 4xx answer from `/api`; logged in the console). Network errors and 5xx answers are retried later.
+
+**What is stored:** name (at most 80 characters), quiz id, a fingerprint of the quiz version taken and whether the quiz had changed since, start and submit time, time taken, score, the score and time per skill, and per question the answer given, whether it was right, the points and the seconds spent. **Not stored:** IP address, browser or device details, location, or anything else.
+
+**Facilitators' page:** `/results.html` (not linked anywhere, not indexed). Sign in with the facilitator password (kept only for that browser tab). Pick a quiz and, optionally, dates; the table lists name, date, score, each skill and time taken, newest first. The list shows the newest 2000 results for the chosen dates; narrow the dates to see older ones. Click a row to load that person's answers, shown as cards as in the participant's own review. **Export CSV** downloads the rows shown (UTF-8 with BOM, so Excel shows names in Indian scripts correctly). **Delete** removes one submission after a confirmation.
+
+**Retention and privacy.** Results are kept for 12 months and then deleted by hand from the results page (there is no automatic deletion). Participants are told before they start that their name and answers go to the facilitators and that only the facilitators can see them; keep the password to the facilitators. The answers themselves are still public (`questions.json` and the `-ans` page, see [Test mode](#test-mode-assessments)); keeping them secret is a separate step (P3).
+
+### Setting it up on Vercel
+
+1. In the Vercel project, open **Storage**, create a **Neon** (Postgres) database and connect it to the project. This sets `DATABASE_URL` (`POSTGRES_URL` is also accepted).
+2. In **Settings → Environment Variables**, add `FACILITATOR_PASSWORD`. Make it **long and random** (for example 20 or more characters from a password manager's generator), since it is the only thing protecting everyone's names and answers; share it only with facilitators, and change it when someone leaves. Without it the results page refuses everyone. (For scripts: the results page sends it as `Authorization: Bearer <password>`, percent-encoded with `encodeURIComponent`.)
+3. Add a rate limit, so the password cannot be guessed by trying many times: in the project, open **Firewall → Configure → New Rule**, name it "API rate limit", set **If** *Request Path* *starts with* `/api/`, **Then** *Rate Limit* (fixed window) of about **30 requests per 60 seconds per IP**, action *Deny* (429), and **Publish**. A participant sends one request per test, so this does not get in the way; a stricter second rule for `/api/results` (about 10 per minute) is also reasonable. A whole class behind one school or office IP submitting at once may need the `/api/submit` limit raised.
+4. Redeploy. `vercel.json` bundles `quizzes/**` with the functions in `api/`; the static site works as before.
+5. Open `/results.html` once and sign in, to check the password and the database connection (the page says what is wrong if either is missing).
+
+The table is created on the first request that needs it. `npm install` brings in the database driver (`@neondatabase/serverless`).
+
+### Testing locally
+
+`npx serve .` still runs the whole app, but without `/api`: sending fails and the results wait in the browser's outbox (the results page says the service is not available). To test sending, use the Vercel CLI from the project folder:
+
+```sh
+npm i -g vercel
+vercel link          # once, to connect the folder to the Vercel project
+vercel env pull      # writes .env.local with DATABASE_URL and FACILITATOR_PASSWORD (git-ignored)
+vercel dev
+```
+
+Then take the test at `http://localhost:3000/?quiz=cit-aptitude` and open `http://localhost:3000/results.html`. Note that `vercel dev` with the pulled `DATABASE_URL` writes to that real database; use a Neon branch for testing if you want to keep it clean. The tests (`npm test`) use an in-memory database and need no network.
 
 ## Keyboard
 
@@ -242,7 +286,14 @@ app/validate.js                    content rules and defaults for meta.json / qu
 app/runtime.js                     answer checking
 app/answerKey.js                   the answer key page (?quiz=<id>-ans) and its question cards, also used by the review
 app/progress.js                    saving and resuming a test in progress (localStorage, deadline, quiz fingerprint)
-app/results.js                     grading stored answers, time per skill, the downloadable results file
+app/grading.js                     grading stored answers, score and time per skill (no DOM; also used by the server)
+app/results.js                     the downloadable results file (re-exports grading.js)
+app/submissions.js                 sending results to the facilitators, and the outbox in localStorage
+app/resultsPage.js, results.html   the facilitators' results page
+app/resultsCsv.js                  the CSV export of that page
+api/submit.js, api/results.js      Vercel functions: receive and re-grade results; list and delete them
+api/_lib/                          shared server code (database, request checks); not routes
+vercel.json                        includes quizzes/** in the functions
 app/utils.js                       scoring, timer, shuffle and keyboard helpers
 quizzes/registry.json              the home page: which quizzes are listed, and in what order
 quizzes/<id>/                      one folder per quiz

@@ -1489,3 +1489,47 @@ a.quiz-card:focus-visible {
         break-after: avoid;
     }
 }
+
+/* ------------------------------------------------------------------ */
+/* Results sent to the facilitators ("collectResults": true)            */
+/* ------------------------------------------------------------------ */
+#results-collected-notice {
+    margin: 4px auto 14px;
+    max-width: 30em;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    color: #495057;
+}
+#results-send {
+    margin: 18px auto 0;
+    max-width: 34em;
+}
+#results-send-status {
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    color: #495057;
+    line-height: 1.5;
+}
+#results-send-status.send-ok {
+    background-color: #e9f7ef;
+    color: #14532d;
+    font-weight: 600;
+}
+#results-send-status.send-failed {
+    background-color: #fdecee;
+    color: #842029;
+}
+#results-retry-btn {
+    margin-top: 10px;
+    padding: 8px 20px;
+    font-size: 0.95em;
+    color: #0d6efd;
+    background-color: #ffffff;
+    border: 1px solid #0d6efd;
+    border-radius: 6px;
+    cursor: pointer;
+}
+#results-retry-btn:hover { background-color: #e7f0fe; }

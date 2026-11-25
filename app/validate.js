@@ -17,6 +17,7 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   resumeDetails: 'Question {current} of {total} · {time} left',
   resumeButtonLabel: 'Resume your test',
   startOverButtonLabel: 'Start over',
+  resultsCollectedNotice: 'Your name and answers will be sent to the facilitators. Only they can see them.',
 
   // While answering
   questionProgress: 'Question {current} / {total}',
@@ -93,6 +94,13 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   shareResultsLabel: 'Share my results',
   shareResultsFailed: 'Sorry, the results could not be shared.',
   shareResultsTitle: '{title}: results for {name}',
+
+  // Results sent to the facilitators (meta.json "collectResults": true)
+  resultsSending: 'Sending your results…',
+  resultsSent: '✓ Your results were sent.',
+  resultsSendFailed: "Couldn't send your results. They will be sent automatically next time you open this quiz. You can also download your results and send the file to your facilitator.",
+  resultsSendRejected: 'Your results could not be accepted. Please download your results and send the file to your facilitator.',
+  resultsRetryLabel: 'Try again',
 
   // Downloaded results file
   resultsFileHeading: 'Results',
@@ -258,9 +266,14 @@ export function validateMeta(meta) {
   const showAnswerReview = meta.showAnswerReview ?? true;
   assert(typeof showAnswerReview === 'boolean', 'meta.showAnswerReview must be true or false');
 
+  // Send each participant's name and answers to the server for the facilitators (results.html).
+  const collectResults = meta.collectResults ?? false;
+  assert(typeof collectResults === 'boolean', 'meta.collectResults must be true or false');
+
   return {
     mode,
     showAnswerReview,
+    collectResults,
     skills: validateSkills(meta.skills),
     id: meta.id.trim(),
     title,

@@ -2,3 +2,6 @@ quizDataMaster.js
 quizData50.js
 quizDataSample.js
 node_modules/
+.vercel/
+.env
+.env*.local

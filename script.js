@@ -143,20 +143,24 @@ async function playSound(synth, note, duration) {
 async function initPage() {
     let loader;
     try {
-        let utils, runtime, progress, results, answerKey;
-        [loader, utils, runtime, progress, results, answerKey] = await Promise.all([
+        let utils, runtime, progress, results, answerKey, submissions;
+        [loader, utils, runtime, progress, results, answerKey, submissions] = await Promise.all([
             import('./app/loader.js'),
             import('./app/utils.js'),
             import('./app/runtime.js'),
             import('./app/progress.js'),
             import('./app/results.js'),
             import('./app/answerKey.js'),
+            import('./app/submissions.js'),
         ]);
-        quizLib = { ...utils, ...runtime, ...progress, ...results, renderQuestionCard: answerKey.renderQuestionCard };
+        quizLib = { ...utils, ...runtime, ...progress, ...results, ...submissions, renderQuestionCard: answerKey.renderQuestionCard };
     } catch (error) {
         showQuizLoadError(error);
         return;
     }
+
+    // Results that could not be sent to the facilitators earlier are retried on every page.
+    quizLib.flushOutbox(quizLib.getStorage(window)).catch(() => {});
 
     const quizParam = loader.getQuizIdFromSearch(window.location.search);
     if (!quizParam) {
@@ -231,13 +235,14 @@ async function initQuiz(loader, quizId) {
     }
 }
 
-// Test mode needs a name before it can start; a quiz falls back to the default name.
+// Test mode, and a quiz that sends its results to the facilitators, need a name
+// before they can start; other quizzes fall back to the default name.
 function updateStartButton() {
-    if (!isTestMode()) {
+    if (!isTestMode() && !currentQuizMeta.collectResults) {
         startQuizButton.disabled = false;
         return;
     }
-    const hasName = nameInputElement.value.trim().length > 0;
+    const hasName = quizLib.hasVisibleText(nameInputElement.value);
     startQuizButton.disabled = !hasName;
     nameHintElement.hidden = hasName;
 }
@@ -447,6 +452,12 @@ function applyQuizMetaToPage(meta) {
     document.getElementById('review-filter-all').textContent = text.reviewFilterAll;
     document.getElementById('download-results-label').textContent = text.downloadResultsLabel;
     document.getElementById('share-results-label').textContent = text.shareResultsLabel;
+    document.getElementById('results-retry-btn').textContent = text.resultsRetryLabel;
+
+    // A quiz that sends results to the facilitators says so before it starts.
+    const collectNotice = document.getElementById('results-collected-notice');
+    collectNotice.textContent = text.resultsCollectedNotice;
+    collectNotice.hidden = !meta.collectResults;
 
     // A test gives no hints while it runs: no feedback choice, no live right/wrong counts.
     correctionModeSelectorElement.style.display = meta.mode === 'test' ? 'none' : '';
@@ -648,7 +659,7 @@ function loadTextOptions(question, initialValue, onInput) {
 
 function startTestFlow() {
     const name = nameInputElement.value.trim();
-    if (!name) {
+    if (!quizLib.hasVisibleText(name)) {
         updateStartButton();
         return;
     }
@@ -1372,6 +1383,8 @@ function showResults(endTime) {
         achievementsListElement.parentElement.style.display = 'block';
     }
 
+    sendResultsToFacilitators(durationSeconds);
+
     reviewFilter = 'wrong';
     renderReview();
     reviewSection.style.display = currentQuizMeta.showAnswerReview ? 'block' : 'none';
@@ -1385,6 +1398,61 @@ function showResults(endTime) {
     resultAreaElement.style.display = 'block';
     setHomeLinkVisible(true);
     playSound(completeSound, "G4", "4n");
+}
+
+// --- Results sent to the facilitators (meta.json "collectResults": true) ---
+// The submission goes into the outbox first (localStorage), so it is retried
+// on the next page load if sending fails or the tab is closed meanwhile.
+let pendingSubmission = null;
+
+function sendResultsToFacilitators(durationSeconds) {
+    const area = document.getElementById('results-send');
+    if (!currentQuizMeta.collectResults) {
+        pendingSubmission = null;
+        area.hidden = true;
+        return;
+    }
+    pendingSubmission = quizLib.buildSubmission({
+        id: quizLib.createSubmissionId(),
+        quizId: currentQuizMeta.id,
+        quizVersion: quizLib.quizFingerprint(quizQuestions),
+        name: userName,
+        startedAt: quizStartTime,
+        timeTakenSeconds: durationSeconds,
+        selections,
+        timeSpent,
+        optionOrders,
+    });
+    quizLib.enqueueSubmission(quizLib.getStorage(window), pendingSubmission);
+    area.hidden = false;
+    trySendingResults();
+}
+
+async function trySendingResults() {
+    const submission = pendingSubmission;
+    if (!submission) return;
+    showSendStatus('sending');
+    const storage = quizLib.getStorage(window);
+    let outcome;
+    try {
+        ({ outcome } = await quizLib.sendSubmission(storage, submission));
+    } catch (error) {
+        console.error('Error sending results:', error);
+        outcome = 'retry';
+    }
+    if (pendingSubmission !== submission) return;
+    showSendStatus(outcome);
+    // A connection that works again also sends anything left from earlier.
+    if (outcome === 'sent') quizLib.flushOutbox(storage).catch(() => {});
+}
+
+function showSendStatus(outcome) {
+    const status = document.getElementById('results-send-status');
+    const retryButton = document.getElementById('results-retry-btn');
+    const messages = { sending: 'resultsSending', sent: 'resultsSent', rejected: 'resultsSendRejected', retry: 'resultsSendFailed' };
+    status.textContent = uiText(messages[outcome] || 'resultsSendFailed');
+    status.className = outcome === 'sent' ? 'send-ok' : outcome === 'sending' ? '' : 'send-failed';
+    retryButton.hidden = outcome !== 'retry';
 }
 
 function populateSkillBreakdown() {
@@ -1702,6 +1770,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('review-filter-all').addEventListener('click', () => setReviewFilter('all'));
     downloadResultsButton.addEventListener('click', downloadResults);
     shareResultsButton.addEventListener('click', shareResults);
+    document.getElementById('results-retry-btn').addEventListener('click', trySendingResults);
 
     // Test mode
     nameInputElement.addEventListener('input', () => { if (currentQuizMeta) updateStartButton(); });

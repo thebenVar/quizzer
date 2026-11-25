@@ -199,3 +199,23 @@ describe('DEFAULT_UI_TEXT covers the app', () => {
     }
   });
 });
+
+describe('collectResults', () => {
+  it('defaults to false and accepts true or false', () => {
+    expect(validateMeta(baseMeta).collectResults).toBe(false);
+    expect(validateMeta({ ...baseMeta, collectResults: true }).collectResults).toBe(true);
+    expect(validateMeta({ ...baseMeta, collectResults: false }).collectResults).toBe(false);
+  });
+
+  it('rejects anything that is not true or false', () => {
+    expect(() => validateMeta({ ...baseMeta, collectResults: 'yes' })).toThrow(/collectResults must be true or false/);
+    expect(() => validateMeta({ ...baseMeta, collectResults: 1 })).toThrow(/collectResults/);
+  });
+
+  it('has the texts the results screen uses while sending', async () => {
+    const { DEFAULT_UI_TEXT } = await import('../app/validate.js');
+    for (const key of ['resultsCollectedNotice', 'resultsSending', 'resultsSent', 'resultsSendFailed', 'resultsSendRejected', 'resultsRetryLabel']) {
+      expect(DEFAULT_UI_TEXT[key], key).toBeTruthy();
+    }
+  });
+});
