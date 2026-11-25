@@ -150,11 +150,53 @@ async function initPage() {
         return;
     }
 
-    const quizId = loader.getQuizIdFromSearch(window.location.search);
-    if (quizId) {
-        await initQuiz(loader, quizId);
-    } else {
+    const quizParam = loader.getQuizIdFromSearch(window.location.search);
+    if (!quizParam) {
         await showHomePage(loader);
+        return;
+    }
+    const { quizId, answerKey } = loader.parseQuizRequest(quizParam);
+    if (answerKey) {
+        await showAnswerKey(loader, quizId);
+    } else {
+        await initQuiz(loader, quizId);
+    }
+}
+
+// ?quiz=<id>-ans: every question with its answer, why, and how to approach it.
+async function showAnswerKey(loader, quizId) {
+    try {
+        const [quiz, { renderAnswerKey }] = await Promise.all([
+            loader.loadQuiz(quizId),
+            import('./app/answerKey.js'),
+        ]);
+        currentQuizMeta = quiz.meta;
+
+        // Not linked anywhere; also ask search engines to leave it out.
+        const robots = document.createElement('meta');
+        robots.name = 'robots';
+        robots.content = 'noindex';
+        document.head.appendChild(robots);
+
+        const meta = quiz.meta;
+        document.title = `${meta.pageTitle} – ${meta.uiText.answerKeyLabel}`;
+        document.getElementById('quiz-title').textContent = meta.title;
+        const logoElement = document.getElementById('logo');
+        if (meta.branding.logoSrc) {
+            logoElement.src = meta.branding.logoSrc;
+            logoElement.alt = meta.branding.logoAlt;
+            logoElement.onerror = () => { logoElement.hidden = true; };
+            logoElement.hidden = false;
+        }
+        document.getElementById('home-link').textContent = meta.uiText.homeLinkLabel;
+        setHomeLinkVisible(true);
+
+        quizContainer.classList.add('answer-key-mode');
+        const root = document.getElementById('answer-key');
+        renderAnswerKey(root, quiz);
+        root.hidden = false;
+    } catch (error) {
+        showQuizLoadError(error);
     }
 }
 

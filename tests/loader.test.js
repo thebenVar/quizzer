@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getQuizIdFromSearch, loadQuiz, loadQuizList, loadRegistry } from '../app/loader.js';
+import { getQuizIdFromSearch, loadQuiz, loadQuizList, loadRegistry, parseQuizRequest } from '../app/loader.js';
 
 const sampleMeta = {
   title: 'Sample Quiz',
@@ -40,6 +40,17 @@ describe('getQuizIdFromSearch', () => {
   });
 });
 
+describe('parseQuizRequest', () => {
+  it('reads <id>-ans as the answer key of <id>', () => {
+    expect(parseQuizRequest('cit-aptitude-ans')).toEqual({ quizId: 'cit-aptitude', answerKey: true });
+  });
+
+  it('reads anything else as the quiz itself', () => {
+    expect(parseQuizRequest('sample')).toEqual({ quizId: 'sample', answerKey: false });
+    expect(parseQuizRequest('-ans')).toEqual({ quizId: '-ans', answerKey: false });
+  });
+});
+
 describe('loadRegistry', () => {
   it('reads the title, description and quiz lists, with defaults', async () => {
     const fetchFn = fakeFetch({ 'quizzes/registry.json': { quizzes: ['a', 'b'] } });
@@ -54,6 +65,11 @@ describe('loadRegistry', () => {
   it('rejects a quiz listed twice, even across quizzes and unlisted', async () => {
     const fetchFn = fakeFetch({ 'quizzes/registry.json': { quizzes: ['a'], unlisted: ['a'] } });
     await expect(loadRegistry({ fetchFn })).rejects.toThrow(/"a" is listed more than once/);
+  });
+
+  it('rejects quiz names ending in -ans, which open answer keys', async () => {
+    const fetchFn = fakeFetch({ 'quizzes/registry.json': { quizzes: ['bible-ans'] } });
+    await expect(loadRegistry({ fetchFn })).rejects.toThrow(/cannot end in "-ans"/);
   });
 
   it('rejects names that are not plain folder names', async () => {

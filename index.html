@@ -13,7 +13,8 @@
 <body>
     <!-- This page is the same for every quiz. Without ?quiz= it is the home page,
          listing the quizzes named in quizzes/registry.json. With ?quiz=<id> it runs
-         that quiz, from quizzes/<id>/meta.json and questions.json. -->
+         that quiz, from quizzes/<id>/meta.json and questions.json; ?quiz=<id>-ans
+         shows that quiz's answer key. -->
 
     <div id="quiz-container">
         <div id="feedback-flash" class="feedback-flash"></div>
@@ -25,6 +26,9 @@
         <p id="quiz-load-error" class="feedback-incorrect" hidden></p>
 
         <ul id="quiz-list" hidden></ul>
+
+        <!-- ?quiz=<id>-ans: the answer key (app/answerKey.js) -->
+        <div id="answer-key" hidden></div>
 
         <div id="initial-setup" style="display: none;">
             <div id="name-input-area">

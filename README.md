@@ -19,6 +19,7 @@ Then open:
 
 - `http://localhost:3000/` — the home page, listing the quizzes
 - `http://localhost:3000/?quiz=sample` — a quiz directly, by folder name
+- `http://localhost:3000/?quiz=sample-ans` — that quiz's answer key (see [Answer key](#answer-key))
 
 Run the tests (they also check every quiz folder):
 
@@ -90,6 +91,7 @@ A list of questions. Two types are supported:
 | `points` | no | Default 0. A matching question with 0 points is worth one point per pair |
 | `explanation` | no | Shown when the answer is wrong, and in the final review |
 | `isBonus` | no | At most one bonus question; it is always asked last and does not count towards the score. Not allowed in test mode |
+| `approach` | no | A tip on how to think the question through; shown on the answer key page |
 | `skill` | if the quiz lists `skills` | Which skill the question measures (one of the `id`s in `meta.json` `skills`) |
 
 Regular questions are asked in random order. A line break in a `prompt` (`
@@ -134,7 +136,7 @@ Only `title` is required; everything else has a default.
 ```
 
 - `mode` — `"quiz"` (default) or `"test"`. See [Test mode](#test-mode-assessments) below.
-- `skills` — optional list of `{ "id", "label" }`. When present, every question names its `skill`, and the results screen shows a score per skill in this order.
+- `skills` — optional list of `{ "id", "label", "description" }`. When present, every question names its `skill`, and the results screen shows a score per skill in this order. The optional `description` introduces the skill on the answer key page.
 - `showAnswerReview` — default `true`. Set `false` to hide the review of wrong answers at the end (for example, to keep a test's questions from circulating).
 - `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language.
 - `branding.logoSrc` is relative to the quiz folder (a full `https://` URL also works). Without it, no logo is shown.
@@ -154,6 +156,12 @@ A quiz with `"mode": "test"` in `meta.json` is an assessment rather than a game:
 
 `quizzes/cit-aptitude/` is an example: an aptitude test for consultants in training, with 40 questions over eight skills.
 
+## Answer key
+
+Add `-ans` to any quiz's name to see its answer key: `?quiz=cit-aptitude-ans`. The page lists every question with all its options, the correct one marked, and the question's `explanation` ("Why") and `approach` ("How to approach"). When the quiz lists `skills`, questions are grouped by skill with jump links. It has a Print button and prints cleanly.
+
+The page is not linked from anywhere and asks search engines not to index it, but it is not secret: anyone who adds `-ans` sees it. Because of this, no quiz folder may end in `-ans`.
+
 ## Project layout
 
 ```text
@@ -161,6 +169,7 @@ index.html, style.css, script.js   page, styles and quiz flow (shared by all qui
 app/loader.js                      finds and loads a quiz folder
 app/validate.js                    content rules and defaults for meta.json / questions.json
 app/runtime.js                     answer checking
+app/answerKey.js                   the answer key page (?quiz=<id>-ans)
 app/utils.js                       scoring, timer and shuffle helpers
 quizzes/registry.json              the home page: which quizzes are listed, and in what order
 quizzes/<id>/                      one folder per quiz

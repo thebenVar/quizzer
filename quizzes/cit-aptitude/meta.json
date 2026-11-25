@@ -6,35 +6,43 @@
   "skills": [
     {
       "id": "pattern",
-      "label": "Pattern recognition"
+      "label": "Pattern recognition",
+      "description": "These questions hide a rule in the material. Line up the items, say out loud what changes from one to the next, and test your rule on every item before you trust it."
     },
     {
       "id": "series",
-      "label": "Series completion"
+      "label": "Series completion",
+      "description": "A series follows a rule that turns each item into the next. Write the gaps between neighbours underneath. Equal gaps: add the gap. Steadily growing gaps: find how they grow. Neither: try multiplying. Letters work the same way once you turn them into numbers (A = 1, B = 2 … Z = 26)."
     },
     {
       "id": "odd-one-out",
-      "label": "Odd one out"
+      "label": "Odd one out",
+      "description": "Find the group that four of the items form; the fifth is the one left over. Several groupings may seem possible, so look for the rule that takes in four items with no exceptions. Check meaning first, then form (what kind of word it is, how it is built)."
     },
     {
       "id": "compare",
-      "label": "Compare and judge"
+      "label": "Compare and judge",
+      "description": "The core consultant skill: weigh options against a standard. Be clear what the standard is (the source text, or the goal in the question). Break the source into its pieces of meaning and check each option piece by piece: is anything added, dropped or changed? Different wording is not a different meaning."
     },
     {
       "id": "deduction",
-      "label": "Logical deduction"
+      "label": "Logical deduction",
+      "description": "These ask what MUST be true from the facts given; likely is not enough. For puzzles, start with the most certain clue and fill in a grid. For “must be true”, imagine a situation where the facts hold but the option is false; if you can, the option is wrong."
     },
     {
       "id": "text-vs-assumption",
-      "label": "Text vs. assumption"
+      "label": "Text vs. assumption",
+      "description": "Well-known stories pick up details in retelling that the text does not contain. A translator translates the text, not the tradition. For each option, find the exact words in the verse that say it; if you cannot point to them, it is not said."
     },
     {
       "id": "detail",
-      "label": "Attention to detail"
+      "label": "Attention to detail",
+      "description": "A consultant’s check catches small slips that change meaning: a number, a name, a missing word. Compare slowly, one piece at a time; never read the draft as a whole, because the mind fills in what it expects to see."
     },
     {
       "id": "analogy",
-      "label": "Analogy"
+      "label": "Analogy",
+      "description": "Carry a relationship from one pair to another. Put the first pair’s relationship into a short sentence (“A shepherd takes care of a flock”), then try each option in the same sentence. Wrong options are usually related words that fit a different sentence."
     }
   ],
   "timing": {

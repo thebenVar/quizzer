@@ -9,6 +9,16 @@ export class QuizLoadError extends Error {
   }
 }
 
+// ?quiz=<id>-ans opens the answer key of quiz <id>, so no quiz folder may end in "-ans".
+export const ANSWER_KEY_SUFFIX = '-ans';
+
+export function parseQuizRequest(quizParam) {
+  if (quizParam.endsWith(ANSWER_KEY_SUFFIX) && quizParam.length > ANSWER_KEY_SUFFIX.length) {
+    return { quizId: quizParam.slice(0, -ANSWER_KEY_SUFFIX.length), answerKey: true };
+  }
+  return { quizId: quizParam, answerKey: false };
+}
+
 export function getQuizIdFromSearch(search) {
   const quizId = new URLSearchParams(search).get('quiz');
   return quizId && quizId.trim().length > 0 ? quizId.trim() : null;
@@ -105,6 +115,7 @@ export async function loadRegistry({ baseUrl = 'quizzes/', fetchFn = fetch } = {
   for (const [listName, list] of [['quizzes', registry.quizzes], ['unlisted', unlisted]]) {
     list.forEach((quizId, index) => {
       if (typeof quizId !== 'string' || !QUIZ_ID_PATTERN.test(quizId)) fail(`${listName}[${index}] "${quizId}" is not a valid quiz folder name`);
+      if (quizId.endsWith(ANSWER_KEY_SUFFIX)) fail(`${listName}[${index}] "${quizId}" cannot end in "${ANSWER_KEY_SUFFIX}"; that ending opens a quiz's answer key`);
       if (seen.has(quizId)) fail(`"${quizId}" is listed more than once`);
       seen.add(quizId);
     });

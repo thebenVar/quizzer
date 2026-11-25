@@ -63,6 +63,16 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   reviewBonusSuffix: '(Bonus)',
   reviewNoExplanation: 'No specific justification provided.',
   reviewMatchingNoExplanation: 'Match all pairs correctly.',
+
+  // Answer key page (?quiz=<id>-ans)
+  answerKeyLabel: 'Answer key',
+  answerKeyQuestionCount: '{count} questions',
+  answerKeySkillCount: '{count} skills',
+  answerKeyCorrect: 'Correct',
+  answerKeyWhy: 'Why',
+  answerKeyApproach: 'How to approach',
+  answerKeyMatchingHeading: 'Correct matches',
+  answerKeyPrint: 'Print',
 });
 
 const DEFAULT_RESULT_BANDS = Object.freeze([
@@ -141,7 +151,8 @@ function validateSkills(skills) {
     const id = skill.id.trim();
     assert(!seen.has(id), `${path}.id "${id}" is used more than once`);
     seen.add(id);
-    return { id, label: skill.label.trim() };
+    assert(skill.description === undefined || typeof skill.description === 'string', `${path}.description must be text`);
+    return { id, label: skill.label.trim(), description: normalizeStringField(skill.description).trim() };
   });
 }
 
@@ -276,6 +287,8 @@ function validateQuestion(question, index) {
     prompt: question.prompt.trim(),
     points,
     explanation: normalizeStringField(question.explanation),
+    // Optional tip on how to think the question through; shown on the answer key page.
+    approach: normalizeStringField(question.approach).trim(),
     isBonus,
     skill: question.skill === undefined ? null : question.skill,
   };
