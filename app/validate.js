@@ -19,6 +19,16 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   startOverButtonLabel: 'Start over',
   resultsCollectedNotice: 'Your name and answers will be sent to the facilitators. Only they can see them.',
 
+  // Cohort code on the start screen (meta.json "cohortCodes": "optional" or "required")
+  cohortCodeLabel: 'Cohort code',
+  cohortCodePlaceholder: 'e.g. ABC234',
+  cohortCodeHint: 'If your facilitator gave you a code',
+  cohortCodeRequiredHint: 'Enter the code your facilitator gave you.',
+  cohortChecking: 'Checking the code…',
+  cohortInvalid: 'This code is not valid for this quiz. Check it with your facilitator.',
+  cohortUnchecked: "The code could not be checked now; it will be checked when your results are sent.",
+  cohortLabel: 'Cohort: {label}',
+
   // While answering
   questionProgress: 'Question {current} / {total}',
   bonusProgress: 'Bonus Question!',
@@ -205,6 +215,9 @@ function validateResultBands(resultBands) {
 // "test": no feedback until the end, no streaks or gifts; for assessments.
 const QUIZ_MODES = ['quiz', 'test'];
 
+// "off": no cohort code. "optional": a field anyone may leave empty. "required": Start needs a code.
+export const COHORT_CODE_MODES = Object.freeze(['off', 'optional', 'required']);
+
 // Optional list of skills a quiz measures; questions name one with "skill",
 // and the results screen shows a score per skill, in this order.
 function validateSkills(skills) {
@@ -270,10 +283,16 @@ export function validateMeta(meta) {
   const collectResults = meta.collectResults ?? false;
   assert(typeof collectResults === 'boolean', 'meta.collectResults must be true or false');
 
+  // A cohort code on the start screen, made by facilitators on results.html.
+  const cohortCodes = meta.cohortCodes ?? 'off';
+  assert(COHORT_CODE_MODES.includes(cohortCodes), `meta.cohortCodes must be one of ${COHORT_CODE_MODES.map((m) => `"${m}"`).join(', ')}`);
+  assert(cohortCodes === 'off' || collectResults, 'meta.cohortCodes needs "collectResults": true (the code is sent with the results)');
+
   return {
     mode,
     showAnswerReview,
     collectResults,
+    cohortCodes,
     skills: validateSkills(meta.skills),
     id: meta.id.trim(),
     title,

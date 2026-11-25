@@ -163,7 +163,7 @@ describe('creating the table', () => {
     const db = createNeonDb('postgres://unused', { connect: async () => sql });
     await expect(db.listQuizIds()).rejects.toThrow(/password authentication/);
     await expect(db.listQuizIds()).resolves.toEqual([]);
-    expect(statements.filter((text) => text.startsWith('CREATE TABLE'))).toHaveLength(2);
+    expect(statements.filter((text) => text.startsWith('CREATE TABLE IF NOT EXISTS submissions'))).toHaveLength(2);
   });
 
   it('recognises only "already exists" errors', () => {

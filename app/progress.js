@@ -37,7 +37,8 @@ export function getStorage(win = globalThis.window) {
 }
 
 // state: { order: [question ids], index, selections: { id: answer }, name,
-//          startedAt, deadline (ms timestamps), timeSpent: { id: ms }, optionOrder: { id: [options] } }
+//          startedAt, deadline (ms timestamps), timeSpent: { id: ms }, optionOrder: { id: [options] },
+//          cohortCode, cohortLabel }
 export function saveProgress(storage, quizId, fingerprint, state) {
   if (!storage) return false;
   try {
@@ -102,6 +103,9 @@ export function loadProgress(storage, quizId, fingerprint) {
     deadline: record.deadline,
     timeSpent: record.timeSpent && typeof record.timeSpent === 'object' ? record.timeSpent : {},
     optionOrder: record.optionOrder && typeof record.optionOrder === 'object' ? record.optionOrder : {},
+    // The cohort code given on the start screen, and its label once checked.
+    cohortCode: typeof record.cohortCode === 'string' ? record.cohortCode : '',
+    cohortLabel: typeof record.cohortLabel === 'string' ? record.cohortLabel : '',
   };
 }
 

@@ -1533,3 +1533,40 @@ a.quiz-card:focus-visible {
     cursor: pointer;
 }
 #results-retry-btn:hover { background-color: #e7f0fe; }
+
+/* ------------------------------------------------------------------ */
+/* Cohort code on the start screen ("cohortCodes" in meta.json)          */
+/* ------------------------------------------------------------------ */
+#cohort-area {
+    margin: -6px 0 20px;
+    text-align: center;
+}
+#cohort-area label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #495057;
+}
+#cohort-code {
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    width: 80%;
+    max-width: 300px;
+    font-size: 1em;
+    box-sizing: border-box;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+#cohort-status {
+    font-weight: 600;
+    color: #0a58ca;
+}
+#cohort-status.cohort-invalid {
+    color: #842029;
+}
+#result-cohort {
+    font-size: 1em;
+    color: #0a58ca;
+    font-weight: 600;
+}

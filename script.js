@@ -56,6 +56,11 @@ let progressStorage = null;
 let quizFingerprintValue = '';
 let ticksSinceSave = 0;
 
+// Cohort code ("cohortCodes" in meta.json): what was given on the start screen
+// and, once the server confirmed it, the cohort's name.
+let cohortCode = '';
+let cohortLabel = '';
+
 // --- Sound Effects (Tone.js Synths) ---
 let correctSound, incorrectSound, completeSound, giftSound;
 let isAudioContextStarted = false;
@@ -143,8 +148,8 @@ async function playSound(synth, note, duration) {
 async function initPage() {
     let loader;
     try {
-        let utils, runtime, progress, results, answerKey, submissions;
-        [loader, utils, runtime, progress, results, answerKey, submissions] = await Promise.all([
+        let utils, runtime, progress, results, answerKey, submissions, cohorts;
+        [loader, utils, runtime, progress, results, answerKey, submissions, cohorts] = await Promise.all([
             import('./app/loader.js'),
             import('./app/utils.js'),
             import('./app/runtime.js'),
@@ -152,8 +157,9 @@ async function initPage() {
             import('./app/results.js'),
             import('./app/answerKey.js'),
             import('./app/submissions.js'),
+            import('./app/cohortCode.js'),
         ]);
-        quizLib = { ...utils, ...runtime, ...progress, ...results, ...submissions, renderQuestionCard: answerKey.renderQuestionCard };
+        quizLib = { ...utils, ...runtime, ...progress, ...results, ...submissions, ...cohorts, renderQuestionCard: answerKey.renderQuestionCard };
     } catch (error) {
         showQuizLoadError(error);
         return;
@@ -237,14 +243,61 @@ async function initQuiz(loader, quizId) {
 
 // Test mode, and a quiz that sends its results to the facilitators, need a name
 // before they can start; other quizzes fall back to the default name.
+// "cohortCodes": "required" also needs a code.
 function updateStartButton() {
+    const needsCode = currentQuizMeta.cohortCodes === 'required';
+    const hasCode = quizLib.tidyCohortInput(document.getElementById('cohort-code').value) !== '';
     if (!isTestMode() && !currentQuizMeta.collectResults) {
         startQuizButton.disabled = false;
         return;
     }
     const hasName = quizLib.hasVisibleText(nameInputElement.value);
-    startQuizButton.disabled = !hasName;
+    startQuizButton.disabled = !hasName || (needsCode && !hasCode);
     nameHintElement.hidden = hasName;
+}
+
+function showCohortStatus(text, isError = false) {
+    const status = document.getElementById('cohort-status');
+    status.textContent = text;
+    status.classList.toggle('cohort-invalid', isError);
+    status.hidden = text === '';
+}
+
+// On Start: checks the cohort code with the server. A code the server says is
+// not valid stops the start; when the server cannot be reached the code is
+// kept and checked when the results are sent. Returns whether to start.
+async function confirmCohortCode() {
+    cohortCode = '';
+    cohortLabel = '';
+    const mode = currentQuizMeta.cohortCodes;
+    if (mode === 'off') return true;
+    const input = document.getElementById('cohort-code');
+    if (quizLib.tidyCohortInput(input.value) !== '') showCohortStatus(uiText('cohortChecking'));
+    startQuizButton.disabled = true;
+    let result;
+    try {
+        result = await quizLib.checkCohortCode(currentQuizMeta.id, input.value);
+    } catch {
+        result = { status: 'unchecked', code: quizLib.tidyCohortInput(input.value) };
+    }
+    updateStartButton();
+    if (!quizLib.cohortAllowsStart(mode, result)) {
+        showCohortStatus(uiText(result.status === 'none' ? 'cohortCodeRequiredHint' : 'cohortInvalid'), true);
+        input.focus();
+        return false;
+    }
+    if (result.status === 'valid') {
+        cohortCode = result.code;
+        cohortLabel = result.label;
+        input.value = result.code;
+        showCohortStatus(uiText('cohortLabel', { label: result.label }));
+    } else if (result.status === 'unchecked') {
+        cohortCode = result.code;
+        showCohortStatus(uiText('cohortUnchecked'));
+    } else {
+        showCohortStatus('');
+    }
+    return true;
 }
 
 // Test mode: a test saved part-way can be resumed, or is submitted if its time ran out meanwhile.
@@ -313,9 +366,12 @@ function startAudioFromClick() {
     }).catch(() => {});
 }
 
+// While the resume panel is shown, the name and cohort fields are hidden: the
+// saved name and code are the ones that will be used.
 function setStartAreaVisible(visible) {
     document.getElementById('name-input-area').style.display = visible ? '' : 'none';
     startQuizButton.style.display = visible ? '' : 'none';
+    document.getElementById('cohort-area').hidden = !visible || currentQuizMeta.cohortCodes === 'off';
 }
 
 function startOver() {
@@ -453,6 +509,18 @@ function applyQuizMetaToPage(meta) {
     document.getElementById('download-results-label').textContent = text.downloadResultsLabel;
     document.getElementById('share-results-label').textContent = text.shareResultsLabel;
     document.getElementById('results-retry-btn').textContent = text.resultsRetryLabel;
+
+    // Cohort code field; a ?code= in the link fills it in.
+    const cohortArea = document.getElementById('cohort-area');
+    cohortArea.hidden = meta.cohortCodes === 'off';
+    if (meta.cohortCodes !== 'off') {
+        document.getElementById('cohort-code-label').textContent = text.cohortCodeLabel;
+        const cohortInput = document.getElementById('cohort-code');
+        cohortInput.placeholder = text.cohortCodePlaceholder;
+        document.getElementById('cohort-code-hint').textContent = meta.cohortCodes === 'required' ? text.cohortCodeRequiredHint : text.cohortCodeHint;
+        const codeFromLink = new URLSearchParams(window.location.search).get('code');
+        if (codeFromLink) cohortInput.value = quizLib.tidyCohortInput(codeFromLink).slice(0, 12);
+    }
 
     // A quiz that sends results to the facilitators says so before it starts.
     const collectNotice = document.getElementById('results-collected-notice');
@@ -681,6 +749,8 @@ function restoreTestState(saved, order) {
     selections = { ...saved.selections };
     timeSpent = { ...saved.timeSpent };
     optionOrders = { ...saved.optionOrder };
+    cohortCode = saved.cohortCode || '';
+    cohortLabel = saved.cohortLabel || '';
     userName = saved.name || uiText('defaultPlayerName');
     quizStartTime = saved.startedAt;
     quizDeadline = saved.deadline;
@@ -726,6 +796,8 @@ function saveTestProgress() {
         deadline: quizDeadline,
         timeSpent: spent,
         optionOrder: optionOrders,
+        cohortCode,
+        cohortLabel,
     });
 }
 
@@ -1372,6 +1444,8 @@ function showResults(endTime) {
         userName,
         resultBands: currentQuizMeta.scoring.resultBands,
     });
+    // The cohort line appears once the server has stored the results with a cohort.
+    showResultCohort(null);
 
     populateSkillBreakdown();
 
@@ -1422,6 +1496,7 @@ function sendResultsToFacilitators(durationSeconds) {
         selections,
         timeSpent,
         optionOrders,
+        cohortCode,
     });
     quizLib.enqueueSubmission(quizLib.getStorage(window), pendingSubmission);
     area.hidden = false;
@@ -1434,16 +1509,25 @@ async function trySendingResults() {
     showSendStatus('sending');
     const storage = quizLib.getStorage(window);
     let outcome;
+    let body = null;
     try {
-        ({ outcome } = await quizLib.sendSubmission(storage, submission));
+        ({ outcome, body } = await quizLib.sendSubmission(storage, submission));
     } catch (error) {
         console.error('Error sending results:', error);
         outcome = 'retry';
     }
     if (pendingSubmission !== submission) return;
     showSendStatus(outcome);
+    if (outcome === 'sent') showResultCohort(body && body.cohort ? body.cohortLabel || cohortLabel : null);
     // A connection that works again also sends anything left from earlier.
     if (outcome === 'sent') quizLib.flushOutbox(storage).catch(() => {});
+}
+
+// "Cohort: …" on the results screen, only for a cohort the server accepted.
+function showResultCohort(label) {
+    const resultCohort = document.getElementById('result-cohort');
+    resultCohort.textContent = label ? uiText('cohortLabel', { label }) : '';
+    resultCohort.hidden = !label;
 }
 
 function showSendStatus(outcome) {
@@ -1743,6 +1827,7 @@ document.addEventListener('DOMContentLoaded', () => {
               if (!correctSound) defineSynths();
          }
 
+            if (!(await confirmCohortCode())) return;
             startQuizFlow();
      });
 
@@ -1774,6 +1859,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Test mode
     nameInputElement.addEventListener('input', () => { if (currentQuizMeta) updateStartButton(); });
+    document.getElementById('cohort-code').addEventListener('input', () => {
+        if (!currentQuizMeta) return;
+        showCohortStatus('');
+        updateStartButton();
+    });
     testNextButton.addEventListener('click', goToNextTestQuestion);
     testBackButton.addEventListener('click', goToPreviousTestQuestion);
     document.getElementById('back-to-test-btn').addEventListener('click', () => showTestQuestion(currentQuestionIndex));

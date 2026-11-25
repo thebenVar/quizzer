@@ -39,6 +39,8 @@ const state = {
   deadline: 61000,
   timeSpent: { c: 4000 },
   optionOrder: { c: ['x', 'y'] },
+  cohortCode: 'ABC234',
+  cohortLabel: 'NLCI Nov 2026',
 };
 
 describe('quizFingerprint', () => {
@@ -62,6 +64,14 @@ describe('saveProgress / loadProgress', () => {
     expect(saveProgress(storage, 'demo', fingerprint, state)).toBe(true);
     expect(storage.data.has(progressKey('demo'))).toBe(true);
     expect(loadProgress(storage, 'demo', fingerprint)).toEqual(state);
+  });
+
+  it('reads progress saved before cohort codes existed', () => {
+    const storage = memoryStorage();
+    const fingerprint = quizFingerprint(questions);
+    const { cohortCode, cohortLabel, ...older } = state;
+    saveProgress(storage, 'demo', fingerprint, older);
+    expect(loadProgress(storage, 'demo', fingerprint)).toMatchObject({ cohortCode: '', cohortLabel: '' });
   });
 
   it('discards progress saved for a different version of the quiz', () => {

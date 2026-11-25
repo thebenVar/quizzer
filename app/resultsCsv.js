@@ -7,7 +7,8 @@
 export function csvField(value) {
   if (value === null || value === undefined) return '';
   let text = String(value);
-  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  // A plain number such as "-0.20" cannot run as a formula, so it stays a number.
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text) && !/^-?\d+(\.\d+)?$/.test(text)) text = `'${text}`;
   return /[",\r\n]/.test(text) || text !== text.trim() ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
@@ -38,14 +39,24 @@ export function skillColumns(submissions) {
   return [...columns.values()];
 }
 
+// The cohort as shown to facilitators: its name, or the code typed with
+// "(not valid)" when it was not an active code for the quiz, or ''.
+export function cohortText(submission) {
+  if (submission.cohortLabel) return submission.cohortLabel;
+  if (submission.cohortCode) return `${submission.cohortCode} (not valid)`;
+  return '';
+}
+
 export function buildResultsCsv(submissions) {
   const skills = skillColumns(submissions);
-  const head = ['Name', 'Submitted', 'Score', 'Out of', ...skills.map((skill) => `${skill.label} (/${skill.outOf})`), 'Time taken (min:sec)', 'Quiz', 'Submission id'];
+  const head = ['Name', 'Submitted', 'Cohort', 'Cohort code', 'Score', 'Out of', ...skills.map((skill) => `${skill.label} (/${skill.outOf})`), 'Time taken (min:sec)', 'Quiz', 'Submission id'];
   const rows = submissions.map((submission) => {
     const bySkill = new Map((submission.skills || []).map((skill) => [skill.id, skill]));
     return [
       submission.name,
       formatDateTime(submission.submittedAt),
+      submission.cohortLabel || '',
+      submission.cohortCode || '',
       submission.score,
       submission.total,
       ...skills.map((skill) => (bySkill.has(skill.id) ? bySkill.get(skill.id).points : '')),

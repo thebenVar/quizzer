@@ -66,7 +66,7 @@ describe('POST /api/submit', () => {
     const { handler, db } = setup();
     const response = await call(handler, jsonRequest(body()));
     expect(response.status).toBe(201);
-    expect(response.json).toEqual({ ok: true, id: ID, score: 5, total: 8, duplicate: false, quizChanged: false });
+    expect(response.json).toEqual({ ok: true, id: ID, score: 5, total: 8, duplicate: false, quizChanged: false, cohort: false, cohortLabel: null });
     expect(response.headers['cache-control']).toBe('no-store');
 
     const stored = db.rows.get(ID);
@@ -93,7 +93,7 @@ describe('POST /api/submit', () => {
     expect(stored.answers.t).toMatchObject({ isCorrect: true, points: 1 });
     // Nothing about the device is stored.
     expect(Object.keys(stored).sort()).toEqual(
-      ['answers', 'id', 'name', 'quizChanged', 'quizId', 'quizVersion', 'score', 'skills', 'startedAt', 'submittedAt', 'timeTakenSeconds', 'total'].sort()
+      ['answers', 'cohortCode', 'cohortId', 'id', 'name', 'quizChanged', 'quizId', 'quizVersion', 'score', 'skills', 'startedAt', 'submittedAt', 'timeTakenSeconds', 'total'].sort()
     );
   });
 

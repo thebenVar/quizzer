@@ -17,7 +17,8 @@ const MAX_SECONDS = 7 * 24 * 3600;
 // A start time more than this after the submission, or more than MAX_SECONDS
 // before it, is not plausible (a wrong clock); it is stored as unknown (null).
 const START_CLOCK_SKEW_MS = 10 * 60 * 1000;
-const ALLOWED_KEYS = new Set(['id', 'quizId', 'quizVersion', 'name', 'startedAt', 'timeTakenSeconds', 'selections', 'timeSpent', 'optionOrders']);
+// `cohortCode` is optional and never a reason to refuse (see api/submit.js).
+const ALLOWED_KEYS = new Set(['id', 'quizId', 'quizVersion', 'name', 'startedAt', 'timeTakenSeconds', 'selections', 'timeSpent', 'optionOrders', 'cohortCode']);
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);

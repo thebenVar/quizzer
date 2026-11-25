@@ -46,6 +46,45 @@
         .fac-warning { color: #664d03; background: #fff3cd; border-radius: 8px; padding: 8px 12px; }
         .fac-review-filter { display: flex; gap: 8px; margin: 6px 0 4px; }
         .fac-review-filter button[aria-pressed="true"] { background: #0d6efd; color: #fff; }
+        .fac-tabs { display: flex; gap: 6px; margin: 18px 0 4px; border-bottom: 2px solid #e7f0fe; flex-wrap: wrap; }
+        .fac .fac-tabs button { background: #fff; color: #0d6efd; border: 1px solid #bcd0f7; border-bottom: none; border-radius: 8px 8px 0 0; }
+        .fac .fac-tabs button[aria-selected="true"] { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+        .fac-row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin: 12px 0 8px; }
+        .fac-row .fac-status { margin: 0; }
+        .fac-inline-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin: 14px 0 4px; }
+        .fac-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; letter-spacing: .1em; color: #2c3e50; }
+        .fac-link { display: flex; gap: 6px; align-items: center; min-width: 16em; }
+        .fac-link input { flex: 1; min-width: 0; font-size: .85em; padding: 5px 8px; }
+        .fac button.fac-small { padding: 4px 10px; font-size: .85em; }
+        .fac-inactive { color: #6c757d; }
+        .fac-badge { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: .8em; font-weight: 600; background: #e9f7ef; color: #14532d; }
+        .fac-inactive .fac-badge { background: #f1f3f5; color: #6c757d; }
+        .fac-muted { color: #6c757d; }
+        .stats-summary { margin: 4px 0 10px; }
+        .stats-controls { margin: 6px 0 10px; }
+        .stats-table td.stats-prompt { white-space: normal; min-width: 14em; max-width: 28em; }
+        .stats-correct { min-width: 9em; }
+        .stats-bar { display: inline-block; vertical-align: middle; width: 70px; height: 9px; border-radius: 999px; background: #e9ecef; overflow: hidden; margin-right: 8px; }
+        .stats-bar-fill { display: block; height: 100%; background: #0d6efd; border-radius: 999px; }
+        .stats-bar-correct .stats-bar-fill { background: #198754; }
+        .stats-flags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+        .stats-flags-cell { white-space: normal !important; min-width: 10em; }
+        .stats-flag { border-radius: 999px; padding: 1px 8px; font-size: .78em; font-weight: 600; }
+        .stats-flag-very-easy { background: #e9f7ef; color: #14532d; }
+        .stats-flag-very-hard { background: #fdecee; color: #842029; }
+        .stats-flag-no-separation { background: #fff3cd; color: #664d03; }
+        .stats-details { margin-top: 22px; padding-top: 8px; border-top: 2px solid #e7f0fe; }
+        .stats-details h3 { color: #2c3e50; margin: 8px 0 6px; }
+        .stats-detail-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 20px; margin-top: 10px; }
+        .stats-detail-block h4 { margin: 10px 0 6px; color: #495057; font-size: .9em; text-transform: uppercase; letter-spacing: .05em; }
+        .stats-dist { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+        .stats-dist li { display: grid; grid-template-columns: minmax(0, 1fr) 80px 2.5em; gap: 8px; align-items: center; font-size: .9em; }
+        .stats-dist-label { overflow-wrap: anywhere; }
+        .stats-dist-correct .stats-dist-label { font-weight: 700; color: #14532d; }
+        .stats-dist-count { text-align: right; font-variant-numeric: tabular-nums; }
+        .stats-statements { padding-left: 1.3em; margin: 0; display: grid; gap: 8px; }
+        .stats-statement-text { margin: 0 0 2px; }
+        @media (max-width: 760px) { .stats-detail-columns { grid-template-columns: 1fr; } }
         @media (max-width: 560px) {
             body { padding: 8px; }
             .fac { padding: 18px 14px; margin-top: 8px; }
@@ -53,6 +92,8 @@
             .fac-field, .fac-field select, .fac-field input { width: 100%; }
             .fac-toolbar-actions { margin-left: 0; width: 100%; }
             .fac-toolbar-actions button { flex: 1; }
+            .stats-table td.stats-prompt { min-width: 8em; font-size: .9em; }
+            .fac-tabs button { flex: 1; padding: 8px 6px; }
         }
     </style>
     <script type="module" src="app/resultsPage.js"></script>
@@ -79,6 +120,10 @@
                     <select id="quiz-select"></select>
                 </div>
                 <div class="fac-field">
+                    <label for="cohort-select">Cohort</label>
+                    <select id="cohort-select"></select>
+                </div>
+                <div class="fac-field">
                     <label for="from-date">From</label>
                     <input type="date" id="from-date">
                 </div>
@@ -87,19 +132,57 @@
                     <input type="date" id="to-date">
                 </div>
                 <div class="fac-toolbar-actions">
-                    <button type="button" id="export-csv-btn">Export CSV</button>
                     <button type="button" id="sign-out-btn" class="fac-secondary">Sign out</button>
                 </div>
             </div>
-            <p id="results-status" class="fac-status" role="status"></p>
-            <div class="fac-table-wrap">
-                <table id="results-table">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
+
+            <div class="fac-tabs" role="tablist">
+                <button type="button" role="tab" id="tab-results-btn" aria-controls="tab-results" aria-selected="true">Results</button>
+                <button type="button" role="tab" id="tab-stats-btn" aria-controls="tab-stats" aria-selected="false">Question statistics</button>
+                <button type="button" role="tab" id="tab-cohorts-btn" aria-controls="tab-cohorts" aria-selected="false">Cohorts</button>
             </div>
-            <section id="review-panel" hidden></section>
-            <p class="fac-note">Click a row to see that person's answers. Participants were told that only the facilitators see their name and answers.</p>
+
+            <section id="tab-results" role="tabpanel" aria-labelledby="tab-results-btn">
+                <div class="fac-row">
+                    <p id="results-status" class="fac-status" role="status"></p>
+                    <button type="button" id="export-csv-btn">Export CSV</button>
+                </div>
+                <div class="fac-table-wrap">
+                    <table id="results-table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <section id="review-panel" hidden></section>
+                <p class="fac-note">Click a row to see that person's answers. Participants were told that only the facilitators see their name and answers.</p>
+            </section>
+
+            <section id="tab-stats" role="tabpanel" aria-labelledby="tab-stats-btn" hidden>
+                <div class="fac-row">
+                    <p id="stats-status" class="fac-status" role="status"></p>
+                    <button type="button" id="export-stats-btn">Export statistics CSV</button>
+                </div>
+                <div id="stats-view"></div>
+            </section>
+
+            <section id="tab-cohorts" role="tabpanel" aria-labelledby="tab-cohorts-btn" hidden>
+                <p id="cohorts-off" class="fac-status" hidden></p>
+                <form id="cohort-form" class="fac-inline-form" hidden>
+                    <div class="fac-field">
+                        <label for="cohort-label-input">New cohort name</label>
+                        <input type="text" id="cohort-label-input" maxlength="80" placeholder="e.g. NLCI Nov 2026" required>
+                    </div>
+                    <button type="submit" id="cohort-create-btn">Create code</button>
+                </form>
+                <p id="cohorts-status" class="fac-status" role="status"></p>
+                <div class="fac-table-wrap">
+                    <table id="cohorts-table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="fac-note">Give participants the code or the link. A deactivated code is refused on the start screen; results already sent keep their cohort. Results sent with a code that is not active are still kept, without a cohort.</p>
+            </section>
         </section>
     </main>
 </body>

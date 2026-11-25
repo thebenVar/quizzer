@@ -62,8 +62,9 @@ The site now has a backend: Vercel functions in `api/` and a Neon Postgres datab
 | # | Feature | Status | Notes |
 |---|---|---|---|
 | P2 | Results sent to the facilitator | **Done** (502f790, live f7a2951) | Quizzes opt in with `"collectResults": true` (only the aptitude test). Server re-grades, stores one row per submission; `results.html` with a shared password: table, per-person review, CSV, delete. Kept 12 months, deleted by hand |
-| P4 | Question statistics | Backlog — now cheap | Which questions everyone gets right or wrong, from the stored results; about half a day |
-| P5 | Cohort access codes | Backlog — now cheap | Stops duplicate or made-up names; tells cohorts apart; about half a day |
+| P4 | Question statistics | In progress (2026-11-25) | Per question: % correct, most common wrong answer, time; flags questions that are too easy, too hard or don't separate stronger from weaker participants; filter by cohort and dates |
+| P5 | Cohort codes | In progress (2026-11-25) | Facilitators create a code per cohort; participants enter it (or open a link with it); results are grouped and filtered by cohort. Optional, so the test stays open to anyone |
+| P9 | Facilitator dashboard | To do (identified 2026-11-25) | One overview page: submissions over time, average score and per-skill averages per cohort, cohort comparison, question statistics at a glance, recent submissions; charts rather than tables. Builds on P2, P4 and P5 |
 | P6 | Rate limit on `/api/*` | To do (Vercel dashboard) | Firewall rule, about 30 requests per minute per IP; protects the database and the facilitator password |
 | P7 | Facilitator accounts | Backlog | Today one shared password; real sign-in (e.g. Google) if more facilitators need access |
 | P8 | Automatic deletion after 12 months | Backlog | Today deleted by hand on the results page |

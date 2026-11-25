@@ -1,9 +1,13 @@
 // POST /api/submit: a participant's answers to a quiz with "collectResults": true.
 // The answers are re-graded here from the quiz files; the browser's own score
 // is never trusted. Stored: the name, times, score, score per skill and the
-// answers. Not stored: IP address, user agent or anything else about the device.
+// answers, and the cohort code typed (with its cohort when the code is active for
+// this quiz). Not stored: IP address, user agent or anything else about the device.
+// A cohort code never makes a submission fail: an unknown or inactive code is
+// stored as typed, without a cohort, so results are never lost.
 import { summarizeSubmission } from '../app/grading.js';
 import { getDb } from './_lib/db.js';
+import { activeCohortFor, rawCohortCode } from './_lib/cohorts.js';
 import { HttpError, readJsonBody, sendError, sendJson } from './_lib/http.js';
 import { loadQuizFromFiles } from './_lib/quizFiles.js';
 import { checkEnvelope, checkSubmission } from './_lib/submission.js';
@@ -45,6 +49,18 @@ export function createSubmitHandler({
         sendError(res, 503, 'Results cannot be stored at the moment.');
         return;
       }
+      let cohortCode = null;
+      let cohortId = null;
+      let cohortLabel = null;
+      if (quiz.meta.cohortCodes !== 'off') {
+        cohortCode = rawCohortCode(body.cohortCode);
+        const cohort = cohortCode ? await activeCohortFor(store, quizId, cohortCode) : null;
+        if (cohort) {
+          cohortCode = cohort.code;
+          cohortId = cohort.id;
+          cohortLabel = cohort.label;
+        }
+      }
       const record = {
         id,
         quizId,
@@ -58,9 +74,24 @@ export function createSubmitHandler({
         total: graded.total,
         skills: graded.skills,
         answers: graded.answers,
+        cohortCode,
+        cohortId,
       };
       const { inserted } = await store.insertSubmission(record);
-      sendJson(res, inserted ? 201 : 200, { ok: true, id, score: graded.score, total: graded.total, duplicate: !inserted, quizChanged: submission.quizChanged });
+      if (!inserted) {
+        // Sent again (a retry): answer with the cohort it was stored with the first time.
+        const stored = store.getSubmission ? await store.getSubmission(id) : null;
+        if (stored) {
+          cohortId = stored.cohortId ?? null;
+          cohortLabel = stored.cohortLabel ?? null;
+        }
+      }
+      // `cohort` / `cohortLabel`: whether the results were stored with a cohort, so
+      // the results screen shows the cohort the server accepted, not what was typed.
+      sendJson(res, inserted ? 201 : 200, {
+        ok: true, id, score: graded.score, total: graded.total, duplicate: !inserted, quizChanged: submission.quizChanged,
+        cohort: cohortId !== null, cohortLabel: cohortId !== null ? cohortLabel : null,
+      });
     } catch (error) {
       if (error instanceof HttpError) {
         sendError(res, error.status, error.message);

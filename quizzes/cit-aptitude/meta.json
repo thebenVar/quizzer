@@ -4,6 +4,7 @@
   "mode": "test",
   "showAnswerReview": true,
   "collectResults": true,
+  "cohortCodes": "optional",
   "skills": [
     {
       "id": "pattern",

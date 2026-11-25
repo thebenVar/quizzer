@@ -56,6 +56,15 @@
                     <input type="radio" name="correction" value="end"> <span id="delayed-correction-label"></span>
                 </label>
             </div>
+            <!-- Quizzes with "cohortCodes": "optional" or "required": the code the facilitator gave
+                 (?code=ABC234 in the link fills it in) -->
+            <div id="cohort-area" hidden>
+                <label for="cohort-code" id="cohort-code-label"></label>
+                <input type="text" id="cohort-code" name="cohort-code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12">
+                <p id="cohort-code-hint" class="setup-hint"></p>
+                <p id="cohort-status" class="setup-hint" role="status" hidden></p>
+            </div>
+
             <!-- Quizzes with "collectResults": true: the participant is told before starting -->
             <p id="results-collected-notice" class="setup-hint" hidden></p>
             <button id="start-quiz-btn" disabled>Start Quiz</button>
@@ -114,6 +123,7 @@
             <div id="score-card">
                 <h2 id="result-heading"></h2>
                 <p id="result-message"></p>
+                <p id="result-cohort" hidden></p>
                 <p><span id="final-score-label"></span> <span id="final-score">0</span> / <span id="total-possible-score">0</span></p>
                 <div id="result-summary">
                     <span class="correct-count"><span id="correct-count-label"></span> <span id="correct-answers-count">0</span></span>

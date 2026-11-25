@@ -195,6 +195,7 @@ Only `title` is required; everything else has a default.
 - `mode` — `"quiz"` (default) or `"test"`. See [Test mode](#test-mode-assessments) below.
 - `skills` — optional list of `{ "id", "label", "description" }`. When present, every question names its `skill`, and the results screen shows a score per skill in this order. The optional `description` introduces the skill on the answer key page.
 - `collectResults` — default `false`. Set `true` to send each participant's name and answers to the facilitators when they finish (see [Results sent to facilitators](#results-sent-to-facilitators)). Such a quiz needs a name before it starts, in quiz mode too.
+- `cohortCodes` — `"off"` (default), `"optional"` or `"required"`: a cohort code field on the start screen (see [Cohort codes](#cohort-codes)). Needs `collectResults`.
 - `showAnswerReview` — default `true`. Set `false` to hide the review of answers at the end, and to leave the answers out of the downloaded results file (for example, to keep a test's questions from circulating).
 - `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language. This includes the test-mode buttons and summary (`testNextButtonLabel`, `finishHeading`, `submitTestLabel`, …), the resume panel (`resumeHeading`, `resumeDetails`, …), the keyboard tip (`keyboardHint`), the review (`reviewFilterWrong`, `reviewFilterAll`, …), the per-skill time (`skillScoreWithTime`), the newer question types (`statementTrue`, `statementFalse`, `statementCannotTell`, `statementsFeedback`, `spotSourceLabel`, `textAnswerPlaceholder`, …) and the results file (`downloadResultsLabel`, `resultsFile…`).
 - `branding.logoSrc` is relative to the quiz folder (a full `https://` URL also works). Without it, no logo is shown.
@@ -233,7 +234,7 @@ A quiz with `"collectResults": true` in `meta.json` sends each participant's res
 
 **What is stored:** name (at most 80 characters), quiz id, a fingerprint of the quiz version taken and whether the quiz had changed since, start and submit time, time taken, score, the score and time per skill, and per question the answer given, whether it was right, the points and the seconds spent. **Not stored:** IP address, browser or device details, location, or anything else.
 
-**Facilitators' page:** `/results.html` (not linked anywhere, not indexed). Sign in with the facilitator password (kept only for that browser tab). Pick a quiz and, optionally, dates; the table lists name, date, score, each skill and time taken, newest first. The list shows the newest 2000 results for the chosen dates; narrow the dates to see older ones. Click a row to load that person's answers, shown as cards as in the participant's own review. **Export CSV** downloads the rows shown (UTF-8 with BOM, so Excel shows names in Indian scripts correctly). **Delete** removes one submission after a confirmation.
+**Facilitators' page:** `/results.html` (not linked anywhere, not indexed). Sign in with the facilitator password (kept only for that browser tab). Pick a quiz and, optionally, a cohort and dates. It has three tabs: **Results**, **Question statistics** and **Cohorts** (see [Cohort codes](#cohort-codes) and [Question statistics](#question-statistics)). On **Results** the table lists name, date, cohort, score, each skill and time taken, newest first. The list shows the newest 2000 results for the chosen dates; narrow the dates to see older ones. Click a row to load that person's answers, shown as cards as in the participant's own review. **Export CSV** downloads the rows shown (UTF-8 with BOM, so Excel shows names in Indian scripts correctly). **Delete** removes one submission after a confirmation.
 
 **Retention and privacy.** Results are kept for 12 months and then deleted by hand from the results page (there is no automatic deletion). Participants are told before they start that their name and answers go to the facilitators and that only the facilitators can see them; keep the password to the facilitators. The answers themselves are still public (`questions.json` and the `-ans` page, see [Test mode](#test-mode-assessments)); keeping them secret is a separate step (P3).
 
@@ -245,7 +246,37 @@ A quiz with `"collectResults": true` in `meta.json` sends each participant's res
 4. Redeploy. `vercel.json` bundles `quizzes/**` with the functions in `api/`; the static site works as before.
 5. Open `/results.html` once and sign in, to check the password and the database connection (the page says what is wrong if either is missing).
 
-The table is created on the first request that needs it. `npm install` brings in the database driver (`@neondatabase/serverless`).
+The tables are created on the first request that needs them. Later additions (the `cohorts` table, the `cohort_code` and `cohort_id` columns of `submissions`) are added the same way, with `CREATE TABLE IF NOT EXISTS` / `ALTER TABLE … ADD COLUMN IF NOT EXISTS`: nothing is removed or rewritten, and existing rows simply have no cohort. Each new server instance first reads the catalog (`to_regclass`, `information_schema.columns`, `pg_indexes`) and runs only the statements for what is missing, so once the database is up to date no `ALTER TABLE` (which locks the table) runs at all. `npm install` brings in the database driver (`@neondatabase/serverless`).
+
+### Cohort codes
+
+A quiz can ask for a cohort code, so a facilitator can tell groups apart and filter by them. In `meta.json`:
+
+- `"cohortCodes": "off"` (default): no code.
+- `"optional"`: the start screen shows a **Cohort code** field ("If your facilitator gave you a code"); anyone may leave it empty. `cit-aptitude` uses this, so it stays open to anyone.
+- `"required"`: Start needs a code.
+
+It needs `"collectResults": true`, since the code is sent with the results. The texts are `uiText` keys (`cohortCodeLabel`, `cohortCodePlaceholder`, `cohortCodeHint`, `cohortCodeRequiredHint`, `cohortChecking`, `cohortInvalid`, `cohortUnchecked`, `cohortLabel`).
+
+- **Making codes.** On the results page, **Cohorts** tab: type a name (for example "NLCI Nov 2026") and **Create code**. The server makes a unique 6-character code from letters and digits that cannot be confused (no 0/O, 1/I/L). Each code has a ready-to-share link, `…/?quiz=<id>&code=<code>`, with a **Copy** button; the link fills the code in. The list shows how many results each cohort has. **Deactivate** stops a code from being accepted on the start screen (results already sent keep their cohort); **Reactivate** turns it back on.
+- **On the start screen** the code is checked when the participant presses Start (`GET /api/cohort?quiz=<id>&code=<code>`; case, spaces and hyphens do not matter). A valid code shows "Cohort: NLCI Nov 2026" and the test starts; a code that is not valid for this quiz (unknown, inactive or for another quiz: the same answer for all three, so nothing leaks) shows a message and the test does not start. If the server cannot be reached (offline, or a static server without `/api`), the test starts anyway and keeps the code. The code is kept in saved progress, so it survives a resume (while the resume offer is shown, the code field is hidden: the saved code is the one used).
+- **When the results arrive**, the server checks the code again: if it is active for that quiz, the results are stored with the cohort; otherwise they are stored with the code as typed and no cohort (shown as "ABC234 (not valid)"). A code never makes the server refuse results. The participant's results screen shows "Cohort: …" only when the server stored the results with a cohort.
+- **Filtering.** The **Cohort** picker (all cohorts, no cohort, or one cohort) filters the results table, the statistics and both CSV exports. The results CSV has **Cohort** and **Cohort code** columns.
+- **Facilitator API** (same password as the results): `GET /api/cohorts?quiz=<id>`, `POST /api/cohorts` with `{ "quizId", "label" }`, `PATCH /api/cohorts?id=<id>` with `{ "active": false }`.
+
+### Question statistics
+
+The **Question statistics** tab shows, for the chosen quiz, cohort and dates, how each question did. It is computed on the server from the stored answers (`GET /api/stats?quiz=<id>[&cohort=<code>|none][&from&to]`, facilitator password); names are not part of it.
+
+- **Summary:** number of submissions, average score and average per skill.
+- **One row per question**, in quiz order or sorted by % correct (lowest first): number, the start of the prompt, skill, how many answered it, % correct (with a bar), discrimination, average time, and flags in plain words: **Very easy** (at least 90% correct), **Very hard** (20% or less), **Doesn't separate** (discrimination below 0.2). The thresholds are `STATS_THRESHOLDS` in [`app/statsFormat.js`](app/statsFormat.js).
+- **Click a row** for the details next to the question as on the answer key page: for multiple choice, how many chose each option (and the most common wrong answer); for typed answers, the five most common wrong answers (compared as the grading compares them: case, spaces and a final full stop ignored); for "tap the error", the most tapped wrong words; for matching, the share of each pair matched correctly; for `statements`, each statement's % correct, discrimination and how many chose True / False / Can't tell.
+- **% correct** counts a question left unanswered as not correct, so it is out of all submissions. Average time is over the submissions that answered the question (and have a recorded time).
+- **Discrimination** shows whether a question separates stronger from weaker participants: submissions are ranked by total score (equal scores in submission-id order, so the groups are the same every time), and it is (share correct in the top 27%) − (share correct in the bottom 27%), from −1 to 1. It needs at least 10 submissions; with fewer the page says "not enough data".
+- **Only submissions taken on the current version of the quiz count** (their quiz fingerprint matches the deployed questions). After a question is edited, earlier submissions are left out, and the page says how many, because their answers may not fit the question as it is now. Older versions are filtered out in the database (only counted), and at most the newest 2000 submissions of the current version are read; when that limit is reached the page says so, and choosing dates narrows it.
+- **Export statistics CSV** downloads one row per question and per statement.
+
+This is deliberately light (no chart library); a fuller dashboard can come later.
 
 ### Testing locally
 
@@ -291,8 +322,12 @@ app/results.js                     the downloadable results file (re-exports gra
 app/submissions.js                 sending results to the facilitators, and the outbox in localStorage
 app/resultsPage.js, results.html   the facilitators' results page
 app/resultsCsv.js                  the CSV export of that page
+app/statsView.js, app/statsFormat.js  the question statistics view, its flags and CSV
+app/cohortCode.js                  cohort codes on the start screen (format, check with the server)
 api/submit.js, api/results.js      Vercel functions: receive and re-grade results; list and delete them
-api/_lib/                          shared server code (database, request checks); not routes
+api/cohort.js, api/cohorts.js      check a cohort code (public); make and manage cohort codes (facilitators)
+api/stats.js                       question statistics (facilitators)
+api/_lib/                          shared server code (database, password, cohorts, statistics, request checks); not routes
 vercel.json                        includes quizzes/** in the functions
 app/utils.js                       scoring, timer, shuffle and keyboard helpers
 quizzes/registry.json              the home page: which quizzes are listed, and in what order

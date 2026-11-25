@@ -35,7 +35,7 @@ export function createSubmissionId(cryptoObject = globalThis.crypto, randomFn = 
 
 // The request body for POST /api/submit. `quizVersion` is the fingerprint of
 // the questions the participant took (quizFingerprint in progress.js).
-export function buildSubmission({ id, quizId, quizVersion, name, startedAt, timeTakenSeconds, selections, timeSpent, optionOrders }) {
+export function buildSubmission({ id, quizId, quizVersion, name, startedAt, timeTakenSeconds, selections, timeSpent, optionOrders, cohortCode }) {
   const submission = {
     id,
     quizId,
@@ -50,6 +50,8 @@ export function buildSubmission({ id, quizId, quizVersion, name, startedAt, time
     if (Number.isFinite(ms) && ms >= 0) submission.timeSpent[questionId] = Math.round(ms);
   }
   if (optionOrders && Object.keys(optionOrders).length > 0) submission.optionOrders = { ...optionOrders };
+  // As typed (tidied); the server checks it and never refuses results because of it.
+  if (typeof cohortCode === 'string' && cohortCode.trim() !== '') submission.cohortCode = cleanTypedText(cohortCode).trim().slice(0, 20);
   return submission;
 }
 

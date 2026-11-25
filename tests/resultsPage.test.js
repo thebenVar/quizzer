@@ -34,3 +34,38 @@ describe('facilitator review', () => {
     expect(card.textContent).toContain('<img src=x onerror=alert(1)>');
   });
 });
+
+describe('cohort links', () => {
+  it('opens the quiz next to the results page with the code filled in', async () => {
+    const { cohortLink } = await import('../app/resultsPage.js');
+    expect(cohortLink('https://quiz.example.org/results.html', 'cit-aptitude', 'ABC234')).toBe('https://quiz.example.org/?quiz=cit-aptitude&code=ABC234');
+    expect(cohortLink('http://localhost:3000/sub/results.html?x=1', 'q', 'DEF567')).toBe('http://localhost:3000/sub/?quiz=q&code=DEF567');
+  });
+});
+
+describe('question statistics view', () => {
+  it('shows prompts and typed answers as text, flags and the chosen question', async () => {
+    const { renderStatsView, sortStatsQuestions } = await import('../app/statsView.js');
+    const stats = {
+      submissions: 12, excluded: 2, enoughData: true, limit: 10000, truncated: false,
+      overall: { averageScore: 1.5, total: 3, averagePercent: 50, skills: [] },
+      questions: [
+        { number: 1, id: 1, type: 'mcq', prompt: 'Pick <b>B</b>', skillLabel: null, answered: 12, percentCorrect: 95, discrimination: 0.1, averageSeconds: 12,
+          options: [{ option: 'A', count: 1, correct: false }, { option: 'B', count: 11, correct: true }], mostCommonWrong: { answer: 'A', count: 1 } },
+        { number: 2, id: 2, type: 'text', prompt: 'Type', skillLabel: null, answered: 10, percentCorrect: 10, discrimination: 0.5, averageSeconds: null,
+          wrongAnswers: [{ answer: '<img src=x onerror=alert(1)>', count: 4 }], mostCommonWrong: { answer: '<img src=x onerror=alert(1)>', count: 4 } },
+      ],
+    };
+    const root = document.createElement('div');
+    renderStatsView(root, { stats, quiz: { meta: { uiText: DEFAULT_UI_TEXT }, questions: [questions[0], questions[1]] }, selectedId: 2 });
+    expect(root.querySelector('img')).toBeNull();
+    expect(root.querySelector('b')).toBeNull();
+    expect(root.textContent).toContain('<img src=x onerror=alert(1)>');
+    expect(root.textContent).toContain('2 submissions were left out');
+    expect([...root.querySelectorAll('tbody tr')].map((row) => row.dataset.id)).toEqual(['1', '2']);
+    expect(root.querySelectorAll('.stats-flag-very-easy')).toHaveLength(1);
+    expect(root.querySelectorAll('.stats-flag-no-separation')).toHaveLength(1);
+    expect(root.querySelector('.stats-details')).not.toBeNull();
+    expect(sortStatsQuestions(stats.questions, 'correct').map((item) => item.id)).toEqual([2, 1]);
+  });
+});
