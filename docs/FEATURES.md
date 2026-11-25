@@ -55,14 +55,17 @@ Nothing at the moment.
 | F36 | Update the answer sheet document | 2026-11-25 | The doc (F09) still describes the 11 questions replaced in F20; the `-ans` page is current |
 | F37 | Skill links count points | 2026-11-25 | On the answer key page the skill links show the number of questions (e.g. 3), though each skill is worth 5 points |
 
-## Parked
+## Server features
 
-Each needs a server (or a hosting decision) first.
+The site now has a backend: Vercel functions in `api/` and a Neon Postgres database (set up 2026-11-25). See the README section "Results sent to facilitators".
 
-| # | Feature | Identified | Notes |
+| # | Feature | Status | Notes |
 |---|---|---|---|
-| P1 | Leaderboard | 2026-11-25 | Dropped for now. If revived: public with nicknames for fun quizzes, never for the aptitude test |
-| P2 | Results sent to the facilitator | 2026-11-25 | Simplest: Google Sheet + Apps Script. Until then participants can send their downloaded results file (F11) |
-| P3 | Answers kept secret | 2026-11-25 | Today `questions.json` and the `-ans` page are public (the repo is public too). Needs grading on a server, and a private repo or a separate private content repo |
-| P4 | Question statistics | 2026-11-25 | Which questions everyone gets right or wrong, from pilot results; needs P2 |
-| P5 | Cohort access codes | 2026-11-25 | Stops duplicate or made-up names; needs P2 |
+| P2 | Results sent to the facilitator | **Done** (502f790, live f7a2951) | Quizzes opt in with `"collectResults": true` (only the aptitude test). Server re-grades, stores one row per submission; `results.html` with a shared password: table, per-person review, CSV, delete. Kept 12 months, deleted by hand |
+| P4 | Question statistics | Backlog — now cheap | Which questions everyone gets right or wrong, from the stored results; about half a day |
+| P5 | Cohort access codes | Backlog — now cheap | Stops duplicate or made-up names; tells cohorts apart; about half a day |
+| P6 | Rate limit on `/api/*` | To do (Vercel dashboard) | Firewall rule, about 30 requests per minute per IP; protects the database and the facilitator password |
+| P7 | Facilitator accounts | Backlog | Today one shared password; real sign-in (e.g. Google) if more facilitators need access |
+| P8 | Automatic deletion after 12 months | Backlog | Today deleted by hand on the results page |
+| P1 | Leaderboard | Parked | Dropped for now. If revived: public with nicknames for fun quizzes, never for the aptitude test |
+| P3 | Answers kept secret | Parked | `questions.json` and the `-ans` page are public (the repo is public too). Needs grading on the server only, the answer keys out of the public repo, and a login for `-ans`. Consider the planned LMS (e.g. Moodle) before building this |
