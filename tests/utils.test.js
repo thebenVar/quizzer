@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   calculateRegularQuestionStats,
+  fillText,
   formatMinutesSeconds,
   getResultMessage,
   getShareFileName,
@@ -133,5 +134,15 @@ describe('getNewStreakGiftClass', () => {
     });
 
     expect(giftClass).toBeNull();
+  });
+});
+
+describe('fillText', () => {
+  it('fills in {placeholders}', () => {
+    expect(fillText('Question {current} / {total}', { current: 3, total: 10 })).toBe('Question 3 / 10');
+  });
+
+  it('leaves unknown placeholders alone', () => {
+    expect(fillText('Hello {name}', {})).toBe('Hello {name}');
   });
 });

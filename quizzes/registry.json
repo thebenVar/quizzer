@@ -1,3 +1,5 @@
 {
-  "defaultQuiz": "gethsemane"
+  "title": "Bible Quizzes",
+  "description": "Choose a quiz to begin.",
+  "quizzes": ["gethsemane", "sample"]
 }

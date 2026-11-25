@@ -1,14 +1,19 @@
-import { getQuestionPoints } from './utils.js';
+import { fillText, getQuestionPoints } from './utils.js';
+import { DEFAULT_UI_TEXT } from './validate.js';
 
-export function checkMCQAnswer(question, selectedOption, showImmediateCorrection = true) {
+function explanationHtml(prefix, explanation) {
+  return `<br><span class="feedback-justification">${prefix} ${explanation}</span>`;
+}
+
+export function checkMCQAnswer(question, selectedOption, showImmediateCorrection = true, text = DEFAULT_UI_TEXT) {
   const isCorrect = selectedOption === question.answer;
   const pointsAwarded = isCorrect && !question.isBonus ? (question.points || 0) : 0;
 
-  let feedback = isCorrect ? 'Correct!' : 'Incorrect!';
+  let feedback = isCorrect ? text.correctFeedback : text.incorrectFeedback;
   if (!isCorrect && showImmediateCorrection && !question.isBonus) {
-    feedback += ` The correct answer was: ${question.answer}.`;
+    feedback += ' ' + fillText(text.correctAnswerReveal, { answer: question.answer });
     if (question.explanation) {
-      feedback += `<br><span class="feedback-justification">Why? ${question.explanation}</span>`;
+      feedback += explanationHtml(text.explanationPrefix, question.explanation);
     }
   }
 
@@ -16,20 +21,20 @@ export function checkMCQAnswer(question, selectedOption, showImmediateCorrection
     questionText: question.prompt,
     userAnswer: selectedOption,
     correctAnswer: question.answer,
-    justification: question.explanation || "No specific justification provided."
+    justification: question.explanation || text.reviewNoExplanation
   } : null;
 
   return { isCorrect, pointsAwarded, feedback, reviewItem };
 }
 
-export function checkMatchingAnswer(question, userAnswers, showImmediateCorrection = true) {
+export function checkMatchingAnswer(question, userAnswers, showImmediateCorrection = true, text = DEFAULT_UI_TEXT) {
   let correctMatches = 0;
   const userMatches = {};
   const correctPairs = {};
 
   question.pairs.forEach(([left, right]) => {
     const userAnswer = userAnswers[left];
-    userMatches[left] = userAnswer || "Not Answered";
+    userMatches[left] = userAnswer || text.reviewNotAnswered;
     correctPairs[left] = right;
 
     if (userAnswer === right) {
@@ -39,28 +44,29 @@ export function checkMatchingAnswer(question, userAnswers, showImmediateCorrecti
 
   const isAllCorrect = correctMatches === question.pairs.length;
   const pointsAwarded = isAllCorrect && !question.isBonus ? getQuestionPoints(question) : 0;
+  const counts = { correct: correctMatches, total: question.pairs.length };
 
   let feedback = '';
   if (question.isBonus) {
-    feedback = isAllCorrect ? 'Bonus Correct! Candy Earned! 🍬' : `Bonus Incorrect (${correctMatches}/${question.pairs.length})`;
+    feedback = isAllCorrect ? text.bonusCorrectFeedback : fillText(text.bonusIncorrectFeedback, counts);
     if (!isAllCorrect && showImmediateCorrection && question.explanation) {
-      feedback += `<br><span class="feedback-justification">Hint: ${question.explanation}</span>`;
+      feedback += explanationHtml(text.hintPrefix, question.explanation);
     }
   } else {
-    feedback = `Answer Submitted! (${correctMatches}/${question.pairs.length} correct)`;
+    feedback = fillText(text.matchingFeedback, counts);
     if (!isAllCorrect && showImmediateCorrection) {
-      feedback += ` Some matches were incorrect. Review at the end.`;
+      feedback += ' ' + text.matchingSomeWrong;
       if (question.explanation) {
-        feedback += `<br><span class="feedback-justification">Why? ${question.explanation}</span>`;
+        feedback += explanationHtml(text.explanationPrefix, question.explanation);
       }
     }
   }
 
   const reviewItem = !isAllCorrect ? {
-    questionText: question.prompt + (question.isBonus ? " (Bonus)" : ""),
+    questionText: question.prompt + (question.isBonus ? ' ' + text.reviewBonusSuffix : ''),
     userAnswer: userMatches,
     correctAnswer: correctPairs,
-    justification: question.explanation || "Match all pairs correctly.",
+    justification: question.explanation || text.reviewMatchingNoExplanation,
     isMatching: true
   } : null;
 

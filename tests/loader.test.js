@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getQuizIdFromSearch, loadQuiz, resolveQuizId } from '../app/loader.js';
+import { getQuizIdFromSearch, loadQuiz, loadQuizList, loadRegistry } from '../app/loader.js';
 
 const sampleMeta = {
   title: 'Sample Quiz',
@@ -40,20 +40,41 @@ describe('getQuizIdFromSearch', () => {
   });
 });
 
-describe('resolveQuizId', () => {
-  it('prefers the quiz named in the URL', async () => {
-    const quizId = await resolveQuizId({ search: '?quiz=sample', fetchFn: fakeFetch({}) });
-    expect(quizId).toBe('sample');
+describe('loadRegistry', () => {
+  it('reads the title, description and quiz lists, with defaults', async () => {
+    const fetchFn = fakeFetch({ 'quizzes/registry.json': { quizzes: ['a', 'b'] } });
+    expect(await loadRegistry({ fetchFn })).toEqual({ title: 'Quizzes', description: '', quizzes: ['a', 'b'], unlisted: [] });
   });
 
-  it('falls back to the registry default', async () => {
-    const fetchFn = fakeFetch({ 'quizzes/registry.json': { defaultQuiz: 'gethsemane' } });
-    expect(await resolveQuizId({ fetchFn })).toBe('gethsemane');
-  });
-
-  it('explains a registry without a default', async () => {
+  it('requires a quizzes list', async () => {
     const fetchFn = fakeFetch({ 'quizzes/registry.json': {} });
-    await expect(resolveQuizId({ fetchFn })).rejects.toThrow(/must set "defaultQuiz"/);
+    await expect(loadRegistry({ fetchFn })).rejects.toThrow(/"quizzes" must be a list/);
+  });
+
+  it('rejects a quiz listed twice, even across quizzes and unlisted', async () => {
+    const fetchFn = fakeFetch({ 'quizzes/registry.json': { quizzes: ['a'], unlisted: ['a'] } });
+    await expect(loadRegistry({ fetchFn })).rejects.toThrow(/"a" is listed more than once/);
+  });
+
+  it('rejects names that are not plain folder names', async () => {
+    const fetchFn = fakeFetch({ 'quizzes/registry.json': { quizzes: ['../x'] } });
+    await expect(loadRegistry({ fetchFn })).rejects.toThrow(/quizzes\[0\] "\.\.\/x" is not a valid quiz folder name/);
+  });
+});
+
+describe('loadQuizList', () => {
+  it('loads the meta of each listed quiz, in order, and reports ones that fail', async () => {
+    const fetchFn = fakeFetch({
+      'quizzes/registry.json': { title: 'My Quizzes', quizzes: ['sample', 'missing'], unlisted: ['draft'] },
+      'quizzes/sample/meta.json': sampleMeta,
+    });
+
+    const list = await loadQuizList({ fetchFn });
+
+    expect(list.title).toBe('My Quizzes');
+    expect(list.quizzes.map((quiz) => quiz.id)).toEqual(['sample', 'missing']);
+    expect(list.quizzes[0].meta).toMatchObject({ title: 'Sample Quiz', branding: { logoSrc: 'quizzes/sample/logo.png' } });
+    expect(list.quizzes[1].error.message).toMatch(/quizzes\/missing\/meta\.json \(HTTP 404\)/);
   });
 });
 

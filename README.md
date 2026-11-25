@@ -1,11 +1,11 @@
 # quizzer
 
-A reusable quiz app for the browser. The app (`index.html`, `script.js`, `style.css`, `app/`) is the same for every quiz; each quiz is a folder of content under `quizzes/`. Adding a quiz means adding a folder — no code changes.
+A reusable quiz app for the browser. The app (`index.html`, `script.js`, `style.css`, `app/`) is the same for every quiz; each quiz is a folder of content under `quizzes/`. The home page lists the quizzes and visitors pick one. Adding a quiz means adding a folder and one line in `quizzes/registry.json` — no code changes.
 
 Included quizzes:
 
-- `gethsemane` — Gethsemane Bible Quiz on Ephesians (the default)
-- `sample` — a short example quiz to copy when starting a new one
+- `gethsemane` — Gethsemane Bible Quiz on Ephesians
+- `sample` — a short six-question quiz, also a good starting point to copy
 
 ## Running it
 
@@ -17,8 +17,8 @@ npx serve .
 
 Then open:
 
-- `http://localhost:3000/` — the default quiz (set in `quizzes/registry.json`)
-- `http://localhost:3000/?quiz=sample` — any quiz, by folder name
+- `http://localhost:3000/` — the home page, listing the quizzes
+- `http://localhost:3000/?quiz=sample` — a quiz directly, by folder name
 
 Run the tests (they also check every quiz folder):
 
@@ -32,10 +32,26 @@ npm test
 1. Copy `quizzes/sample/` to `quizzes/<your-quiz>/`. The folder name is the quiz's id in the URL; use letters, numbers, `-` and `_`.
 2. Edit `meta.json` (title and settings) and `questions.json` (the questions).
 3. Optionally add a logo image to the folder and name it in `meta.json`.
-4. Run `npm test`. If anything is wrong, the failure names the file, the question and the problem.
-5. Open `?quiz=<your-quiz>`.
+4. Add the folder name to `"quizzes"` in `quizzes/registry.json` so it appears on the home page.
+5. Run `npm test`. If anything is wrong, the failure names the file, the question and the problem. It also fails if a quiz folder is missing from `registry.json`.
+6. Open the home page and pick your quiz, or go straight to `?quiz=<your-quiz>`.
 
-To make it the quiz that opens without `?quiz=`, set `"defaultQuiz"` in `quizzes/registry.json`.
+## `quizzes/registry.json`
+
+The home page and its list of quizzes:
+
+```json
+{
+  "title": "Bible Quizzes",
+  "description": "Choose a quiz to begin.",
+  "quizzes": ["gethsemane", "sample"],
+  "unlisted": ["my-draft"]
+}
+```
+
+- `quizzes` — folder names shown on the home page, in this order. Each card shows the quiz's logo, `title` and `description` from its `meta.json`.
+- `unlisted` — optional. Quizzes kept off the home page (drafts, private quizzes); they still open with `?quiz=<id>` for anyone who has the link.
+- `title`, `description` — optional; the home page heading (default "Quizzes") and the text under it.
 
 ## `questions.json`
 
@@ -89,16 +105,10 @@ Only `title` is required; everything else has a default.
   "branding": { "logoSrc": "logo.png", "logoAlt": "Logo description" },
   "timing": { "timeLimitSeconds": 3600, "autoAdvanceDelayMs": 2000 },
   "uiText": {
-    "nameLabel": "Enter Your Name:",
-    "namePlaceholder": "Your Name",
-    "correctionModeLabel": "Feedback on incorrect answers:",
-    "immediateCorrectionLabel": "Show correction immediately",
-    "delayedCorrectionLabel": "Show only in final review",
     "startButtonLabel": "Start Quiz",
-    "resultHeading": "Quiz Complete!",
-    "reviewToggleClosed": "Review Incorrect Answers",
-    "reviewToggleOpen": "Hide Review",
-    "shareButtonLabel": "Share Score"
+    "questionProgress": "Question {current} / {total}",
+    "correctAnswerReveal": "The correct answer was: {answer}.",
+    "bonusCorrectFeedback": "Bonus Correct! 🎉"
   },
   "scoring": {
     "resultBands": [
@@ -121,6 +131,7 @@ Only `title` is required; everything else has a default.
 }
 ```
 
+- `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language.
 - `branding.logoSrc` is relative to the quiz folder (a full `https://` URL also works). Without it, no logo is shown.
 - `timing.timeLimitSeconds` is the time for the whole quiz; `autoAdvanceDelayMs` is the pause before the next question.
 - `{name}` in a result message is replaced with the player's name.
@@ -135,7 +146,7 @@ app/loader.js                      finds and loads a quiz folder
 app/validate.js                    content rules and defaults for meta.json / questions.json
 app/runtime.js                     answer checking
 app/utils.js                       scoring, timer and shuffle helpers
-quizzes/registry.json              which quiz opens by default
+quizzes/registry.json              the home page: which quizzes are listed, and in what order
 quizzes/<id>/                      one folder per quiz
 tests/                             Vitest tests, including a check of every quiz folder
 ```

@@ -43,45 +43,94 @@ function resolveAssetPath(src, quizFolder) {
   return quizFolder + src;
 }
 
-export async function resolveQuizId({ search = '', baseUrl = 'quizzes/', fetchFn = fetch } = {}) {
-  const fromUrl = getQuizIdFromSearch(search);
-  if (fromUrl) {
-    return fromUrl;
-  }
-
-  const registry = await fetchJson(`${baseUrl}registry.json`, fetchFn);
-  if (typeof registry?.defaultQuiz !== 'string' || registry.defaultQuiz.trim().length === 0) {
-    throw new QuizLoadError(`${baseUrl}registry.json must set "defaultQuiz" to a quiz folder name`);
-  }
-  return registry.defaultQuiz.trim();
-}
-
-export async function loadQuiz(quizId, { baseUrl = 'quizzes/', fetchFn = fetch } = {}) {
-  if (!QUIZ_ID_PATTERN.test(quizId)) {
+function quizFolderFor(quizId, baseUrl) {
+  if (typeof quizId !== 'string' || !QUIZ_ID_PATTERN.test(quizId)) {
     throw new QuizLoadError(`"${quizId}" is not a valid quiz name (use letters, numbers, - and _)`);
   }
+  return `${baseUrl}${quizId}/`;
+}
 
-  const quizFolder = `${baseUrl}${quizId}/`;
-  const [rawMeta, rawQuestions] = await Promise.all([
-    fetchJson(`${quizFolder}meta.json`, fetchFn),
-    fetchJson(`${quizFolder}questions.json`, fetchFn),
-  ]);
-
+async function loadMeta(quizId, quizFolder, fetchFn) {
+  const rawMeta = await fetchJson(`${quizFolder}meta.json`, fetchFn);
   let meta;
-  let questions;
   try {
     // The folder name is the quiz id, so meta.json does not need to repeat it.
     meta = validateMeta({ ...rawMeta, id: quizId });
   } catch (error) {
     throw new QuizLoadError(`${quizFolder}meta.json: ${error.message}`);
   }
+  meta.branding.logoSrc = resolveAssetPath(meta.branding.logoSrc, quizFolder);
+  return meta;
+}
+
+export async function loadQuiz(quizId, { baseUrl = 'quizzes/', fetchFn = fetch } = {}) {
+  const quizFolder = quizFolderFor(quizId, baseUrl);
+  // Fetch both at once, but report a meta.json problem first so errors are predictable.
+  const [metaResult, questionsResult] = await Promise.allSettled([
+    loadMeta(quizId, quizFolder, fetchFn),
+    fetchJson(`${quizFolder}questions.json`, fetchFn),
+  ]);
+  for (const result of [metaResult, questionsResult]) {
+    if (result.status === 'rejected') {
+      throw result.reason;
+    }
+  }
+  const meta = metaResult.value;
+  const rawQuestions = questionsResult.value;
+
+  let questions;
   try {
     questions = validateQuestions(rawQuestions);
   } catch (error) {
     throw new QuizLoadError(`${quizFolder}questions.json: ${error.message}`);
   }
 
-  meta.branding.logoSrc = resolveAssetPath(meta.branding.logoSrc, quizFolder);
-
   return { meta, questions };
+}
+
+// Reads quizzes/registry.json: "quizzes" are shown on the home page, in that order;
+// "unlisted" quizzes are kept off it (drafts, examples) but still open with ?quiz=<id>.
+export async function loadRegistry({ baseUrl = 'quizzes/', fetchFn = fetch } = {}) {
+  const url = `${baseUrl}registry.json`;
+  const registry = await fetchJson(url, fetchFn);
+
+  const fail = (message) => { throw new QuizLoadError(`${url}: ${message}`); };
+  if (registry === null || typeof registry !== 'object' || Array.isArray(registry)) fail('must be an object');
+  if (!Array.isArray(registry.quizzes)) fail('"quizzes" must be a list of quiz folder names');
+  const unlisted = registry.unlisted ?? [];
+  if (!Array.isArray(unlisted)) fail('"unlisted" must be a list of quiz folder names');
+
+  const seen = new Set();
+  for (const [listName, list] of [['quizzes', registry.quizzes], ['unlisted', unlisted]]) {
+    list.forEach((quizId, index) => {
+      if (typeof quizId !== 'string' || !QUIZ_ID_PATTERN.test(quizId)) fail(`${listName}[${index}] "${quizId}" is not a valid quiz folder name`);
+      if (seen.has(quizId)) fail(`"${quizId}" is listed more than once`);
+      seen.add(quizId);
+    });
+  }
+  for (const key of ['title', 'description']) {
+    if (registry[key] !== undefined && typeof registry[key] !== 'string') fail(`"${key}" must be text`);
+  }
+
+  return {
+    title: registry.title?.trim() || 'Quizzes',
+    description: registry.description?.trim() || '',
+    quizzes: [...registry.quizzes],
+    unlisted: [...unlisted],
+  };
+}
+
+// The home page list: each registered quiz with its meta, or the error that stopped it loading.
+export async function loadQuizList({ baseUrl = 'quizzes/', fetchFn = fetch } = {}) {
+  const registry = await loadRegistry({ baseUrl, fetchFn });
+  const quizzes = await Promise.all(
+    registry.quizzes.map(async (quizId) => {
+      try {
+        return { id: quizId, meta: await loadMeta(quizId, quizFolderFor(quizId, baseUrl), fetchFn) };
+      } catch (error) {
+        return { id: quizId, error };
+      }
+    })
+  );
+  return { ...registry, quizzes };
 }

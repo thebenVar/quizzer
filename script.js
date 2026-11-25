@@ -8,7 +8,7 @@ let startQuizButton, quizContentElement, questionTextElement, optionsAreaElement
     liveIncorrectCountElement, streakCounterElement, feedbackFlashElement,
     reviewSection, reviewToggleButton, reviewContent, achievementsListElement,
     liveGiftsElement, timeTakenElement, nameInputElement,
-    resultNameElement, resultMessageElement, correctionModeSelectorElement,
+    resultMessageElement, correctionModeSelectorElement,
     nextQuestionButtonElement, initialSetupElement;
 
 // --- Quiz State ---
@@ -27,7 +27,7 @@ let autoProceedTimeout;
 let quizStartTime;
 let quizEndTime;
 let totalRegularQuestions = 0;
-let userName = "Quiz Taker"; // Default name
+let userName = "";
 let currentQuizData = []; // This will hold the main quiz data after setup
 let currentQuizMeta = null;
 let quizQuestions = []; // All questions of the loaded quiz, before shuffling
@@ -72,7 +72,6 @@ function getDOMElements() {
     liveGiftsElement = document.getElementById('live-gifts');
     timeTakenElement = document.getElementById('time-taken');
     nameInputElement = document.getElementById('user-name');
-    resultNameElement = document.getElementById('result-name');
     resultMessageElement = document.getElementById('result-message');
     correctionModeSelectorElement = document.getElementById('correction-mode-selector');
     nextQuestionButtonElement = document.getElementById('next-question-btn');
@@ -133,18 +132,33 @@ async function playSound(synth, note, duration) {
     }
 }
 
-// Loads the quiz chosen by ?quiz=<id> (or the default in quizzes/registry.json)
-// and fills the page with its title, logo and labels.
-async function initQuiz() {
+// With ?quiz=<id>, loads that quiz and fills the page with its title, logo and
+// labels. Without it, shows the home page: the quizzes listed in quizzes/registry.json.
+async function initPage() {
+    let loader;
     try {
-        const [loader, utils, runtime] = await Promise.all([
+        let utils, runtime;
+        [loader, utils, runtime] = await Promise.all([
             import('./app/loader.js'),
             import('./app/utils.js'),
             import('./app/runtime.js'),
         ]);
         quizLib = { ...utils, ...runtime };
+    } catch (error) {
+        showQuizLoadError(error);
+        return;
+    }
 
-        const quizId = await loader.resolveQuizId({ search: window.location.search });
+    const quizId = loader.getQuizIdFromSearch(window.location.search);
+    if (quizId) {
+        await initQuiz(loader, quizId);
+    } else {
+        await showHomePage(loader);
+    }
+}
+
+async function initQuiz(loader, quizId) {
+    try {
         const quiz = await loader.loadQuiz(quizId);
 
         currentQuizMeta = quiz.meta;
@@ -153,15 +167,91 @@ async function initQuiz() {
         currentBonusGiftClass = currentQuizMeta.gamification.bonusRewardClass;
 
         applyQuizMetaToPage(currentQuizMeta);
+        initialSetupElement.style.display = 'block';
         startQuizButton.disabled = false;
     } catch (error) {
         showQuizLoadError(error);
     }
 }
 
+async function showHomePage(loader) {
+    const titleElement = document.getElementById('quiz-title');
+    const descriptionElement = document.getElementById('quiz-description');
+    const listElement = document.getElementById('quiz-list');
+
+    let list;
+    try {
+        list = await loader.loadQuizList();
+    } catch (error) {
+        console.error('Error loading quiz list:', error);
+        document.title = 'Quizzes not available';
+        titleElement.textContent = 'Quizzes not available';
+        const errorElement = document.getElementById('quiz-load-error');
+        errorElement.textContent = error.message;
+        errorElement.hidden = false;
+        return;
+    }
+
+    document.title = list.title;
+    titleElement.textContent = list.title;
+    descriptionElement.textContent = list.description;
+    descriptionElement.hidden = list.description.length === 0;
+
+    listElement.innerHTML = '';
+    for (const entry of list.quizzes) {
+        const item = document.createElement('li');
+        if (entry.error) {
+            // Shown so a broken quiz is noticed; visitors just see it is unavailable.
+            console.error(`Quiz "${entry.id}" could not be loaded:`, entry.error);
+            item.className = 'quiz-card quiz-card-broken';
+            item.textContent = `"${entry.id}" is not available right now.`;
+            listElement.appendChild(item);
+            continue;
+        }
+
+        const { meta } = entry;
+        const link = document.createElement('a');
+        link.className = 'quiz-card';
+        link.href = `?quiz=${encodeURIComponent(entry.id)}`;
+
+        if (meta.branding.logoSrc) {
+            const logo = document.createElement('img');
+            logo.className = 'quiz-card-logo';
+            logo.src = meta.branding.logoSrc;
+            logo.alt = '';
+            logo.onerror = () => logo.remove();
+            link.appendChild(logo);
+        }
+
+        const textWrap = document.createElement('span');
+        textWrap.className = 'quiz-card-text';
+        const title = document.createElement('span');
+        title.className = 'quiz-card-title';
+        title.textContent = meta.title;
+        textWrap.appendChild(title);
+        if (meta.description) {
+            const description = document.createElement('span');
+            description.className = 'quiz-card-description';
+            description.textContent = meta.description;
+            textWrap.appendChild(description);
+        }
+        link.appendChild(textWrap);
+
+        item.appendChild(link);
+        listElement.appendChild(item);
+    }
+    listElement.hidden = false;
+}
+
+function setHomeLinkVisible(visible) {
+    document.getElementById('home-link').hidden = !visible;
+}
+
 function applyQuizMetaToPage(meta) {
     const text = meta.uiText;
     document.title = meta.pageTitle;
+    document.getElementById('home-link').textContent = text.homeLinkLabel;
+    setHomeLinkVisible(true);
     document.getElementById('quiz-title').textContent = meta.title;
 
     const descriptionElement = document.getElementById('quiz-description');
@@ -188,6 +278,13 @@ function applyQuizMetaToPage(meta) {
     document.getElementById('result-heading').textContent = text.resultHeading;
     reviewToggleButton.textContent = text.reviewToggleClosed;
     document.getElementById('share-score-label').textContent = text.shareButtonLabel;
+    submitButton.textContent = text.submitButtonLabel;
+    document.getElementById('next-question-label').textContent = text.nextButtonLabel;
+    document.getElementById('final-score-label').textContent = text.finalScoreLabel;
+    document.getElementById('correct-count-label').textContent = text.correctCountLabel;
+    document.getElementById('incorrect-count-label').textContent = text.incorrectCountLabel;
+    document.getElementById('time-taken-label').textContent = text.timeTakenLabel;
+    document.getElementById('achievements-heading').textContent = text.achievementsHeading;
 }
 
 function showQuizLoadError(error) {
@@ -195,9 +292,17 @@ function showQuizLoadError(error) {
     document.title = 'Quiz not available';
     document.getElementById('quiz-title').textContent = 'Quiz not available';
     initialSetupElement.style.display = 'none';
+    const homeLink = document.getElementById('home-link');
+    homeLink.textContent = '← All quizzes';
+    homeLink.hidden = false;
     const errorElement = document.getElementById('quiz-load-error');
     errorElement.textContent = error.message;
     errorElement.hidden = false;
+}
+
+// The quiz's text for `key` (see DEFAULT_UI_TEXT in app/validate.js), with {placeholders} filled in.
+function uiText(key, values) {
+    return quizLib.fillText(currentQuizMeta.uiText[key], values);
 }
 
 function getAchievementLabel(labelKey) {
@@ -206,8 +311,9 @@ function getAchievementLabel(labelKey) {
 
 function startQuizFlow() {
      console.log("Starting quiz flow...");
-     userName = nameInputElement.value.trim() || "Quiz Taker";
+     userName = nameInputElement.value.trim() || uiText('defaultPlayerName');
      initialSetupElement.style.display = 'none'; // Hide the entire initial setup div
+     setHomeLinkVisible(false); // Leaving mid-quiz would lose progress
 
      const selectedCorrectionMode = document.querySelector('input[name="correction"]:checked');
       showImmediateCorrection = selectedCorrectionMode ? selectedCorrectionMode.value === 'immediate' : true;
@@ -251,7 +357,7 @@ function startOverallTimer() {
          if (timeLeft <= 0) {
              clearInterval(overallTimerInterval);
              clearTimeout(autoProceedTimeout);
-             feedbackAreaElement.textContent = "Time's up!";
+             feedbackAreaElement.textContent = uiText('timesUp');
              feedbackAreaElement.className = 'feedback-incorrect';
              playSound(incorrectSound, "C3", "8n");
              showResults();
@@ -260,7 +366,7 @@ function startOverallTimer() {
  }
 
 function updateTimerDisplay() {
-     overallTimerElement.textContent = `Time Left: ${quizLib.formatMinutesSeconds(timeLeft)}`;
+     overallTimerElement.textContent = uiText('timeLeft', { time: quizLib.formatMinutesSeconds(timeLeft) });
  }
 
 function calculateTotalPossibleScore() {
@@ -270,10 +376,10 @@ function calculateTotalPossibleScore() {
  }
 
 function updateLiveCountsAndStreak() {
-    liveCorrectCountElement.textContent = `✔️ ${correctCount}`;
-    liveIncorrectCountElement.textContent = `❌ ${incorrectCount}`;
+    liveCorrectCountElement.textContent = uiText('liveCorrectCount', { count: correctCount });
+    liveIncorrectCountElement.textContent = uiText('liveIncorrectCount', { count: incorrectCount });
     if (currentStreak > 1) {
-        streakCounterElement.textContent = `🔥 Streak: ${currentStreak}`;
+        streakCounterElement.textContent = uiText('streakCounter', { count: currentStreak });
         streakCounterElement.classList.add('visible');
     } else {
         streakCounterElement.classList.remove('visible');
@@ -346,10 +452,10 @@ function loadQuestion() {
 
     updateProgressBar();
     if (currentQuestion.isBonus) {
-         progressTextElement.textContent = `Bonus Question!`;
+         progressTextElement.textContent = uiText('bonusProgress');
     } else {
          const regularQuestionIndex = currentQuizData.slice(0, currentQuestionIndex + 1).filter(q => !q.isBonus).length;
-         progressTextElement.textContent = `Question ${regularQuestionIndex} / ${totalRegularQuestions}`;
+         progressTextElement.textContent = uiText('questionProgress', { current: regularQuestionIndex, total: totalRegularQuestions });
     }
 
     updateLiveCountsAndStreak();
@@ -362,7 +468,7 @@ function loadQuestion() {
 
     if (currentQuestion.isBonus) {
         const bonusLabel = document.createElement('span');
-        bonusLabel.textContent = '✨ BONUS ✨';
+        bonusLabel.textContent = uiText('bonusBadge');
         bonusLabel.classList.add('bonus-question-label');
         questionTextElement.prepend(bonusLabel);
     }
@@ -371,7 +477,6 @@ function loadQuestion() {
     switch (currentQuestion.type) {
         case "mcq": loadMCQOptions(currentQuestion); break;
         case "matching": loadMatchingOptions(currentQuestion); submitButton.style.display = 'inline-block'; break;
-        default: optionsAreaElement.innerHTML = '<p>Unsupported question type.</p>'; scheduleOrWaitForNext(); break;
     }
 }
 
@@ -404,7 +509,7 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
     document.querySelectorAll('.mcq-option').forEach(btn => btn.disabled = true);
     buttonElement.classList.add('selected');
 
-    const result = quizLib.checkMCQAnswer(question, selectedOption, showImmediateCorrection);
+    const result = quizLib.checkMCQAnswer(question, selectedOption, showImmediateCorrection, currentQuizMeta.uiText);
     if (result.isCorrect) {
         score += result.pointsAwarded;
         if (!question.isBonus) {
@@ -465,7 +570,7 @@ function loadMatchingOptions(question) {
          selectElement.dataset.leftItem = leftItem;
          const defaultOption = document.createElement('option');
          defaultOption.value = "";
-         defaultOption.textContent = "Select match...";
+         defaultOption.textContent = uiText('matchPlaceholder');
          selectElement.appendChild(defaultOption);
          rightItems.forEach(rightItem => {
              const optionElement = document.createElement('option');
@@ -486,7 +591,7 @@ function loadMatchingOptions(question) {
      submitButton.disabled = true;
      const currentQuestion = currentQuizData[currentQuestionIndex];
 
-     const result = quizLib.checkMatchingAnswer(currentQuestion, userAnswers, showImmediateCorrection);
+     const result = quizLib.checkMatchingAnswer(currentQuestion, userAnswers, showImmediateCorrection, currentQuizMeta.uiText);
      if (currentQuestion.isBonus) {
          if (result.isCorrect) {
              feedbackAreaElement.textContent = result.feedback;
@@ -570,6 +675,7 @@ function showResults() {
 
 
     resultAreaElement.style.display = 'block';
+    setHomeLinkVisible(true);
     playSound(completeSound, "G4", "4n");
 }
 
@@ -602,7 +708,7 @@ function populateAchievements() {
          const icon = document.createElement('i');
             icon.className = currentBonusGiftClass;
          li.appendChild(icon);
-         li.append(" (Bonus!)");
+         li.append(' ' + uiText('bonusGiftLabel'));
          achievementsListElement.appendChild(li);
          achievementsDisplayed = true;
     }
@@ -635,19 +741,19 @@ function populateAchievements() {
 function populateReviewSection() {
      reviewContent.innerHTML = '';
      if (incorrectlyAnsweredQuestions.length === 0) {
-         reviewContent.innerHTML = '<p>No incorrect answers to review!</p>';
+         reviewContent.innerHTML = `<p>${uiText('reviewNothingToReview')}</p>`;
          return;
      }
      incorrectlyAnsweredQuestions.forEach(item => {
          const div = document.createElement('div');
          div.classList.add('review-item');
          const qText = document.createElement('p');
-         qText.innerHTML = `<strong>Q:</strong> ${item.questionText}`;
+         qText.innerHTML = `<strong>${uiText('reviewQuestionLabel')}</strong> ${item.questionText}`;
          div.appendChild(qText);
 
          if (item.isMatching) {
              const userAnsText = document.createElement('p');
-             userAnsText.innerHTML = `<strong>Your Matches:</strong>`;
+             userAnsText.innerHTML = `<strong>${uiText('reviewYourMatchesLabel')}</strong>`;
              div.appendChild(userAnsText);
              const userList = document.createElement('ul');
              userList.style.listStyle = 'none'; userList.style.paddingLeft = '15px';
@@ -658,7 +764,7 @@ function populateReviewSection() {
               }
               div.appendChild(userList);
              const correctAnsText = document.createElement('p');
-             correctAnsText.innerHTML = `<strong>Correct Matches:</strong>`;
+             correctAnsText.innerHTML = `<strong>${uiText('reviewCorrectMatchesLabel')}</strong>`;
               div.appendChild(correctAnsText);
               const correctList = document.createElement('ul');
               correctList.style.listStyle = 'none'; correctList.style.paddingLeft = '15px';
@@ -670,11 +776,11 @@ function populateReviewSection() {
               div.appendChild(correctList);
          } else {
              const userAnsText = document.createElement('p');
-             userAnsText.innerHTML = `<strong>Your Answer:</strong> <span class="review-user-answer">${item.userAnswer}</span>`;
+             userAnsText.innerHTML = `<strong>${uiText('reviewYourAnswerLabel')}</strong> <span class="review-user-answer">${item.userAnswer}</span>`;
              div.appendChild(userAnsText);
 
              const correctAnsText = document.createElement('p');
-             correctAnsText.innerHTML = `<strong>Correct Answer:</strong> <span class="review-correct-answer">${item.correctAnswer}</span>`;
+             correctAnsText.innerHTML = `<strong>${uiText('reviewCorrectAnswerLabel')}</strong> <span class="review-correct-answer">${item.correctAnswer}</span>`;
              div.appendChild(correctAnsText);
          }
 
@@ -683,7 +789,7 @@ function populateReviewSection() {
              justificationText.style.marginTop = '8px';
              justificationText.style.fontStyle = 'italic';
              justificationText.style.fontSize = '0.9em';
-             justificationText.innerHTML = `<strong>Why?</strong> ${item.justification}`;
+             justificationText.innerHTML = `<strong>${uiText('explanationPrefix')}</strong> ${item.justification}`;
              div.appendChild(justificationText);
          }
 
@@ -709,7 +815,7 @@ async function shareScoreAsImage() {
 
     try {
         if (typeof html2canvas === 'undefined') {
-            alert('Share functionality is still loading, please try again in a moment.');
+            alert(uiText('shareNotReady'));
             return;
         }
         const canvas = await html2canvas(elementToCapture, {
@@ -726,7 +832,7 @@ async function shareScoreAsImage() {
         document.body.removeChild(downloadLink);
     } catch (error) {
         console.error('Error generating score image:', error);
-        alert('Sorry, there was an error generating the score image.');
+        alert(uiText('shareFailed'));
     } finally {
          buttonsToHide.forEach(el => el.classList.remove('hide-for-screenshot'));
     }
@@ -771,6 +877,6 @@ document.addEventListener('DOMContentLoaded', () => {
     reviewToggleButton.addEventListener('click', toggleReview);
     shareScoreButton.addEventListener('click', shareScoreAsImage);
 
-    initQuiz();
+    initPage();
 
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkMCQAnswer, checkMatchingAnswer } from '../app/runtime.js';
+import { DEFAULT_UI_TEXT } from '../app/validate.js';
 
 describe('checkMCQAnswer', () => {
   const question = {
@@ -66,5 +67,30 @@ describe('checkMatchingAnswer', () => {
     const userAnswers = { 'A': 'a', 'B': 'b' };
     const result = checkMatchingAnswer(zeroPointsQuestion, userAnswers);
     expect(result.pointsAwarded).toBe(2);
+  });
+});
+
+describe('feedback wording', () => {
+  const text = {
+    ...DEFAULT_UI_TEXT,
+    incorrectFeedback: 'Faux !',
+    correctAnswerReveal: 'La bonne réponse était : {answer}.',
+    explanationPrefix: 'Pourquoi ?',
+    matchingFeedback: '{correct} sur {total}',
+    reviewNotAnswered: 'Sans réponse',
+  };
+
+  it('uses the quiz texts for MCQ feedback', () => {
+    const question = { id: 1, type: 'mcq', prompt: 'Q', answer: 'A', points: 1, explanation: 'Parce que.' };
+    const result = checkMCQAnswer(question, 'B', true, text);
+    expect(result.feedback).toContain('Faux ! La bonne réponse était : A.');
+    expect(result.feedback).toContain('Pourquoi ? Parce que.');
+  });
+
+  it('fills counts into matching feedback', () => {
+    const question = { id: 2, type: 'matching', prompt: 'Q', pairs: [['A', 'a'], ['B', 'b']], points: 2 };
+    const result = checkMatchingAnswer(question, { A: 'a' }, false, text);
+    expect(result.feedback).toBe('1 sur 2');
+    expect(result.reviewItem.userAnswer.B).toBe('Sans réponse');
   });
 });

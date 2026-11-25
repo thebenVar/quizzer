@@ -42,7 +42,12 @@ export function getResultMessage({ score, totalPossibleScore, userName = 'Quiz T
   const sortedBands = [...resultBands].sort((left, right) => right.minPercent - left.minPercent);
   const selectedBand = sortedBands.find((band) => percentage >= band.minPercent) ?? sortedBands[sortedBands.length - 1];
 
-  return selectedBand.message.replaceAll('{name}', userName);
+  return fillText(selectedBand.message, { name: userName });
+}
+
+// Replaces {key} in a uiText template with values[key]; unknown keys are left as-is.
+export function fillText(template, values = {}) {
+  return template.replace(/\{(\w+)\}/g, (match, key) => (key in values ? String(values[key]) : match));
 }
 
 export function getShareFileName(scoring = {}) {

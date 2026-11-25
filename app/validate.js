@@ -1,14 +1,65 @@
-const DEFAULT_UI_TEXT = Object.freeze({
+// Every piece of text the quiz shows. A quiz can override any of these in
+// meta.json "uiText". Words in {braces} are filled in by the app.
+export const DEFAULT_UI_TEXT = Object.freeze({
+  // Start screen
+  homeLinkLabel: '← All quizzes',
   nameLabel: 'Enter Your Name:',
   namePlaceholder: 'Your Name',
+  defaultPlayerName: 'Quiz Taker',
   correctionModeLabel: 'Feedback on incorrect answers:',
   immediateCorrectionLabel: 'Show correction immediately',
   delayedCorrectionLabel: 'Show only in final review',
   startButtonLabel: 'Start Quiz',
+
+  // While answering
+  questionProgress: 'Question {current} / {total}',
+  bonusProgress: 'Bonus Question!',
+  bonusBadge: '✨ BONUS ✨',
+  timeLeft: 'Time Left: {time}',
+  timesUp: "Time's up!",
+  liveCorrectCount: '✔️ {count}',
+  liveIncorrectCount: '❌ {count}',
+  streakCounter: '🔥 Streak: {count}',
+  matchPlaceholder: 'Select match...',
+  submitButtonLabel: 'Submit Answer',
+  nextButtonLabel: 'Next Question',
+
+  // Feedback after an answer
+  correctFeedback: 'Correct!',
+  incorrectFeedback: 'Incorrect!',
+  correctAnswerReveal: 'The correct answer was: {answer}.',
+  explanationPrefix: 'Why?',
+  hintPrefix: 'Hint:',
+  matchingFeedback: 'Answer Submitted! ({correct}/{total} correct)',
+  matchingSomeWrong: 'Some matches were incorrect. Review at the end.',
+  bonusCorrectFeedback: 'Bonus Correct! 🎉',
+  bonusIncorrectFeedback: 'Bonus Incorrect ({correct}/{total})',
+
+  // Results screen
   resultHeading: 'Quiz Complete!',
+  finalScoreLabel: 'Your final score is:',
+  correctCountLabel: 'Correct:',
+  incorrectCountLabel: 'Incorrect:',
+  timeTakenLabel: 'Time Taken:',
+  achievementsHeading: 'Achievements / Gifts Earned:',
+  bonusGiftLabel: '(Bonus!)',
+  shareButtonLabel: 'Share Score',
+  shareNotReady: 'Share functionality is still loading, please try again in a moment.',
+  shareFailed: 'Sorry, there was an error generating the score image.',
+
+  // Review of incorrect answers
   reviewToggleClosed: 'Review Incorrect Answers',
   reviewToggleOpen: 'Hide Review',
-  shareButtonLabel: 'Share Score',
+  reviewNothingToReview: 'No incorrect answers to review!',
+  reviewQuestionLabel: 'Q:',
+  reviewYourAnswerLabel: 'Your Answer:',
+  reviewCorrectAnswerLabel: 'Correct Answer:',
+  reviewYourMatchesLabel: 'Your Matches:',
+  reviewCorrectMatchesLabel: 'Correct Matches:',
+  reviewNotAnswered: 'Not Answered',
+  reviewBonusSuffix: '(Bonus)',
+  reviewNoExplanation: 'No specific justification provided.',
+  reviewMatchingNoExplanation: 'Match all pairs correctly.',
 });
 
 const DEFAULT_RESULT_BANDS = Object.freeze([
@@ -92,6 +143,7 @@ export function validateMeta(meta) {
 
   const normalizedUiText = { ...DEFAULT_UI_TEXT };
   for (const [key, value] of Object.entries(uiText)) {
+    assert(key in DEFAULT_UI_TEXT, `meta.uiText.${key} is not a known text (check the spelling)`);
     assert(typeof value === 'string', `meta.uiText.${key} must be a string`);
     normalizedUiText[key] = value;
   }

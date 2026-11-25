@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { loadQuiz } from '../app/loader.js';
+import { loadQuiz, loadRegistry } from '../app/loader.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const quizzesDir = path.join(repoRoot, 'quizzes');
@@ -28,9 +28,19 @@ describe('quiz content', () => {
     expect(quizIds.length).toBeGreaterThan(0);
   });
 
-  it('registry.json names an existing quiz as the default', () => {
-    const registry = JSON.parse(fs.readFileSync(path.join(quizzesDir, 'registry.json'), 'utf8'));
-    expect(quizIds).toContain(registry.defaultQuiz);
+  it('registry.json only names quiz folders that exist', async () => {
+    const registry = await loadRegistry({ fetchFn: fileFetch });
+    for (const quizId of [...registry.quizzes, ...registry.unlisted]) {
+      expect(quizIds, `registry.json names "${quizId}" but there is no quizzes/${quizId}/ folder`).toContain(quizId);
+    }
+  });
+
+  it('every quiz folder is in registry.json, under "quizzes" (home page) or "unlisted"', async () => {
+    const registry = await loadRegistry({ fetchFn: fileFetch });
+    const registered = new Set([...registry.quizzes, ...registry.unlisted]);
+    for (const quizId of quizIds) {
+      expect(registered.has(quizId), `quizzes/${quizId}/ is not in registry.json; add it to "quizzes" to show it on the home page`).toBe(true);
+    }
   });
 
   describe.each(quizIds)('quizzes/%s', (quizId) => {

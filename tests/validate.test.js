@@ -68,6 +68,15 @@ describe('validateMeta', () => {
       noAchievements: 'No special achievements or gifts this time.',
     });
   });
+  it('accepts uiText overrides and keeps defaults for the rest', () => {
+    const validated = validateMeta({ ...baseMeta, uiText: { startButtonLabel: 'Go!' } });
+    expect(validated.uiText.startButtonLabel).toBe('Go!');
+    expect(validated.uiText.submitButtonLabel).toBe('Submit Answer');
+  });
+
+  it('rejects misspelled uiText keys', () => {
+    expect(() => validateMeta({ ...baseMeta, uiText: { startButonLabel: 'Go!' } })).toThrow(/meta\.uiText\.startButonLabel is not a known text/);
+  });
 });
 
 describe('validateQuestions', () => {

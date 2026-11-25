@@ -1,5 +1,6 @@
 {
   "title": "Gethsemane Bible Quiz",
+  "description": "Questions on the book of Ephesians.",
   "branding": {
     "logoSrc": "logo.png",
     "logoAlt": "Gethsemane Logo"
@@ -18,5 +19,8 @@
   "timing": {
     "timeLimitSeconds": 3600,
     "autoAdvanceDelayMs": 2000
+  },
+  "uiText": {
+    "bonusCorrectFeedback": "Bonus Correct! Candy Earned! 🍬"
   }
 }

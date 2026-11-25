@@ -11,18 +11,22 @@
     <script src="script.js" defer></script>
 </head>
 <body>
-    <!-- This page is the same for every quiz. The quiz's title, logo, labels and
-         questions come from quizzes/<quiz-id>/meta.json and questions.json. -->
+    <!-- This page is the same for every quiz. Without ?quiz= it is the home page,
+         listing the quizzes named in quizzes/registry.json. With ?quiz=<id> it runs
+         that quiz, from quizzes/<id>/meta.json and questions.json. -->
 
     <div id="quiz-container">
         <div id="feedback-flash" class="feedback-flash"></div>
 
+        <a id="home-link" href="./" hidden></a>
         <img id="logo" alt="" hidden>
-        <h1 id="quiz-title">Loading quiz…</h1>
+        <h1 id="quiz-title">Loading…</h1>
         <p id="quiz-description" hidden></p>
         <p id="quiz-load-error" class="feedback-incorrect" hidden></p>
 
-        <div id="initial-setup">
+        <ul id="quiz-list" hidden></ul>
+
+        <div id="initial-setup" style="display: none;">
             <div id="name-input-area">
                  <label for="user-name" id="name-label"></label>
                  <input type="text" id="user-name" name="user-name">
@@ -47,10 +51,10 @@
                     <div id="progress-bar"></div>
                 </div>
                 <div id="header-info">
-                    <span id="progress-text">Question 1 / X</span> <div id="live-stats">
-                        <span id="live-correct-count">✔️ 0</span>
-                        <span id="live-incorrect-count">❌ 0</span>
-                        <span id="streak-counter">🔥 Streak: 0</span>
+                    <span id="progress-text"></span> <div id="live-stats">
+                        <span id="live-correct-count"></span>
+                        <span id="live-incorrect-count"></span>
+                        <span id="streak-counter"></span>
                         <div id="live-gifts"></div>
                     </div>
                     <span id="overall-timer"></span>
@@ -58,7 +62,7 @@
             </div>
 
             <div id="question-area">
-                <p id="question-text">Loading question...</p>
+                <p id="question-text"></p>
             </div>
 
             <div id="options-area">
@@ -68,25 +72,23 @@
                 </div>
 
             <div id="navigation">
-                <button id="submit-btn" style="display: none;">Submit Answer</button>
-                <button id="next-question-btn" style="display: none;">Next Question <i class="fas fa-arrow-right"></i></button>
+                <button id="submit-btn" style="display: none;"></button>
+                <button id="next-question-btn" style="display: none;"><span id="next-question-label"></span> <i class="fas fa-arrow-right"></i></button>
             </div>
         </div> <div id="result-area" style="display: none;">
             <div id="score-card">
                 <h2 id="result-heading"></h2>
-                <p id="result-message">Well done, <span id="result-name">User</span>!</p>
-                <p>Your final score is: <span id="final-score">0</span> / <span id="total-possible-score">0</span></p>
+                <p id="result-message"></p>
+                <p><span id="final-score-label"></span> <span id="final-score">0</span> / <span id="total-possible-score">0</span></p>
                 <div id="result-summary">
-                    <span class="correct-count">Correct: <span id="correct-answers-count">0</span></span>
-                    <span class="incorrect-count">Incorrect: <span id="incorrect-answers-count">0</span></span>
+                    <span class="correct-count"><span id="correct-count-label"></span> <span id="correct-answers-count">0</span></span>
+                    <span class="incorrect-count"><span id="incorrect-count-label"></span> <span id="incorrect-answers-count">0</span></span>
                 </div>
-                <p id="time-taken-summary">Time Taken: <span id="time-taken">--:--</span></p>
+                <p id="time-taken-summary"><span id="time-taken-label"></span> <span id="time-taken">--:--</span></p>
 
                 <div id="achievements-section">
-                    <h3>Achievements / Gifts Earned:</h3>
-                    <ul id="achievements-list">
-                        <li>No gifts earned yet.</li>
-                    </ul>
+                    <h3 id="achievements-heading"></h3>
+                    <ul id="achievements-list"></ul>
                 </div>
             </div> <div id="review-section" style="display: none;">
                 <button id="review-toggle-btn"></button>
