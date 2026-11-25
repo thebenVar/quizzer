@@ -287,6 +287,7 @@ a.quiz-card:focus-visible {
     margin-bottom: 20px;
     line-height: 1.5;
     font-weight: 500;
+    white-space: pre-line; /* line breaks ("\n") in a question's prompt are shown */
 }
 .bonus-question-label {
     font-weight: bold;
@@ -410,6 +411,51 @@ a.quiz-card:focus-visible {
     justify-content: center;
     align-items: center;
     gap: 8px;
+}
+
+/* Results by skill */
+#skill-breakdown {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed #ccc;
+}
+#skill-breakdown h3 {
+    font-size: 1.1em;
+    color: #6c757d;
+    margin-bottom: 10px;
+}
+#skill-breakdown-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+#skill-breakdown-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 11em) 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+.skill-label {
+    color: #343a40;
+    font-size: 0.95em;
+}
+.skill-bar {
+    height: 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.skill-bar-fill {
+    display: block;
+    height: 100%;
+    background-color: #0d6efd;
+}
+.skill-score {
+    font-variant-numeric: tabular-nums;
+    color: #495057;
+    font-size: 0.95em;
 }
 
 #achievements-section {

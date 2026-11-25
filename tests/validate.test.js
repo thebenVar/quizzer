@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { validateMeta, validateQuestions } from '../app/validate.js';
+import { validateMeta, validateQuestions, validateQuizConsistency } from '../app/validate.js';
 
 const baseMeta = {
   id: 'sample',
@@ -143,5 +143,46 @@ describe('validateQuestions', () => {
 
   it('rejects a quiz with only a bonus question', () => {
     expect(() => validateQuestions([validMatchingQuestion])).toThrow(/at least one non-bonus question/i);
+  });
+});
+
+describe('test mode and skills', () => {
+  const skills = [{ id: 'logic', label: 'Logic' }];
+
+  it('defaults to quiz mode, answer review on, and no skills', () => {
+    const validated = validateMeta(baseMeta);
+    expect(validated.mode).toBe('quiz');
+    expect(validated.showAnswerReview).toBe(true);
+    expect(validated.skills).toEqual([]);
+  });
+
+  it('accepts test mode with skills', () => {
+    const validated = validateMeta({ ...baseMeta, mode: 'test', showAnswerReview: false, skills });
+    expect(validated).toMatchObject({ mode: 'test', showAnswerReview: false, skills });
+  });
+
+  it('rejects an unknown mode', () => {
+    expect(() => validateMeta({ ...baseMeta, mode: 'exam' })).toThrow(/meta\.mode must be one of "quiz", "test"/);
+  });
+
+  it('rejects duplicate skill ids', () => {
+    expect(() => validateMeta({ ...baseMeta, skills: [...skills, ...skills] })).toThrow(/"logic" is used more than once/);
+  });
+
+  it('requires every question to name a listed skill when the quiz has skills', () => {
+    const meta = validateMeta({ ...baseMeta, skills });
+    const [withSkill] = validateQuestions([{ ...validMcqQuestion, skill: 'logic' }]);
+    const [unknownSkill] = validateQuestions([{ ...validMcqQuestion, skill: 'maths' }]);
+    const [noSkill] = validateQuestions([validMcqQuestion]);
+
+    expect(() => validateQuizConsistency(meta, [withSkill])).not.toThrow();
+    expect(() => validateQuizConsistency(meta, [unknownSkill])).toThrow(/skill "maths" is not one of the skills/);
+    expect(() => validateQuizConsistency(meta, [noSkill])).toThrow(/skill is required/);
+  });
+
+  it('rejects a bonus question in test mode', () => {
+    const meta = validateMeta({ ...baseMeta, mode: 'test' });
+    const questions = validateQuestions([validMcqQuestion, validMatchingQuestion]);
+    expect(() => validateQuizConsistency(meta, questions)).toThrow(/cannot have a bonus question/);
   });
 });

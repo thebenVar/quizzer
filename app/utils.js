@@ -66,3 +66,22 @@ export function getNewStreakGiftClass({ currentStreak, streakRewards = {}, earne
   const alreadyEarned = earnedGifts.some((gift) => gift.class === giftClass && gift.source === 'streak');
   return alreadyEarned ? null : giftClass;
 }
+
+// Score per skill, in the order the skills are listed in meta.json.
+// `questions` are the questions asked (unanswered ones still count in the total);
+// `answers` are { questionId, isCorrect } for each answered question.
+export function calculateSkillBreakdown(skills, questions, answers) {
+  const correctIds = new Set(answers.filter((answer) => answer.isCorrect).map((answer) => answer.questionId));
+
+  return skills
+    .map((skill) => {
+      const skillQuestions = questions.filter((question) => !question.isBonus && question.skill === skill.id);
+      return {
+        id: skill.id,
+        label: skill.label,
+        correct: skillQuestions.filter((question) => correctIds.has(question.id)).length,
+        total: skillQuestions.length,
+      };
+    })
+    .filter((row) => row.total > 0);
+}

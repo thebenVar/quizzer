@@ -21,6 +21,7 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   liveIncorrectCount: '❌ {count}',
   streakCounter: '🔥 Streak: {count}',
   matchPlaceholder: 'Select match...',
+  answerSaved: 'Answer saved.',
   submitButtonLabel: 'Submit Answer',
   nextButtonLabel: 'Next Question',
 
@@ -42,6 +43,8 @@ export const DEFAULT_UI_TEXT = Object.freeze({
   incorrectCountLabel: 'Incorrect:',
   timeTakenLabel: 'Time Taken:',
   achievementsHeading: 'Achievements / Gifts Earned:',
+  skillBreakdownHeading: 'Results by skill',
+  skillScore: '{correct} / {total}',
   bonusGiftLabel: '(Bonus!)',
   shareButtonLabel: 'Share Score',
   shareNotReady: 'Share functionality is still loading, please try again in a moment.',
@@ -117,6 +120,31 @@ function validateResultBands(resultBands) {
   });
 }
 
+// "quiz": feedback after each answer, streaks and gifts.
+// "test": no feedback until the end, no streaks or gifts; for assessments.
+const QUIZ_MODES = ['quiz', 'test'];
+
+// Optional list of skills a quiz measures; questions name one with "skill",
+// and the results screen shows a score per skill, in this order.
+function validateSkills(skills) {
+  if (skills === undefined) {
+    return [];
+  }
+  assert(Array.isArray(skills), 'meta.skills must be a list');
+
+  const seen = new Set();
+  return skills.map((skill, index) => {
+    const path = `meta.skills[${index}]`;
+    assert(isPlainObject(skill), `${path} must be an object with "id" and "label"`);
+    assert(isNonEmptyString(skill.id), `${path}.id is required`);
+    assert(isNonEmptyString(skill.label), `${path}.label is required`);
+    const id = skill.id.trim();
+    assert(!seen.has(id), `${path}.id "${id}" is used more than once`);
+    seen.add(id);
+    return { id, label: skill.label.trim() };
+  });
+}
+
 export function validateMeta(meta) {
   assert(isPlainObject(meta), 'meta must be an object');
   assert(isNonEmptyString(meta.id), 'meta.id is required');
@@ -150,7 +178,16 @@ export function validateMeta(meta) {
 
   const normalizedResultBands = validateResultBands(scoring.resultBands ?? DEFAULT_RESULT_BANDS);
 
+  const mode = meta.mode ?? 'quiz';
+  assert(QUIZ_MODES.includes(mode), `meta.mode must be one of ${QUIZ_MODES.map((m) => `"${m}"`).join(', ')}`);
+
+  const showAnswerReview = meta.showAnswerReview ?? true;
+  assert(typeof showAnswerReview === 'boolean', 'meta.showAnswerReview must be true or false');
+
   return {
+    mode,
+    showAnswerReview,
+    skills: validateSkills(meta.skills),
     id: meta.id.trim(),
     title,
     pageTitle: isNonEmptyString(meta.pageTitle) ? meta.pageTitle.trim() : title,
@@ -240,7 +277,9 @@ function validateQuestion(question, index) {
     points,
     explanation: normalizeStringField(question.explanation),
     isBonus,
+    skill: question.skill === undefined ? null : question.skill,
   };
+  assert(normalizedBase.skill === null || isNonEmptyString(normalizedBase.skill), `${path}.skill must be a skill id`);
 
   if (type === 'mcq') {
     return {
@@ -276,4 +315,21 @@ export function validateQuestions(questions) {
   assert(bonusCount < validated.length, 'questions must contain at least one non-bonus question');
 
   return validated;
+}
+// Checks that meta.json and questions.json agree with each other.
+export function validateQuizConsistency(meta, questions) {
+  const skillIds = new Set(meta.skills.map((skill) => skill.id));
+
+  questions.forEach((question, index) => {
+    const path = `questions[${index}]`;
+    if (question.skill !== null) {
+      assert(skillIds.has(question.skill), `${path}.skill "${question.skill}" is not one of the skills in meta.json`);
+    } else if (skillIds.size > 0 && !question.isBonus) {
+      assert(false, `${path}.skill is required, because meta.json lists skills`);
+    }
+  });
+
+  if (meta.mode === 'test') {
+    assert(!questions.some((question) => question.isBonus), 'a quiz with "mode": "test" cannot have a bonus question');
+  }
 }

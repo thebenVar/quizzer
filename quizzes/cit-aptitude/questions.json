@@ -1,0 +1,402 @@
+[
+  {
+    "id": "pattern-1",
+    "type": "mcq",
+    "skill": "pattern",
+    "prompt": "Genesis 1 describes six days of creation:\nDay 1 – light\nDay 2 – the sky, separating the waters above from the waters below\nDay 3 – dry land and plants\nDay 4 – sun, moon and stars\nDay 5 – birds of the sky and creatures of the sea\nDay 6 – land animals and people\n\nDays 4–6 fill the spaces formed on Days 1–3. Which day fills the space formed on Day 2?",
+    "options": ["Day 4", "Day 5", "Day 6", "Day 3"],
+    "answer": "Day 5",
+    "points": 1,
+    "explanation": "Day 2 separates the sky from the waters; Day 5 fills the sky with birds and the waters with sea creatures (1→4, 2→5, 3→6)."
+  },
+  {
+    "id": "pattern-2",
+    "type": "mcq",
+    "skill": "pattern",
+    "prompt": "In Hebrew poetry the second line often relates to the first in one of three ways:\n• it repeats the idea in other words (synonymous)\n• it states the opposite (antithetic)\n• it adds to or completes the idea (synthetic)\n\n“A wise son makes a glad father,\nbut a foolish son is a sorrow to his mother.” (Proverbs 10:1)\n\nWhich pattern is this?",
+    "options": ["Synonymous", "Antithetic", "Synthetic"],
+    "answer": "Antithetic",
+    "points": 1,
+    "explanation": "The second line states the opposite of the first: wise/foolish, glad/sorrow."
+  },
+  {
+    "id": "pattern-3",
+    "type": "mcq",
+    "skill": "pattern",
+    "prompt": "Which name continues the pattern?\n\nEden, Nineveh, Hebron, ___",
+    "options": ["Bethel", "Jericho", "Nazareth", "Sinai"],
+    "answer": "Nazareth",
+    "points": 1,
+    "explanation": "Each name begins with the last letter of the name before it: Eden ends in N → Nineveh; Nineveh ends in H → Hebron; Hebron ends in N → Nazareth."
+  },
+  {
+    "id": "pattern-4",
+    "type": "mcq",
+    "skill": "pattern",
+    "prompt": "In a secret code, ADAM is written as BEBN.\nUsing the same code, how is EVE written?",
+    "options": ["FWF", "DUD", "FVF", "EWE"],
+    "answer": "FWF",
+    "points": 1,
+    "explanation": "Each letter is replaced by the next letter of the alphabet: E→F, V→W, E→F."
+  },
+  {
+    "id": "pattern-5",
+    "type": "mcq",
+    "skill": "pattern",
+    "prompt": "Group 1 follows a rule: Ruth, Mark, Jude, Joel\nGroup 2 does not: Genesis, Matthew, Romans, Isaiah\n\nWhich of these book names follows the same rule as Group 1?",
+    "options": ["Jonah", "Amos", "Titus", "Hosea"],
+    "answer": "Amos",
+    "points": 1,
+    "explanation": "Every name in Group 1 has exactly four letters. Amos is the only four-letter name among the options."
+  },
+  {
+    "id": "series-1",
+    "type": "mcq",
+    "skill": "series",
+    "prompt": "What comes next?\n\n3, 6, 12, 24, ___",
+    "options": ["36", "42", "48", "30"],
+    "answer": "48",
+    "points": 1,
+    "explanation": "Each number is double the one before it: 24 × 2 = 48."
+  },
+  {
+    "id": "series-2",
+    "type": "mcq",
+    "skill": "series",
+    "prompt": "What comes next?\n\n2, 3, 5, 8, 12, ___",
+    "options": ["15", "16", "17", "18"],
+    "answer": "17",
+    "points": 1,
+    "explanation": "The gaps grow by one each time: +1, +2, +3, +4, then +5. 12 + 5 = 17."
+  },
+  {
+    "id": "series-3",
+    "type": "mcq",
+    "skill": "series",
+    "prompt": "What comes next?\n\nA, C, F, J, O, ___",
+    "options": ["S", "T", "U", "V"],
+    "answer": "U",
+    "points": 1,
+    "explanation": "The steps between letters grow by one: +2, +3, +4, +5, then +6. Six letters after O is U."
+  },
+  {
+    "id": "series-4",
+    "type": "mcq",
+    "skill": "series",
+    "prompt": "What comes next?\n\n2, 6, 12, 20, 30, ___",
+    "options": ["40", "42", "44", "36"],
+    "answer": "42",
+    "points": 1,
+    "explanation": "The gaps are 4, 6, 8, 10, so the next gap is 12: 30 + 12 = 42. (Each number is n × (n + 1): 1×2, 2×3, 3×4 …)"
+  },
+  {
+    "id": "series-5",
+    "type": "mcq",
+    "skill": "series",
+    "prompt": "Which reference continues the list?\n\nGenesis 1:1, Exodus 2:2, Leviticus 3:3, Numbers 4:4, ___",
+    "options": ["Deuteronomy 4:5", "Deuteronomy 5:5", "Deuteronomy 5:6", "Deuteronomy 6:6"],
+    "answer": "Deuteronomy 5:5",
+    "points": 1,
+    "explanation": "Chapter and verse both go up by one each time, and are always the same number: 1:1, 2:2, 3:3, 4:4, so 5:5."
+  },
+  {
+    "id": "odd-1",
+    "type": "mcq",
+    "skill": "odd-one-out",
+    "prompt": "Which word does not belong with the others?",
+    "options": ["sheep", "lamb", "shepherd", "wool", "winepress"],
+    "answer": "winepress",
+    "points": 1,
+    "explanation": "All the others have to do with sheep. A winepress is used for making wine."
+  },
+  {
+    "id": "odd-2",
+    "type": "mcq",
+    "skill": "odd-one-out",
+    "prompt": "Which number does not belong with the others?",
+    "options": ["9", "16", "25", "30", "36"],
+    "answer": "30",
+    "points": 1,
+    "explanation": "9, 16, 25 and 36 are square numbers (3×3, 4×4, 5×5, 6×6). 30 is not."
+  },
+  {
+    "id": "odd-3",
+    "type": "mcq",
+    "skill": "odd-one-out",
+    "prompt": "Which word does not belong with the others?",
+    "options": ["running", "singing", "walking", "morning", "reading"],
+    "answer": "morning",
+    "points": 1,
+    "explanation": "The others are verbs with -ing added (run, sing, walk, read). “Morning” is a noun; there is no verb “to morn”."
+  },
+  {
+    "id": "odd-4",
+    "type": "mcq",
+    "skill": "odd-one-out",
+    "prompt": "Which expression is NOT a way of saying that someone died?",
+    "options": ["fell asleep", "passed away", "breathed his last", "went up to Jerusalem", "gave up his spirit"],
+    "answer": "went up to Jerusalem",
+    "points": 1,
+    "explanation": "The other four are polite ways of saying someone died. “Went up to Jerusalem” describes a journey."
+  },
+  {
+    "id": "odd-5",
+    "type": "mcq",
+    "skill": "odd-one-out",
+    "prompt": "Which word is a different part of speech from the others?",
+    "options": ["quickly", "gently", "holy", "slowly", "boldly"],
+    "answer": "holy",
+    "points": 1,
+    "explanation": "The others are adverbs (they describe how something is done). “Holy” also ends in -ly, but it is an adjective."
+  },
+  {
+    "id": "compare-1",
+    "type": "mcq",
+    "skill": "compare",
+    "prompt": "Source text (John 1:1):\n“In the beginning was the Word, and the Word was with God, and the Word was God.”\n\nWhich back-translation clearly changes the meaning of the source?",
+    "options": ["In the beginning the Word already existed. The Word was with God, and the Word was God.", "At the very beginning the Word was there; he was together with God, and he was God.", "In the beginning was the Word, and the Word was with God, and the Word was a god.", "Before anything else existed, there was the Word. The Word was with God and was God."],
+    "answer": "In the beginning was the Word, and the Word was with God, and the Word was a god.",
+    "points": 1,
+    "explanation": "“The Word was God” and “the Word was a god” say different things. The other three reword the verse but keep its meaning."
+  },
+  {
+    "id": "compare-2",
+    "type": "mcq",
+    "skill": "compare",
+    "prompt": "Source text (Mark 1:35):\n“And rising very early in the morning, while it was still dark, he departed and went out to a desolate place, and there he prayed.”\n\nWhich back-translation adds something the source does not say?",
+    "options": ["Very early, while it was still dark, he got up, left, and went to a lonely place, where he prayed.", "Very early in the morning, before daylight, he got up and went out to a deserted place to pray.", "Very early, while it was still dark, he got up and went to a lonely place, where he prayed for his disciples.", "Before dawn he rose, went out to an empty, lonely place, and prayed there."],
+    "answer": "Very early, while it was still dark, he got up and went to a lonely place, where he prayed for his disciples.",
+    "points": 1,
+    "explanation": "The source says he prayed, not what he prayed for. “For his disciples” is added information."
+  },
+  {
+    "id": "compare-3",
+    "type": "mcq",
+    "skill": "compare",
+    "prompt": "Source text (Ruth 1:16):\n“Where you go I will go, and where you lodge I will lodge. Your people shall be my people, and your God my God.”\n\nWhich back-translation leaves something out?",
+    "options": ["I will go wherever you go and stay wherever you stay. Your people will be my people, and your God will be my God.", "Wherever you go, I will go; wherever you live, I will live. Your people will be my people.", "I will go where you go and live where you live; your people will be my people and your God my God.", "Where you go, I will go; where you stay, I will stay. Your people will be my people; your God will be my God."],
+    "answer": "Wherever you go, I will go; wherever you live, I will live. Your people will be my people.",
+    "points": 1,
+    "explanation": "It drops “and your God my God”, the last and most important part of Ruth’s promise."
+  },
+  {
+    "id": "compare-4",
+    "type": "mcq",
+    "skill": "compare",
+    "prompt": "Source text (James 1:23): “…a hearer of the word and not a doer…”\n\nIn the target language, nouns like “hearer” and “doer” sound unnatural; verbs are preferred. Which rendering keeps the meaning and uses verbs?",
+    "options": ["someone who listens to the word but does not do what it says", "someone who both hears the word and does it", "someone who does the word but does not hear it", "a hearer of the word, not a doer"],
+    "answer": "someone who listens to the word but does not do what it says",
+    "points": 1,
+    "explanation": "It keeps the meaning (hears but does not do) and turns the nouns into verbs. The others change the meaning or keep the nouns."
+  },
+  {
+    "id": "compare-5",
+    "type": "mcq",
+    "skill": "compare",
+    "prompt": "A team wants to know whether readers understand their draft of a verse. Which evidence best shows that they do?",
+    "options": ["The translator says the verse is clear.", "Three people from the community, asked “What does this verse say?”, each explained it the way the source text means it.", "The draft uses about the same number of words as the source.", "The verse sounds beautiful when it is read aloud."],
+    "answer": "Three people from the community, asked “What does this verse say?”, each explained it the way the source text means it.",
+    "points": 1,
+    "explanation": "Only this option tests what readers actually understand. The others are opinions or say nothing about meaning."
+  },
+  {
+    "id": "deduction-1",
+    "type": "mcq",
+    "skill": "deduction",
+    "prompt": "Four translators – Asha, Ben, Chitra and Dev – each check one book: Ruth, Jonah, Mark or James. Ruth and Jonah are in the Old Testament; Mark and James are in the New Testament.\n\n• Chitra checks James.\n• Ben checks an Old Testament book, but not Jonah.\n• Asha does not check a New Testament book.\n\nWho checks Mark?",
+    "options": ["Asha", "Ben", "Chitra", "Dev"],
+    "answer": "Dev",
+    "points": 1,
+    "explanation": "Chitra has James. Ben has an Old Testament book that is not Jonah, so Ruth. Asha has an Old Testament book, and only Jonah is left. That leaves Mark for Dev."
+  },
+  {
+    "id": "deduction-2",
+    "type": "mcq",
+    "skill": "deduction",
+    "prompt": "All the members of the review team read Greek.\nSome members of the review team read Hebrew.\n\nWhich statement must be true?",
+    "options": ["Everyone who reads Greek is on the review team.", "Some people who read Greek also read Hebrew.", "No one on the review team reads only Greek.", "Everyone who reads Hebrew is on the review team."],
+    "answer": "Some people who read Greek also read Hebrew.",
+    "points": 1,
+    "explanation": "The team members who read Hebrew also read Greek, because every team member does. None of the other statements follows from the two facts."
+  },
+  {
+    "id": "deduction-3",
+    "type": "mcq",
+    "skill": "deduction",
+    "prompt": "Rule: Every draft that passes the community check is sent to the consultant.\n\nThe draft of Philippians was sent to the consultant.\nWhat can you conclude for certain?",
+    "options": ["The Philippians draft passed the community check.", "The Philippians draft did not pass the community check.", "Nothing about the community check follows from this.", "The Philippians draft is ready to be printed."],
+    "answer": "Nothing about the community check follows from this.",
+    "points": 1,
+    "explanation": "The rule says what happens to drafts that pass. It does not say that only those drafts are sent, so the Philippians draft may have been sent for another reason."
+  },
+  {
+    "id": "deduction-4",
+    "type": "mcq",
+    "skill": "deduction",
+    "prompt": "Rule: Every draft that passes the community check is sent to the consultant.\n\nThe draft of Colossians was not sent to the consultant.\nWhat can you conclude for certain?",
+    "options": ["The Colossians draft passed the community check.", "The Colossians draft did not pass the community check.", "Nothing about the community check follows from this.", "The Colossians draft was never translated."],
+    "answer": "The Colossians draft did not pass the community check.",
+    "points": 1,
+    "explanation": "If it had passed, the rule says it would have been sent. It was not sent, so it did not pass."
+  },
+  {
+    "id": "deduction-5",
+    "type": "mcq",
+    "skill": "deduction",
+    "prompt": "A consultant checks chapters 1–5 of a book, one chapter each day from Monday to Friday.\n\n• Chapter 3 is checked on Wednesday.\n• Chapter 1 is checked the day after chapter 5.\n• Chapter 2 is checked before chapter 4.\n• Chapter 4 is checked after chapter 3.\n\nWhich chapter is checked on Monday?",
+    "options": ["Chapter 1", "Chapter 2", "Chapter 4", "Chapter 5"],
+    "answer": "Chapter 5",
+    "points": 1,
+    "explanation": "Chapter 4 comes after Wednesday, so on Thursday or Friday. Chapters 5 and 1 need two days in a row, which leaves only Monday–Tuesday. So: Mon 5, Tue 1, Wed 3, Thu 2, Fri 4."
+  },
+  {
+    "id": "text-1",
+    "type": "mcq",
+    "skill": "text-vs-assumption",
+    "prompt": "Luke 2:7: “And she gave birth to her firstborn son and wrapped him in swaddling cloths and laid him in a manger, because there was no place for them in the inn.”\n\nWhich statement is NOT said in this verse?",
+    "options": ["She laid the baby in a manger.", "There was no place for them in the inn.", "An innkeeper turned them away.", "The baby was wrapped in swaddling cloths."],
+    "answer": "An innkeeper turned them away.",
+    "points": 1,
+    "explanation": "The verse mentions an inn with no room, but no innkeeper. That detail comes from retellings, not the text."
+  },
+  {
+    "id": "text-2",
+    "type": "mcq",
+    "skill": "text-vs-assumption",
+    "prompt": "Jonah 1:17: “And the LORD appointed a great fish to swallow up Jonah. And Jonah was in the belly of the fish three days and three nights.”\n\nWhich statement is NOT said in this verse?",
+    "options": ["The LORD appointed the fish.", "Jonah was swallowed by a whale.", "Jonah was in the fish for three days and three nights.", "The fish was great."],
+    "answer": "Jonah was swallowed by a whale.",
+    "points": 1,
+    "explanation": "The verse says “a great fish”. It does not say what kind; “whale” is an assumption."
+  },
+  {
+    "id": "text-3",
+    "type": "mcq",
+    "skill": "text-vs-assumption",
+    "prompt": "Matthew 2:11: “And going into the house, they saw the child with Mary his mother, and they fell down and worshiped him. Then, opening their treasures, they offered him gifts, gold and frankincense and myrrh.”\n\nWhich statement is NOT said in this verse?",
+    "options": ["They went into a house.", "There were three wise men.", "They offered gold, frankincense and myrrh.", "They worshiped the child."],
+    "answer": "There were three wise men.",
+    "points": 1,
+    "explanation": "Three kinds of gifts are named, but the verse does not say how many visitors there were."
+  },
+  {
+    "id": "text-4",
+    "type": "mcq",
+    "skill": "text-vs-assumption",
+    "prompt": "Mark 1:30–31: “Now Simon’s mother-in-law lay ill with a fever, and immediately they told him about her. And he came and took her by the hand and lifted her up, and the fever left her, and she began to serve them.”\n\nWhich conclusion is best supported by the text?",
+    "options": ["Simon was married.", "Simon’s wife was also ill.", "Simon’s mother-in-law asked to be healed.", "The fever had lasted many days."],
+    "answer": "Simon was married.",
+    "points": 1,
+    "explanation": "Having a mother-in-law means Simon had (or had had) a wife. The text says others told him about her, and says nothing about how long the fever lasted or about his wife being ill."
+  },
+  {
+    "id": "text-5",
+    "type": "mcq",
+    "skill": "text-vs-assumption",
+    "prompt": "Genesis 3:6: “So when the woman saw that the tree was good for food, and that it was a delight to the eyes, and that the tree was to be desired to make one wise, she took of its fruit and ate, and she also gave some to her husband who was with her, and he ate.”\n\nWhich statement is NOT said in this verse?",
+    "options": ["Her husband was with her.", "The fruit was an apple.", "She gave some of the fruit to her husband.", "The tree was a delight to the eyes."],
+    "answer": "The fruit was an apple.",
+    "points": 1,
+    "explanation": "The verse says “its fruit” without naming a kind. The apple comes from later tradition and art."
+  },
+  {
+    "id": "detail-1",
+    "type": "mcq",
+    "skill": "detail",
+    "prompt": "Source (Mark 6:44): “And those who ate the loaves were five thousand men.”\nDraft back-translation: “And those who ate the bread were four thousand men.”\n\nWhich difference changes the meaning?",
+    "options": ["“loaves” became “bread”", "“five” became “four”", "“men” became “people”", "There is no difference in meaning"],
+    "answer": "“five” became “four”",
+    "points": 1,
+    "explanation": "“Loaves” and “bread” say the same thing here. The number changed from five to four thousand. (“Men” did not change.)"
+  },
+  {
+    "id": "detail-2",
+    "type": "mcq",
+    "skill": "detail",
+    "prompt": "How many differences are there between the source and the draft?\n\nSource (Mark 11:22): And Jesus answered them, “Have faith in God.”\nDraft: And Jesus answered him, “Have faith in Good.”",
+    "options": ["1", "2", "3", "4"],
+    "answer": "2",
+    "points": 1,
+    "explanation": "“them” became “him”, and “God” became “Good”. Everything else is the same."
+  },
+  {
+    "id": "detail-3",
+    "type": "mcq",
+    "skill": "detail",
+    "prompt": "How many times does the letter “e” appear in this sentence?\n\nBlessed are the meek",
+    "options": ["5", "6", "7", "8"],
+    "answer": "6",
+    "points": 1,
+    "explanation": "Blessed (2), are (1), the (1), meek (2): 6 in all."
+  },
+  {
+    "id": "detail-4",
+    "type": "mcq",
+    "skill": "detail",
+    "prompt": "A list of references was copied into a draft. Which line does not match?\n\nLine 1: Source Psalm 119:105 – Draft Psalm 119:105\nLine 2: Source Psalm 121:1 – Draft Psalm 121:1\nLine 3: Source Psalm 139:14 – Draft Psalm 193:14\nLine 4: Source Psalm 145:3 – Draft Psalm 145:3",
+    "options": ["Line 1", "Line 2", "Line 3", "Line 4"],
+    "answer": "Line 3",
+    "points": 1,
+    "explanation": "Psalm 139 was copied as Psalm 193 – two digits swapped."
+  },
+  {
+    "id": "detail-5",
+    "type": "mcq",
+    "skill": "detail",
+    "prompt": "Source (John 3:16): “For God so loved the world, that he gave his only Son…”\nDraft back-translation: “For God so loved the world that he gave his Son…”\n\nWhat is missing from the draft?",
+    "options": ["the word “so”", "the word “only”", "the word “world”", "Nothing is missing"],
+    "answer": "the word “only”",
+    "points": 1,
+    "explanation": "“His only Son” became “his Son”. (The draft also drops a comma, which does not change the meaning.)"
+  },
+  {
+    "id": "analogy-1",
+    "type": "mcq",
+    "skill": "analogy",
+    "prompt": "Shepherd is to flock as ___ is to vineyard.",
+    "options": ["vine grower", "grape", "wine", "harvest"],
+    "answer": "vine grower",
+    "points": 1,
+    "explanation": "A shepherd takes care of a flock; a vine grower takes care of a vineyard."
+  },
+  {
+    "id": "analogy-2",
+    "type": "mcq",
+    "skill": "analogy",
+    "prompt": "Silence is to noise as ___ is to light.",
+    "options": ["darkness", "shadow", "lamp", "day"],
+    "answer": "darkness",
+    "points": 1,
+    "explanation": "Silence is the complete absence of noise; darkness is the complete absence of light. A shadow is only a place where some light is blocked."
+  },
+  {
+    "id": "analogy-3",
+    "type": "mcq",
+    "skill": "analogy",
+    "prompt": "Teach is to teacher as translate is to ___.",
+    "options": ["translation", "translator", "translated", "translating"],
+    "answer": "translator",
+    "points": 1,
+    "explanation": "A teacher is a person who teaches; a translator is a person who translates."
+  },
+  {
+    "id": "analogy-4",
+    "type": "mcq",
+    "skill": "analogy",
+    "prompt": "Original painting is to copy as source text is to ___.",
+    "options": ["translation", "author", "language", "reader"],
+    "answer": "translation",
+    "points": 1,
+    "explanation": "A copy is made from the original painting; a translation is made from the source text."
+  },
+  {
+    "id": "analogy-5",
+    "type": "mcq",
+    "skill": "analogy",
+    "prompt": "Bread is to baker as ___ is to potter.",
+    "options": ["clay", "wheel", "pot", "kiln"],
+    "answer": "pot",
+    "points": 1,
+    "explanation": "A baker makes bread; a potter makes pots. Clay is the material and the wheel and kiln are tools, not what the potter makes."
+  }
+]

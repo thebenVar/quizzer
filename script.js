@@ -31,6 +31,7 @@ let userName = "";
 let currentQuizData = []; // This will hold the main quiz data after setup
 let currentQuizMeta = null;
 let quizQuestions = []; // All questions of the loaded quiz, before shuffling
+let answerLog = []; // { questionId, isCorrect } for each answered question, for the per-skill results
 let currentStreakRewards = {};
 let currentBonusGiftClass = null;
 let quizLib = null; // Functions from app/utils.js and app/runtime.js, loaded when the quiz starts
@@ -285,6 +286,11 @@ function applyQuizMetaToPage(meta) {
     document.getElementById('incorrect-count-label').textContent = text.incorrectCountLabel;
     document.getElementById('time-taken-label').textContent = text.timeTakenLabel;
     document.getElementById('achievements-heading').textContent = text.achievementsHeading;
+    document.getElementById('skill-breakdown-heading').textContent = text.skillBreakdownHeading;
+
+    // A test gives no hints while it runs: no feedback choice, no live right/wrong counts.
+    correctionModeSelectorElement.style.display = meta.mode === 'test' ? 'none' : '';
+    document.getElementById('live-stats').style.display = meta.mode === 'test' ? 'none' : '';
 }
 
 function showQuizLoadError(error) {
@@ -305,6 +311,27 @@ function uiText(key, values) {
     return quizLib.fillText(currentQuizMeta.uiText[key], values);
 }
 
+// "test" mode: no right/wrong feedback, streaks or gifts until the end.
+function isTestMode() {
+    return currentQuizMeta.mode === 'test';
+}
+
+// In test mode an answer is recorded silently, then the test moves on.
+function recordTestAnswer(question, result) {
+    score += result.pointsAwarded;
+    if (result.isCorrect) {
+        correctCount++;
+    } else {
+        incorrectCount++;
+        if (result.reviewItem) {
+            incorrectlyAnsweredQuestions.push(result.reviewItem);
+        }
+    }
+    feedbackAreaElement.textContent = uiText('answerSaved');
+    feedbackAreaElement.className = 'feedback-submitted';
+    scheduleOrWaitForNext();
+}
+
 function getAchievementLabel(labelKey) {
     return currentQuizMeta.gamification.achievementLabels[labelKey];
 }
@@ -316,7 +343,7 @@ function startQuizFlow() {
      setHomeLinkVisible(false); // Leaving mid-quiz would lose progress
 
      const selectedCorrectionMode = document.querySelector('input[name="correction"]:checked');
-      showImmediateCorrection = selectedCorrectionMode ? selectedCorrectionMode.value === 'immediate' : true;
+     showImmediateCorrection = !isTestMode() && (selectedCorrectionMode ? selectedCorrectionMode.value === 'immediate' : true);
      console.log("Immediate Correction Mode:", showImmediateCorrection);
 
      quizContentElement.style.display = 'block'; // Show quiz content now
@@ -339,6 +366,7 @@ function startQuizFlow() {
      currentStreak = 0;
      earnedGifts = [];
      incorrectlyAnsweredQuestions = [];
+     answerLog = [];
 
      quizStartTime = Date.now();
      calculateTotalPossibleScore();
@@ -510,6 +538,11 @@ function handleMCQAnswer(selectedOption, question, buttonElement) {
     buttonElement.classList.add('selected');
 
     const result = quizLib.checkMCQAnswer(question, selectedOption, showImmediateCorrection, currentQuizMeta.uiText);
+    answerLog.push({ questionId: question.id, isCorrect: result.isCorrect });
+    if (isTestMode()) {
+        recordTestAnswer(question, result);
+        return;
+    }
     if (result.isCorrect) {
         score += result.pointsAwarded;
         if (!question.isBonus) {
@@ -592,6 +625,12 @@ function loadMatchingOptions(question) {
      const currentQuestion = currentQuizData[currentQuestionIndex];
 
      const result = quizLib.checkMatchingAnswer(currentQuestion, userAnswers, showImmediateCorrection, currentQuizMeta.uiText);
+     answerLog.push({ questionId: currentQuestion.id, isCorrect: result.isCorrect });
+     optionsAreaElement.querySelectorAll('.match-select').forEach(sel => sel.disabled = true);
+     if (isTestMode()) {
+         recordTestAnswer(currentQuestion, result);
+         return;
+     }
      if (currentQuestion.isBonus) {
          if (result.isCorrect) {
              feedbackAreaElement.textContent = result.feedback;
@@ -635,7 +674,6 @@ function loadMatchingOptions(question) {
          updateLiveCountsAndStreak();
      }
 
-     optionsAreaElement.querySelectorAll('.match-select').forEach(sel => sel.disabled = true);
      scheduleOrWaitForNext();
  }
 
@@ -665,11 +703,19 @@ function showResults() {
         resultBands: currentQuizMeta.scoring.resultBands,
     });
 
-    populateAchievements();
-    achievementsListElement.parentElement.style.display = 'block';
+    populateSkillBreakdown();
+
+    // Test mode has no gifts or achievements to show.
+    if (isTestMode()) {
+        achievementsListElement.parentElement.style.display = 'none';
+    } else {
+        populateAchievements();
+        achievementsListElement.parentElement.style.display = 'block';
+    }
 
     populateReviewSection();
-    reviewSection.style.display = incorrectlyAnsweredQuestions.length > 0 ? 'block' : 'none';
+    const canReview = currentQuizMeta.showAnswerReview && incorrectlyAnsweredQuestions.length > 0;
+    reviewSection.style.display = canReview ? 'block' : 'none';
 
     shareScoreButton.style.display = 'inline-block';
 
@@ -677,6 +723,32 @@ function showResults() {
     resultAreaElement.style.display = 'block';
     setHomeLinkVisible(true);
     playSound(completeSound, "G4", "4n");
+}
+
+function populateSkillBreakdown() {
+    const section = document.getElementById('skill-breakdown');
+    const list = document.getElementById('skill-breakdown-list');
+    const rows = quizLib.calculateSkillBreakdown(currentQuizMeta.skills, currentQuizData, answerLog);
+
+    list.innerHTML = '';
+    section.hidden = rows.length === 0;
+    for (const row of rows) {
+        const item = document.createElement('li');
+        const label = document.createElement('span');
+        label.className = 'skill-label';
+        label.textContent = row.label;
+        const bar = document.createElement('span');
+        bar.className = 'skill-bar';
+        const fill = document.createElement('span');
+        fill.className = 'skill-bar-fill';
+        fill.style.width = `${(row.correct / row.total) * 100}%`;
+        bar.appendChild(fill);
+        const value = document.createElement('span');
+        value.className = 'skill-score';
+        value.textContent = uiText('skillScore', { correct: row.correct, total: row.total });
+        item.append(label, bar, value);
+        list.appendChild(item);
+    }
 }
 
 function populateAchievements() {

@@ -1,4 +1,4 @@
-import { validateMeta, validateQuestions } from './validate.js';
+import { validateMeta, validateQuestions, validateQuizConsistency } from './validate.js';
 
 const QUIZ_ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/i;
 
@@ -81,6 +81,7 @@ export async function loadQuiz(quizId, { baseUrl = 'quizzes/', fetchFn = fetch }
   let questions;
   try {
     questions = validateQuestions(rawQuestions);
+    validateQuizConsistency(meta, questions);
   } catch (error) {
     throw new QuizLoadError(`${quizFolder}questions.json: ${error.message}`);
   }

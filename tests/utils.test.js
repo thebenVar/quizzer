@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   calculateRegularQuestionStats,
+  calculateSkillBreakdown,
   fillText,
   formatMinutesSeconds,
   getResultMessage,
@@ -144,5 +145,36 @@ describe('fillText', () => {
 
   it('leaves unknown placeholders alone', () => {
     expect(fillText('Hello {name}', {})).toBe('Hello {name}');
+  });
+});
+
+describe('calculateSkillBreakdown', () => {
+  const skills = [
+    { id: 'logic', label: 'Logic' },
+    { id: 'detail', label: 'Detail' },
+    { id: 'unused', label: 'Unused' },
+  ];
+  const questions = [
+    { id: 1, skill: 'logic' },
+    { id: 2, skill: 'logic' },
+    { id: 3, skill: 'detail' },
+    { id: 4, skill: 'detail' },
+  ];
+
+  it('scores each skill in the listed order, counting unanswered questions in the total', () => {
+    const answers = [
+      { questionId: 1, isCorrect: true },
+      { questionId: 2, isCorrect: false },
+      { questionId: 3, isCorrect: true },
+    ];
+
+    expect(calculateSkillBreakdown(skills, questions, answers)).toEqual([
+      { id: 'logic', label: 'Logic', correct: 1, total: 2 },
+      { id: 'detail', label: 'Detail', correct: 1, total: 2 },
+    ]);
+  });
+
+  it('is empty when the quiz has no skills', () => {
+    expect(calculateSkillBreakdown([], questions, [])).toEqual([]);
   });
 });

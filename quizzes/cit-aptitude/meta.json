@@ -1,0 +1,57 @@
+{
+  "title": "Consultant Aptitude Test",
+  "description": "Problem solving and critical thinking, in eight short sections. About 45 minutes.",
+  "mode": "test",
+  "showAnswerReview": false,
+  "skills": [
+    {
+      "id": "pattern",
+      "label": "Pattern recognition"
+    },
+    {
+      "id": "series",
+      "label": "Series completion"
+    },
+    {
+      "id": "odd-one-out",
+      "label": "Odd one out"
+    },
+    {
+      "id": "compare",
+      "label": "Compare and judge"
+    },
+    {
+      "id": "deduction",
+      "label": "Logical deduction"
+    },
+    {
+      "id": "text-vs-assumption",
+      "label": "Text vs. assumption"
+    },
+    {
+      "id": "detail",
+      "label": "Attention to detail"
+    },
+    {
+      "id": "analogy",
+      "label": "Analogy"
+    }
+  ],
+  "timing": {
+    "timeLimitSeconds": 2700,
+    "autoAdvanceDelayMs": 800
+  },
+  "uiText": {
+    "startButtonLabel": "Start Test",
+    "resultHeading": "Test Complete"
+  },
+  "scoring": {
+    "resultBands": [
+      {
+        "minPercent": 0,
+        "message": "Thank you, {name}. Here are your results by skill."
+      }
+    ],
+    "shareFileName": "aptitude-results.png"
+  }
+}

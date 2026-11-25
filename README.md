@@ -89,9 +89,11 @@ A list of questions. Two types are supported:
 | `pairs` | matching | `[left, right]` pairs; the right-hand side is shuffled |
 | `points` | no | Default 0. A matching question with 0 points is worth one point per pair |
 | `explanation` | no | Shown when the answer is wrong, and in the final review |
-| `isBonus` | no | At most one bonus question; it is always asked last and does not count towards the score |
+| `isBonus` | no | At most one bonus question; it is always asked last and does not count towards the score. Not allowed in test mode |
+| `skill` | if the quiz lists `skills` | Which skill the question measures (one of the `id`s in `meta.json` `skills`) |
 
-Regular questions are asked in random order.
+Regular questions are asked in random order. A line break in a `prompt` (`
+` in the JSON) is shown as a new line, which helps for quoted verses or lists.
 
 ## `meta.json`
 
@@ -131,12 +133,25 @@ Only `title` is required; everything else has a default.
 }
 ```
 
+- `mode` — `"quiz"` (default) or `"test"`. See [Test mode](#test-mode-assessments) below.
+- `skills` — optional list of `{ "id", "label" }`. When present, every question names its `skill`, and the results screen shows a score per skill in this order.
+- `showAnswerReview` — default `true`. Set `false` to hide the review of wrong answers at the end (for example, to keep a test's questions from circulating).
 - `uiText` holds every piece of text the quiz shows: start screen labels, progress and timer, answer feedback, results and review labels, and error alerts. The full list of keys and their default (English) wording is `DEFAULT_UI_TEXT` in [`app/validate.js`](app/validate.js). Words in `{braces}` such as `{current}`, `{total}`, `{answer}`, `{count}` and `{time}` are filled in by the app; keep them in your wording. A misspelled key fails `npm test`. Together with `scoring.resultBands` and `gamification.achievementLabels`, this is how you put a quiz in another language.
 - `branding.logoSrc` is relative to the quiz folder (a full `https://` URL also works). Without it, no logo is shown.
 - `timing.timeLimitSeconds` is the time for the whole quiz; `autoAdvanceDelayMs` is the pause before the next question.
 - `{name}` in a result message is replaced with the player's name.
 - `streakRewards` maps a streak of correct answers to a [Font Awesome 5](https://fontawesome.com/v5/search) icon class, awarded when the streak reaches that number. `bonusRewardClass` is the icon for getting the bonus question right.
 - Any `uiText` or `achievementLabels` entry you leave out keeps its default.
+
+## Test mode (assessments)
+
+A quiz with `"mode": "test"` in `meta.json` is an assessment rather than a game:
+
+- No feedback while answering: each answer just shows "Answer saved." and the test moves on. There are no right/wrong counts, streaks, sounds, flashes, gifts or bonus question, and no choice of feedback mode.
+- At the end: the score, time taken and, if the quiz lists `skills`, a score per skill.
+- Combine with `"showAnswerReview": false` to keep the questions private, and list the test under `"unlisted"` in `registry.json` so it is reached only by its link.
+
+`quizzes/cit-aptitude/` is an example: an aptitude test for consultants in training, with 40 questions over eight skills.
 
 ## Project layout
 
